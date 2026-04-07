@@ -2065,40 +2065,61 @@ export type Database = {
       }
       training_completions: {
         Row: {
+          assessment_passed: boolean | null
           certificate_url: string | null
           completion_date: string | null
           created_at: string
+          evidence_file_url: string | null
           expiry_date: string | null
           id: string
           module_id: string
+          organisation_id: string | null
+          rejection_reason: string | null
           score: number | null
           status: string
+          training_code: string | null
           updated_at: string
           user_id: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
+          assessment_passed?: boolean | null
           certificate_url?: string | null
           completion_date?: string | null
           created_at?: string
+          evidence_file_url?: string | null
           expiry_date?: string | null
           id?: string
           module_id: string
+          organisation_id?: string | null
+          rejection_reason?: string | null
           score?: number | null
           status?: string
+          training_code?: string | null
           updated_at?: string
           user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
+          assessment_passed?: boolean | null
           certificate_url?: string | null
           completion_date?: string | null
           created_at?: string
+          evidence_file_url?: string | null
           expiry_date?: string | null
           id?: string
           module_id?: string
+          organisation_id?: string | null
+          rejection_reason?: string | null
           score?: number | null
           status?: string
+          training_code?: string | null
           updated_at?: string
           user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -2106,6 +2127,13 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_completions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -2150,6 +2178,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "training_modules_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_requirements: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_mandatory: boolean
+          linked_module_id: string | null
+          min_pass_score: number | null
+          organisation_id: string
+          required_for_roles: Json | null
+          training_code: string
+          training_name: string
+          updated_at: string
+          validity_months: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean
+          linked_module_id?: string | null
+          min_pass_score?: number | null
+          organisation_id: string
+          required_for_roles?: Json | null
+          training_code: string
+          training_name: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean
+          linked_module_id?: string | null
+          min_pass_score?: number | null
+          organisation_id?: string
+          required_for_roles?: Json | null
+          training_code?: string
+          training_name?: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_requirements_linked_module_id_fkey"
+            columns: ["linked_module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_requirements_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
