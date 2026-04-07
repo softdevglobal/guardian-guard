@@ -367,6 +367,18 @@ export default function Risks() {
                   </>
                 )}
 
+                {/* Closure Validation Errors */}
+                {closureErrors.length > 0 && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-3 w-3" /> Cannot close — criteria not met:
+                    </p>
+                    <ul className="text-xs text-destructive space-y-0.5 list-disc list-inside">
+                      {closureErrors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Advance button */}
                 {nextStatus && (
                   <div className="pt-2">
