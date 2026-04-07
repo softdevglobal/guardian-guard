@@ -423,3 +423,119 @@ describe("notification fingerprint deduplication", () => {
     expect(fp1).not.toBe(fp2);
   });
 });
+
+// ── CONCURRENCY / CONFLICT HANDLING TESTS ──
+
+describe("atomic deduplication conflict handling", () => {
+  /**
+   * These tests simulate the behavior of the `insert_notification_deduped` DB function
+   * and the edge function's error handling wrapper. We can't call the actual DB function
+   * in unit tests, but we verify the contract that the edge function relies on.
+   */
+
+  // Simulates the createNotificationDeduped wrapper behavior
+  type InsertResult = { created: boolean; fingerprint: string };
+
+  function simulateAtomicInsert(
+    existingFingerprints: Set<string>,
+    fingerprint: string
+  ): InsertResult {
+    // Simulates INSERT ... ON CONFLICT DO NOTHING
+    if (existingFingerprints.has(fingerprint)) {
+      // DB returns ROW_COUNT = 0, function returns false
+      return { created: false, fingerprint };
+    }
+    existingFingerprints.add(fingerprint);
+    return { created: true, fingerprint };
+  }
+
+  function simulateWithErrorHandling(
+    existingFingerprints: Set<string>,
+    fingerprint: string,
+    shouldThrow: boolean = false
+  ): InsertResult {
+    try {
+      if (shouldThrow) {
+        throw new Error("Simulated unexpected DB error");
+      }
+      return simulateAtomicInsert(existingFingerprints, fingerprint);
+    } catch {
+      // Edge function catches and returns non-fatal result
+      return { created: false, fingerprint };
+    }
+  }
+
+  const fp = "stale_incident:incidents:inc-001:user-1:2026-04-07";
+
+  it("first invocation creates the notification", () => {
+    const db = new Set<string>();
+    const result = simulateAtomicInsert(db, fp);
+    expect(result.created).toBe(true);
+    expect(db.has(fp)).toBe(true);
+  });
+
+  it("second invocation with same fingerprint is silently ignored", () => {
+    const db = new Set<string>();
+    simulateAtomicInsert(db, fp); // first
+    const result = simulateAtomicInsert(db, fp); // second
+    expect(result.created).toBe(false);
+    expect(db.size).toBe(1); // no duplicate row
+  });
+
+  it("two concurrent invocations result in exactly one notification", () => {
+    const db = new Set<string>();
+    // Simulate two "concurrent" calls — both execute atomically
+    const r1 = simulateAtomicInsert(db, fp);
+    const r2 = simulateAtomicInsert(db, fp);
+    // Exactly one should succeed
+    expect([r1.created, r2.created].filter(Boolean).length).toBe(1);
+    expect(db.size).toBe(1);
+  });
+
+  it("different fingerprints both succeed", () => {
+    const db = new Set<string>();
+    const fp2 = "complaint_ack_overdue:complaints:comp-001:user-1:2026-04-07";
+    const r1 = simulateAtomicInsert(db, fp);
+    const r2 = simulateAtomicInsert(db, fp2);
+    expect(r1.created).toBe(true);
+    expect(r2.created).toBe(true);
+    expect(db.size).toBe(2);
+  });
+
+  it("unexpected error is caught and does not crash automation", () => {
+    const db = new Set<string>();
+    const result = simulateWithErrorHandling(db, fp, true);
+    expect(result.created).toBe(false);
+    // Automation continues — no throw
+  });
+
+  it("automation continues processing after a conflict", () => {
+    const db = new Set<string>();
+    const results: InsertResult[] = [];
+
+    // First batch — all new
+    results.push(simulateAtomicInsert(db, fp));
+    results.push(simulateAtomicInsert(db, "type2:table2:rec-2:user-2:2026-04-07"));
+
+    // Second batch — one duplicate, one new
+    results.push(simulateAtomicInsert(db, fp)); // duplicate
+    results.push(simulateAtomicInsert(db, "type3:table3:rec-3:user-3:2026-04-07")); // new
+
+    expect(results[0].created).toBe(true);
+    expect(results[1].created).toBe(true);
+    expect(results[2].created).toBe(false); // deduped
+    expect(results[3].created).toBe(true);  // continues after conflict
+    expect(db.size).toBe(3); // no duplicates
+  });
+
+  it("same event on next day creates a new notification", () => {
+    const db = new Set<string>();
+    const fpDay1 = "stale_incident:incidents:inc-001:user-1:2026-04-07";
+    const fpDay2 = "stale_incident:incidents:inc-001:user-1:2026-04-08";
+    const r1 = simulateAtomicInsert(db, fpDay1);
+    const r2 = simulateAtomicInsert(db, fpDay2);
+    expect(r1.created).toBe(true);
+    expect(r2.created).toBe(true);
+    expect(db.size).toBe(2);
+  });
+});
