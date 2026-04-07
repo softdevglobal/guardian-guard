@@ -68,9 +68,9 @@ export default function StaffCompliance() {
   const updateMutation = useMutation({
     mutationFn: async (updates: { id: string; [key: string]: any }) => {
       const { id, ...rest } = updates;
-      const { error } = await supabase.from("staff_compliance").update(rest).eq("id", id);
+      const { error } = await supabase.from("staff_compliance").update(rest as any).eq("id", id);
       if (error) throw error;
-      if (user) await logAudit("staff_compliance", "updated", id, rest);
+      if (user) await logAudit({ action: "updated", module: "staff_compliance", record_id: id, details: rest });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-compliance"] });

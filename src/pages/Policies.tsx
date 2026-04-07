@@ -109,7 +109,7 @@ export default function Policies() {
       if (status === "published") updates.published_at = new Date().toISOString();
       const { error } = await supabase.from("policies").update(updates).eq("id", id);
       if (error) throw error;
-      if (user) await logAudit("policies", `status_changed_to_${status}`, id, updates);
+      if (user) await logAudit({ action: `status_changed_to_${status}`, module: "policies", record_id: id, details: updates });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["policies"] });
