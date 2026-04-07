@@ -1,8 +1,5 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Check, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Bell, Check, ExternalLink, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,72 +7,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { useNotifications, AppNotification } from "@/hooks/useNotifications";
+
+const severityConfig: Record<string, { icon: string; className: string }> = {
+  critical: { icon: "🔴", className: "border-l-4 border-l-destructive bg-destructive/5" },
+  urgent: { icon: "🟠", className: "border-l-4 border-l-orange-500 bg-orange-500/5" },
+  warning: { icon: "🟡", className: "border-l-4 border-l-yellow-500 bg-yellow-500/5" },
+  info: { icon: "🔵", className: "" },
+};
 
 export function NotificationBell() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { notifications, unreadCount, criticalUnread, markRead, markAllRead, logClick } = useNotifications({ limit: 20 });
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["notifications", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data;
-    },
-    refetchInterval: 30000, // poll every 30s
-  });
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("notifications-realtime")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "notifications",
-        filter: `user_id=eq.${user.id}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
-
-  const markReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
-  });
-
-  const markAllReadMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) return;
-      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
-  });
-
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  const typeIcon = (type: string) => {
-    switch (type) {
-      case "critical": return "🔴";
-      case "warning": return "🟡";
-      case "success": return "🟢";
-      default: return "🔵";
-    }
+  const handleClick = async (n: AppNotification) => {
+    if (!n.is_read) markRead.mutate(n.id);
+    await logClick(n);
+    if (n.link) { navigate(n.link); setOpen(false); }
   };
 
   return (
@@ -90,45 +39,82 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-96 p-0" align="end">
         <div className="flex items-center justify-between px-4 py-3">
-          <h3 className="text-sm font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => markAllReadMutation.mutate()}>
-              <Check className="h-3 w-3 mr-1" />Mark all read
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">Notifications</h3>
+            {criticalUnread.length > 0 && (
+              <Badge variant="destructive" className="text-[10px]">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {criticalUnread.length} critical
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => markAllRead.mutate()}>
+                <Check className="h-3 w-3 mr-1" />All read
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { navigate("/notifications"); setOpen(false); }}>
+              View all
             </Button>
-          )}
+          </div>
         </div>
         <Separator />
-        <ScrollArea className="max-h-80">
+
+        {criticalUnread.length > 0 && (
+          <>
+            <div className="px-3 py-1.5 bg-destructive/10">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-destructive">Pinned — Critical</p>
+            </div>
+            {criticalUnread.map(n => (
+              <NotificationItem key={n.id} notification={n} onClick={() => handleClick(n)} />
+            ))}
+            <Separator />
+          </>
+        )}
+
+        <ScrollArea className="max-h-72">
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No notifications</p>
           ) : (
             <div className="divide-y">
-              {notifications.map(n => (
-                <div
-                  key={n.id}
-                  className={`px-4 py-3 text-sm cursor-pointer hover:bg-muted/50 ${!n.is_read ? "bg-primary/5" : ""}`}
-                  onClick={() => {
-                    if (!n.is_read) markReadMutation.mutate(n.id);
-                    if (n.link) { navigate(n.link); setOpen(false); }
-                  }}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-base leading-none mt-0.5">{typeIcon(n.notification_type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`leading-tight ${!n.is_read ? "font-medium" : ""}`}>{n.title}</p>
-                      {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
-                      <p className="text-xs text-muted-foreground mt-1">{format(new Date(n.created_at), "PPp")}</p>
-                    </div>
-                    {n.link && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />}
-                  </div>
-                </div>
+              {notifications.filter(n => !(n.severity === "critical" && !n.is_read)).map(n => (
+                <NotificationItem key={n.id} notification={n} onClick={() => handleClick(n)} />
               ))}
             </div>
           )}
         </ScrollArea>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function NotificationItem({ notification: n, onClick }: { notification: AppNotification; onClick: () => void }) {
+  const config = severityConfig[n.severity] || severityConfig.info;
+  return (
+    <div
+      className={`px-4 py-3 text-sm cursor-pointer hover:bg-muted/50 transition-colors ${!n.is_read ? "bg-primary/5 font-medium" : ""} ${config.className}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+    >
+      <div className="flex items-start gap-2">
+        <span className="text-base leading-none mt-0.5 shrink-0">{config.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="leading-tight">{n.title}</p>
+          {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 font-normal">{n.message}</p>}
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-muted-foreground">{format(new Date(n.created_at), "PPp")}</p>
+            {n.source_table && (
+              <Badge variant="outline" className="text-[9px] h-4 capitalize">{n.source_table.replace(/_/g, " ")}</Badge>
+            )}
+          </div>
+        </div>
+        {n.link && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />}
+      </div>
+    </div>
   );
 }
