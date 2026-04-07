@@ -14,16 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      organisations: {
+        Row: {
+          abn: string | null
+          created_at: string
+          id: string
+          name: string
+          ndis_registration: string | null
+          primary_contact_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          abn?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          ndis_registration?: string | null
+          primary_contact_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          abn?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          ndis_registration?: string | null
+          primary_contact_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organisation_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          active_status: boolean
+          avatar_url: string | null
+          clearance_status: string | null
+          created_at: string
+          data_scope: string | null
+          email: string
+          full_name: string
+          id: string
+          last_login: string | null
+          mfa_enabled: boolean
+          organisation_id: string | null
+          permitted_modules: string[] | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active_status?: boolean
+          avatar_url?: string | null
+          clearance_status?: string | null
+          created_at?: string
+          data_scope?: string | null
+          email: string
+          full_name: string
+          id: string
+          last_login?: string | null
+          mfa_enabled?: boolean
+          organisation_id?: string | null
+          permitted_modules?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active_status?: boolean
+          avatar_url?: string | null
+          clearance_status?: string | null
+          created_at?: string
+          data_scope?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          last_login?: string | null
+          mfa_enabled?: boolean
+          organisation_id?: string | null
+          permitted_modules?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_organisation_id: { Args: { _user_id: string }; Returns: string }
+      get_user_team_id: { Args: { _user_id: string }; Returns: string }
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "compliance_officer"
+        | "supervisor"
+        | "trainer"
+        | "support_worker"
+        | "hr_admin"
+        | "executive"
+        | "participant"
+      record_status: "active" | "archived" | "deleted"
+      sensitivity_level:
+        | "public"
+        | "internal"
+        | "controlled"
+        | "sensitive"
+        | "highly_sensitive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +328,25 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "compliance_officer",
+        "supervisor",
+        "trainer",
+        "support_worker",
+        "hr_admin",
+        "executive",
+        "participant",
+      ],
+      record_status: ["active", "archived", "deleted"],
+      sensitivity_level: [
+        "public",
+        "internal",
+        "controlled",
+        "sensitive",
+        "highly_sensitive",
+      ],
+    },
   },
 } as const
