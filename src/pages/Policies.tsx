@@ -176,39 +176,109 @@ export default function Policies() {
         <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Overdue Review</CardTitle><AlertTriangle className="h-4 w-4 text-destructive" /></CardHeader><CardContent><div className="text-2xl font-bold">{overdueCount}</div></CardContent></Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle>All Policies</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-center py-4 text-muted-foreground">Loading...</p> : policies.length === 0 ? <p className="text-center py-4 text-muted-foreground">No policies found</p> : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow><TableHead>Policy</TableHead><TableHead>Category</TableHead><TableHead>Version</TableHead><TableHead>Status</TableHead><TableHead>Next Review</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {policies.map(p => {
-                    const overdue = p.next_review_date && differenceInDays(parseISO(p.next_review_date), new Date()) < 0;
-                    return (
-                      <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(p)}>
-                        <TableCell className="font-medium">{p.title}</TableCell>
-                        <TableCell><Badge variant="outline">{p.category ?? "—"}</Badge></TableCell>
-                        <TableCell>v{p.current_version}</TableCell>
-                        <TableCell><Badge className={`${statusColor(p.status)} capitalize`}>{p.status}</Badge></TableCell>
-                        <TableCell>
-                          {p.next_review_date ? (
-                            <span className={overdue ? "text-destructive font-medium" : "text-muted-foreground"}>
-                              {overdue && <AlertTriangle className="inline h-3 w-3 mr-1" />}
-                              {p.next_review_date}
-                            </span>
-                          ) : "—"}
-                        </TableCell>
+      <Tabs value={pageTab} onValueChange={setPageTab}>
+        <TabsList><TabsTrigger value="policies">All Policies</TabsTrigger><TabsTrigger value="document-control">Document Control</TabsTrigger></TabsList>
+
+        <TabsContent value="policies">
+          <Card>
+            <CardHeader><CardTitle>All Policies</CardTitle></CardHeader>
+            <CardContent>
+              {isLoading ? <p className="text-center py-4 text-muted-foreground">Loading...</p> : policies.length === 0 ? <p className="text-center py-4 text-muted-foreground">No policies found</p> : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader><TableRow><TableHead>Policy</TableHead><TableHead>Category</TableHead><TableHead>Version</TableHead><TableHead>Status</TableHead><TableHead>Next Review</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {policies.map(p => {
+                        const overdue = p.next_review_date && differenceInDays(parseISO(p.next_review_date), new Date()) < 0;
+                        return (
+                          <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(p)}>
+                            <TableCell className="font-medium">{p.title}</TableCell>
+                            <TableCell><Badge variant="outline">{p.category ?? "—"}</Badge></TableCell>
+                            <TableCell>v{p.current_version}</TableCell>
+                            <TableCell><Badge className={`${statusColor(p.status)} capitalize`}>{p.status}</Badge></TableCell>
+                            <TableCell>
+                              {p.next_review_date ? (
+                                <span className={overdue ? "text-destructive font-medium" : "text-muted-foreground"}>
+                                  {overdue && <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                                  {p.next_review_date}
+                                </span>
+                              ) : "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="document-control">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Document Control Register</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => {
+                const headers = ["Title", "Owner", "Version", "Approval Date", "Next Review Date", "Linked Standard", "Status"];
+                const rows = [...policies].sort((a, b) => {
+                  if (!a.next_review_date) return 1;
+                  if (!b.next_review_date) return -1;
+                  return a.next_review_date.localeCompare(b.next_review_date);
+                }).map(p => [csvSafe(p.title), p.owner_id ?? "Unassigned", `v${p.current_version}`, p.approved_at ? format(new Date(p.approved_at), "PP") : "", p.next_review_date ?? "", p.linked_standard_id ?? "None", p.status].join(","));
+                downloadCSV([headers.join(","), ...rows].join("\n"), `document-control-${new Date().toISOString().split("T")[0]}.csv`);
+                toast({ title: "Document control register exported" });
+              }}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <p className="text-center py-4 text-muted-foreground">Loading...</p> : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Policy Title</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Approval Date</TableHead>
+                        <TableHead>Next Review</TableHead>
+                        <TableHead>Category</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {[...policies].sort((a, b) => {
+                        if (!a.next_review_date) return 1;
+                        if (!b.next_review_date) return -1;
+                        return a.next_review_date.localeCompare(b.next_review_date);
+                      }).map(p => {
+                        const overdue = p.next_review_date && differenceInDays(parseISO(p.next_review_date), new Date()) < 0;
+                        return (
+                          <TableRow key={p.id} className={overdue ? "bg-destructive/5" : ""} onClick={() => setSelected(p)}>
+                            <TableCell className="font-medium cursor-pointer">{p.title}</TableCell>
+                            <TableCell>v{p.current_version}</TableCell>
+                            <TableCell><Badge className={`${statusColor(p.status)} capitalize`}>{p.status}</Badge></TableCell>
+                            <TableCell className="text-muted-foreground">{p.approved_at ? format(new Date(p.approved_at), "PP") : "—"}</TableCell>
+                            <TableCell>
+                              {p.next_review_date ? (
+                                <span className={overdue ? "text-destructive font-medium" : "text-muted-foreground"}>
+                                  {overdue && <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                                  {p.next_review_date}
+                                </span>
+                              ) : "—"}
+                            </TableCell>
+                            <TableCell><Badge variant="outline">{p.category ?? "—"}</Badge></TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}>
