@@ -12,6 +12,7 @@ import {
   Activity,
   HeartHandshake,
   Lock,
+  Bell,
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { NavLink } from "@/components/NavLink";
@@ -45,6 +46,7 @@ const navItems = [
   { title: "Heartbeat", url: "/heartbeat", icon: Activity, module: "dashboard" },
   { title: "Safeguarding", url: "/safeguarding", icon: HeartHandshake, module: "safeguarding" },
   { title: "Privacy", url: "/privacy", icon: Lock, module: "privacy" },
+  { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
 
 const settingsItem = { title: "Settings", url: "/settings", icon: Settings, module: "settings" };
