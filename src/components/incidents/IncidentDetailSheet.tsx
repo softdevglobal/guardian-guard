@@ -18,9 +18,12 @@ import { format, differenceInHours, differenceInDays } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import {
   AlertTriangle, Timer, CheckCircle, XCircle, Plus, Clock,
-  ShieldAlert, Siren, ArrowRight, Loader2, GraduationCap
+  ShieldAlert, Siren, ArrowRight, Loader2, GraduationCap, Download
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
+import { IncidentExportButton } from "@/components/incidents/IncidentExportButtons";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Incident = Tables<"incidents">;
 
