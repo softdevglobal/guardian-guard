@@ -1,145 +1,156 @@
 
 
-# DGTG NDIS Proactive Compliance Operating System
+# Non-Working Functions Audit
 
-## Overview
-A full-stack, accessibility-first compliance platform with 8 core modules, role-based access control, real-time AI monitoring, and audit-ready logging. Built with WCAG AAA compliance, including high-contrast theme, large text mode, screen reader optimization, reduced motion, and simplified interface toggle.
-
----
-
-## Foundation Layer
-
-### 1. Authentication & Role-Based Access Control
-- Supabase Auth with email/password + MFA enforcement for admin/supervisor/compliance/HR roles
-- **Roles table** using `app_role` enum: `super_admin`, `compliance_officer`, `supervisor`, `trainer`, `support_worker`, `hr_admin`, `executive`, `participant`
-- `user_roles` table with RLS + `has_role()` security definer function
-- `user_profiles` table: user_id, team_id, organisation_id, active_status, mfa_enabled, permitted_modules, data_scope, clearance_status
-- Session timeout by role, device/geolocation logging, suspicious access alerts
-
-### 2. Accessibility System (WCAG AAA+)
-- Global accessibility toolbar (persistent, keyboard-accessible):
-  - **High contrast mode** toggle (dark/light/high-contrast themes)
-  - **Large text mode** (scales all text up 150%+)
-  - **Simplified interface** mode (reduces visual complexity, larger touch targets, simplified navigation)
-  - **Reduced motion** toggle (disables all animations)
-  - **Screen reader optimized** with proper ARIA landmarks, live regions, skip links
-- All interactive elements: visible focus indicators, minimum 44px touch targets
-- Color choices never rely on color alone — always include icons/text labels
-- Form validation with clear, descriptive error messages linked to fields
-
-### 3. App Shell & Navigation
-- Responsive sidebar navigation filtered by user role/permissions
-- Breadcrumb navigation on all pages
-- Global search with keyboard shortcut
-- Notification center for alerts and approvals
-- Role indicator in header showing current user's access level
+After reviewing every page and component, here is the complete list of buttons, actions, and features that are currently non-functional (using mock data or doing nothing on click):
 
 ---
 
-## Module 1: Compliance Pulse Dashboard
-- Real-time compliance health gauges (0-100%) for:
-  - Governance & Operational Management
-  - Provision of Supports
-  - Support Environment
-  - AI Oversight status
-- Score auto-decreases based on: overdue policy reviews, expiring staff screening, open incidents >5 days, missing progress notes
-- Alert cards for each compliance drop with direct links to resolve
-- Executive summary view vs detailed operational view (role-filtered)
+## GLOBAL / APP SHELL
 
-## Module 2: Incident Management & Smart Classification
-- Incident creation form with guided workflow
-- **Auto-classification engine** (Lovable AI): if injury=yes AND type=participant-related → force "Reportable Incident", disable manual override
-- Auto-fill NDIS reporting fields and notification deadlines
-- Workflow states: Reported → Review → Investigating → Actioned → Closed
-- Role-based actions: Trainer=submit only, Supervisor=review (team scope), Compliance Officer=classify/escalate/close
-- Closed incidents become read-only; version history on all edits
-- No deletion — archive only
-
-## Module 3: Continuous Monitoring Engine ("Heartbeat")
-- Lovable AI edge function for sentiment analysis on training interactions
-- Detect distress markers, emotional escalation, safeguarding triggers
-- **Silent Alert System**: auto-create Draft Incident, assign severity (Low/Medium/High), notify Supervisor
-- **Participant Risk Score**: dynamic score based on distress signals, incident history, missed sessions
-- Full AI intervention logging: trigger reason, confidence score, action taken, human reviewer
-
-## Module 4: Risk Register
-- Risk creation/update by Supervisors (team scope), Compliance Officer (all scope)
-- Trainers can submit risk concerns
-- Risk mitigation assignment and tracking
-- Risk heat map visualization on dashboard
-
-## Module 5: Complaints Management
-- Participant self-service complaint submission (accessible form)
-- Staff can log complaints received
-- Supervisor review within team scope
-- Compliance Officer: full complaint handling authority
-- Workflow: Submitted → Under Review → Investigating → Resolved → Closed
-
-## Module 6: Policy Management
-- Policy CRUD with version control (no overwriting — new versions only)
-- Workflow: Draft → Review → Approved → Published
-- Compliance Officer/Super Admin move to Review; Director/Super Admin approve
-- All staff see approved versions only; version history fully auditable
-
-## Module 7: Dynamic Training Matrix & Staff Compliance
-- Competency mapping: each role → required training modules + certifications
-- **Enforcement logic**: incomplete training blocks participant assignment/scheduling
-- Auto re-certification: 60-day expiry alerts, auto-enroll in refresher training
-- Staff compliance dashboard: police checks, worker screening, training certificates, expiry tracking
-- HR Admin: full staff file access; Supervisors: limited clearance status view
-
-## Module 8: Participant Profiles & Outcome Tracker
-- Participant goal mapping linked to training modules and skill milestones
-- Progress tracking: communication skills, call handling, confidence levels
-- **Sensitive field masking** by default (DOB, address, phone, government IDs, safeguarding notes)
-- "Reveal" button requiring permission + logged reason + auto-expire access
-- Success report generator: before/after comparison, measurable improvements, trainer notes
-- Evidence storage: assessments, feedback logs, attached files
-- Participant self-service portal: view own schedule, progress, submit feedback
+1. **Global Search (Header)** — Search input does nothing; no Ctrl+K shortcut handler
+2. **Notifications Bell (Header)** — Hardcoded "4" badge; clicking does nothing; no notifications panel/dropdown
+3. **Logout Button (Header)** — Sets user to null in-memory only; no real Supabase auth session to end
+4. **No Login/Signup Pages** — No authentication flow exists; the app uses a hardcoded demo user (`DEMO_USER`)
 
 ---
 
-## Cross-Cutting Features
+## DASHBOARD
 
-### Audit Trail
-- Every action timestamped with user, device, location
-- Full audit log table accessible to Super Admin and Compliance Officer
-- Director gets read-only summary view
-- Major changes create version history entries
-
-### Digital Privacy Guard
-- PII masking with reveal-on-request (logged with reason, user, timestamp, device)
-- Geofencing access logs, device type tracking
-- Data breach detection: bulk access alerts, unusual login patterns
-- IP allowlist option for sensitive roles
-
-### AI Oversight Controls
-- AI can: analyze text, suggest drafts, generate summaries, identify missing compliance items
-- AI cannot: close incidents, approve complaints/policies, make safeguarding decisions, reveal masked data
-- Full AI activity log: source data, trigger reason, confidence score, suggestion, human reviewer
-
-### Approval Workflows
-- Policy approval chain (Draft → Review → Approved → Published)
-- Incident closure chain with role gates
-- Elevated data access: request → supervisor/compliance review → temporary access → auto-expire
+5. **Compliance Gauges** — Hardcoded scores (87%, 72%, 91%, 95%); not computed from real database data
+6. **Stats Cards** — Hardcoded values (3 incidents, 24 participants, etc.); no database queries
+7. **Recent Alerts** — Static mock array; not fetched from `alerts` table
+8. **Alert Items not clickable** — No navigation to the related record
 
 ---
 
-## Database Schema (Key Tables)
-- `organisations`, `teams`, `user_profiles`, `user_roles`
-- `participants`, `participant_goals`, `participant_progress`, `participant_risk_scores`
-- `incidents`, `incident_versions`, `incident_workflow_history`
-- `risks`, `risk_mitigations`
-- `complaints`, `complaint_workflow_history`
-- `policies`, `policy_versions`
-- `staff_compliance`, `training_modules`, `training_completions`, `certifications`
-- `audit_logs`, `ai_activity_logs`, `access_reveal_logs`
-- `alerts`, `notifications`
-- All tables include: organisation_id, created_by, sensitivity_level, record_status
+## INCIDENTS
 
-## Tech Stack
-- React + TypeScript + Tailwind CSS (WCAG AAA themed)
-- Supabase (external): Auth, Database with RLS, Edge Functions, Storage
-- Lovable AI: sentiment analysis, incident classification, compliance suggestions
-- Real-time subscriptions for alerts and notifications
+9. **"Report Incident" form submit** — `onSubmit` calls `e.preventDefault()` only; no data saved to database
+10. **Smart Classification logic** — The warning text is shown but no actual auto-classification runs (no AI call, no forced reportable status)
+11. **Incident table rows not clickable** — Cursor pointer but no onClick handler; no detail/edit view
+12. **All data is mock** — Not fetched from `incidents` table
+
+---
+
+## RISKS
+
+13. **"Add Risk" button** — No onClick handler; does nothing
+14. **Risk summary cards** — Hardcoded counts; not computed
+15. **Risk rows not clickable** — No detail/edit view
+16. **All data is mock** — Not fetched from `risks` table
+
+---
+
+## COMPLAINTS
+
+17. **"Log Complaint" button** — No onClick handler; does nothing
+18. **Complaint rows not clickable** — No detail/edit view
+19. **All data is mock** — Not fetched from `complaints` table
+
+---
+
+## POLICIES
+
+20. **"Create Policy" button** — No onClick handler; does nothing
+21. **Policy summary cards** — Hardcoded counts
+22. **Policy rows not clickable** — No detail/edit/version view
+23. **All data is mock** — Not fetched from `policies` table
+
+---
+
+## PARTICIPANTS
+
+24. **"Add Participant" button** — No onClick handler; does nothing
+25. **PII Reveal/Mask toggle** — Works visually with mock data but does NOT log access to `access_reveal_logs` table; no reason prompt
+26. **Participant rows not clickable** — No detail/goals/progress view
+27. **All data is mock** — Not fetched from `participants` table
+
+---
+
+## STAFF COMPLIANCE
+
+28. **"Add Staff Member" button** — No onClick handler; does nothing
+29. **Staff summary cards** — Hardcoded counts
+30. **Staff rows not clickable** — No detail/edit view
+31. **All data is mock** — Not fetched from `staff_compliance` / `user_profiles` tables
+
+---
+
+## TRAINING
+
+32. **No "Add Module" button** — No way to create training modules
+33. **Training summary cards** — Hardcoded counts
+34. **Module rows not clickable** — No detail/enrollment view
+35. **All data is mock** — Not fetched from `training_modules` / `training_completions` tables
+
+---
+
+## AUDIT LOGS
+
+36. **Search and filter work** — But only against mock data array
+37. **All data is mock** — Not fetched from `audit_logs` table
+
+---
+
+## HEARTBEAT
+
+38. **All monitoring data is mock** — No real AI sentiment analysis running
+39. **No AI edge function deployed** — No Lovable AI integration for distress detection
+40. **Alert items not actionable** — No way to view/escalate/dismiss alerts
+41. **Risk scores static** — Not fetched from `participant_risk_scores` table
+
+---
+
+## SETTINGS
+
+42. **Organisation Details "Save Changes"** — No onClick/onSubmit; does nothing
+43. **Security toggles (MFA, IP Allowlist, etc.)** — Visual only; no state persistence
+44. **Notification preference toggles** — Visual only; no state persistence
+45. **Role "Configure" buttons** — No onClick handler; does nothing
+46. **Session timeout input** — Not saved anywhere
+
+---
+
+## CROSS-CUTTING (NOT IMPLEMENTED)
+
+47. **No real authentication** — No login/signup pages, no Supabase Auth integration
+48. **No real RBAC enforcement** — Demo user bypasses all; roles table exists but isn't used
+49. **No audit trail logging** — Actions don't write to `audit_logs` table
+50. **No approval workflows** — No policy approval chain, no incident closure gates
+51. **No data masking with access logging** — Reveal doesn't prompt for reason or log to DB
+52. **No real-time subscriptions** — No Supabase realtime channels connected
+53. **No file upload/storage** — No storage buckets for certificates, evidence, etc.
+
+---
+
+## Summary
+
+| Category | Non-Working Items |
+|---|---|
+| Authentication & RBAC | 4 items (no login, no real roles, no MFA) |
+| Database connectivity | 10 pages all use mock data (0 live queries) |
+| Create/Add buttons | 7 buttons do nothing |
+| Form submissions | 2 forms don't save (Incident, Settings) |
+| Detail/Edit views | 8 tables have no row click actions |
+| AI / Heartbeat | 3 items (no edge function, no sentiment analysis) |
+| Cross-cutting features | 7 items (audit logging, workflows, realtime, storage) |
+| **Total** | **~53 non-functional items** |
+
+---
+
+## Recommended Implementation Order
+
+1. **Authentication** — Login/signup pages + connect AuthContext to Supabase Auth
+2. **Wire Dashboard + Incidents to live DB** — Replace mock data with real queries; implement incident creation form
+3. **Wire remaining modules** — Participants, Risks, Complaints, Policies, Staff, Training, Audit Logs
+4. **Add detail/edit views** — Row click opens detail panel or page for each module
+5. **Implement audit trail logging** — Write to `audit_logs` on every create/update action
+6. **PII masking with access logging** — Reveal prompt with reason, write to `access_reveal_logs`
+7. **Settings persistence** — Save org details and preferences to database
+8. **Notifications system** — Real notification bell with dropdown from `notifications` table
+9. **Global search** — Search across modules with Ctrl+K
+10. **AI Heartbeat edge function** — Deploy Lovable AI sentiment analysis
+11. **Approval workflows** — Policy and incident state machines with role gates
+12. **Real-time subscriptions** — Live alerts for incidents and heartbeat triggers
 
