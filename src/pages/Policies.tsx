@@ -38,6 +38,7 @@ export default function Policies() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<PolicyRecord | null>(null);
+  const [pageTab, setPageTab] = useState("policies");
 
   // Form state
   const [title, setTitle] = useState("");
