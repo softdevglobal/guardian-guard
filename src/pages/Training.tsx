@@ -613,10 +613,13 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
         </CardContent>
       </Card>
 
-      {/* Training Checklist */}
+      {/* Training Evidence Register */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Training Checklist</CardTitle>
+          <div>
+            <CardTitle>Staff Training Evidence Register</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Internal mock audit sample data for system demonstration and readiness testing.</p>
+          </div>
           {(isAdmin || isSelf) && (
             <TrainingUploadDialog
               open={uploadOpen}
@@ -632,20 +635,20 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Training</TableHead>
-                  <TableHead>Mandatory</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Score</TableHead>
+                  <TableHead>Training Module</TableHead>
+                  <TableHead>Delivery</TableHead>
                   <TableHead>Completed</TableHead>
                   <TableHead>Expiry</TableHead>
-                  <TableHead>Evidence</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Evidence Type</TableHead>
+                  <TableHead>Compliance Outcome</TableHead>
                   <TableHead>Verified</TableHead>
                   {isAdmin && !isSelf && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {checklist.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-4">No requirements configured</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-4">No requirements configured</TableCell></TableRow>
                 ) : (
                   checklist.map(item => {
                     const badge = TRAINING_STATUS_BADGE[item.displayStatus] ?? TRAINING_STATUS_BADGE.missing;
@@ -655,25 +658,29 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
                     const scorePass = item.min_pass_score > 0 && item.completion?.score != null
                       ? item.completion.score >= item.min_pass_score
                       : null;
+                    const outcomeInfo = item.completion?.compliance_outcome
+                      ? COMPLIANCE_OUTCOME_BADGE[item.completion.compliance_outcome] ?? COMPLIANCE_OUTCOME_BADGE.pending
+                      : null;
 
                     return (
                       <TableRow key={item.training_code}>
                         <TableCell>
                           <p className="font-medium text-sm">{item.training_name}</p>
-                          {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={item.is_mandatory ? "destructive" : "secondary"} className="text-xs">
-                            {item.is_mandatory ? "Required" : "Optional"}
+                          <Badge variant={item.is_mandatory ? "destructive" : "secondary"} className="text-[10px] mt-0.5">
+                            {item.is_mandatory ? "Mandatory" : "Optional"}
                           </Badge>
                         </TableCell>
-                        <TableCell><Badge className={badge.className}>{badge.label}</Badge></TableCell>
-                        <TableCell>
-                          {item.completion?.score != null ? (
-                            <span className={`text-sm font-medium ${scorePass === false ? "text-destructive" : scorePass ? "text-success" : ""}`}>
-                              {item.completion.score}%
-                              {item.min_pass_score > 0 && <span className="text-xs text-muted-foreground"> (min {item.min_pass_score}%)</span>}
-                            </span>
+                        <TableCell className="text-sm">
+                          {item.completion?.delivery_method ? (
+                            <div>
+                              <p>{item.completion.delivery_method}</p>
+                              {item.completion.facilitator && (
+                                <p className="text-xs text-muted-foreground">by {item.completion.facilitator}</p>
+                              )}
+                              {item.completion.duration_hours && (
+                                <p className="text-xs text-muted-foreground">{item.completion.duration_hours}h</p>
+                              )}
+                            </div>
                           ) : "—"}
                         </TableCell>
                         <TableCell className="text-sm">
@@ -695,11 +702,39 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
                           ) : "No expiry"}
                         </TableCell>
                         <TableCell>
-                          {item.completion?.evidence_file_url ? (
-                            <a href={item.completion.evidence_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm flex items-center gap-1">
-                              <FileText className="h-3 w-3" />View
-                            </a>
+                          {item.completion?.score != null ? (
+                            <span className={`text-sm font-medium ${scorePass === false ? "text-destructive" : scorePass ? "text-success" : ""}`}>
+                              {item.completion.score}%
+                              {item.min_pass_score > 0 && <span className="text-xs text-muted-foreground"> (min {item.min_pass_score}%)</span>}
+                            </span>
                           ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <div>
+                            {item.completion?.evidence_type ?? "—"}
+                            {item.completion?.evidence_file_url && (
+                              <a href={item.completion.evidence_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
+                                <FileText className="h-3 w-3" />View file
+                              </a>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {outcomeInfo ? (
+                            <div>
+                              <Badge className={outcomeInfo.className}>{outcomeInfo.label}</Badge>
+                              {item.completion?.retraining_due_date && (
+                                <p className="text-xs text-destructive mt-1">Retrain by {format(new Date(item.completion.retraining_due_date), "PP")}</p>
+                              )}
+                              {item.completion?.notes && (
+                                <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate" title={item.completion.notes}>
+                                  {item.completion.notes}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <Badge className={badge.className}>{badge.label}</Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm">
                           {item.completion?.verified_by ? (
