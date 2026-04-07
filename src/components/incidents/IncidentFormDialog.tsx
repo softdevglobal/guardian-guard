@@ -263,6 +263,20 @@ export function IncidentFormDialog() {
                   <Label>Sub-category</Label>
                   <Input value={form.sub_category} onChange={(e) => set("sub_category", e.target.value)} placeholder="Optional sub-category" />
                 </div>
+                <div className="space-y-2">
+                  <Label>NDIS Practice Standard *</Label>
+                  <Select value={form.practice_standard_id} onValueChange={(v) => set("practice_standard_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select Practice Standard" /></SelectTrigger>
+                    <SelectContent>
+                      {practiceStandards.map((ps) => (
+                        <SelectItem key={ps.id} value={ps.id}>
+                          <span className="font-mono text-xs mr-1">{ps.code}</span> {ps.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Required — maps this incident to an NDIS Practice Standard for compliance reporting.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: "Participant Harmed?", field: "participant_harmed" },
