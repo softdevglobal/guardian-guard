@@ -70,6 +70,13 @@ const TRAINING_STATUS_BADGE: Record<string, { label: string; className: string }
   expiring_soon: { label: "Expiring Soon", className: "bg-warning text-warning-foreground" },
 };
 
+const COMPLIANCE_OUTCOME_BADGE: Record<string, { label: string; className: string }> = {
+  Verified: { label: "Verified", className: "bg-success text-success-foreground" },
+  "Conditional Pass": { label: "Conditional Pass", className: "bg-warning text-warning-foreground" },
+  "Retraining Required": { label: "Retraining Required", className: "bg-destructive text-destructive-foreground" },
+  pending: { label: "Pending", className: "bg-muted text-muted-foreground" },
+};
+
 export default function Training() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
