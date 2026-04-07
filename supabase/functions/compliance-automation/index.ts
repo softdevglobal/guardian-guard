@@ -6,6 +6,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface NotificationPayload {
+  user_id: string;
+  title: string;
+  message: string;
+  severity: "info" | "warning" | "urgent" | "critical";
+  notification_type: string;
+  source_table: string;
+  source_record_id?: string;
+  link: string;
+  organisation_id?: string;
+}
+
+async function createNotification(supabase: ReturnType<typeof createClient>, payload: NotificationPayload) {
+  await supabase.from("notifications").insert({
+    user_id: payload.user_id,
+    title: payload.title,
+    message: payload.message,
+    severity: payload.severity,
+    notification_type: payload.notification_type,
+    source_table: payload.source_table,
+    source_record_id: payload.source_record_id,
+    link: payload.link,
+    organisation_id: payload.organisation_id,
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -18,7 +44,7 @@ serve(async (req) => {
     const results: string[] = [];
     const todayStr = now.toISOString().split("T")[0];
 
-    // 1. Staff clearance expiry warnings (60 days)
+    // ── 1. Staff clearance expiry warnings (60 days) ──
     const sixtyDaysFromNow = new Date(now);
     sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
     const sixtyDaysStr = sixtyDaysFromNow.toISOString().split("T")[0];
@@ -29,24 +55,62 @@ serve(async (req) => {
       .or(`police_check_expiry.lte.${sixtyDaysStr},wwcc_expiry.lte.${sixtyDaysStr},worker_screening_expiry.lte.${sixtyDaysStr}`);
 
     for (const staff of expiringStaff ?? []) {
-      const expiringItems: string[] = [];
-      if (staff.police_check_expiry && staff.police_check_expiry <= sixtyDaysStr) expiringItems.push("Police Check");
-      if (staff.wwcc_expiry && staff.wwcc_expiry <= sixtyDaysStr) expiringItems.push("WWCC");
-      if (staff.worker_screening_expiry && staff.worker_screening_expiry <= sixtyDaysStr) expiringItems.push("Worker Screening");
+      const items: string[] = [];
+      if (staff.police_check_expiry && staff.police_check_expiry <= sixtyDaysStr) items.push("Police Check");
+      if (staff.wwcc_expiry && staff.wwcc_expiry <= sixtyDaysStr) items.push("WWCC");
+      if (staff.worker_screening_expiry && staff.worker_screening_expiry <= sixtyDaysStr) items.push("Worker Screening");
 
-      if (expiringItems.length > 0) {
-        await supabase.from("notifications").insert({
+      if (items.length > 0) {
+        const isExpired = items.some(i => {
+          if (i === "Police Check" && staff.police_check_expiry && staff.police_check_expiry < todayStr) return true;
+          if (i === "WWCC" && staff.wwcc_expiry && staff.wwcc_expiry < todayStr) return true;
+          if (i === "Worker Screening" && staff.worker_screening_expiry && staff.worker_screening_expiry < todayStr) return true;
+          return false;
+        });
+
+        // Notify the staff member
+        await createNotification(supabase, {
           user_id: staff.user_id,
-          title: "Clearance Expiry Warning",
-          message: `The following clearances are expiring soon: ${expiringItems.join(", ")}`,
-          notification_type: "warning",
+          title: isExpired ? "Clearance EXPIRED" : "Clearance Expiry Warning",
+          message: `${isExpired ? "EXPIRED" : "Expiring soon"}: ${items.join(", ")}. ${isExpired ? "You have been blocked from participant assignment." : "Please renew before expiry."}`,
+          severity: isExpired ? "critical" : "warning",
+          notification_type: isExpired ? "critical" : "warning",
+          source_table: "staff_compliance",
+          source_record_id: staff.id,
           link: "/staff",
         });
-        results.push(`Expiry warning sent to user ${staff.user_id}`);
+
+        // Notify HR and supervisors for expired
+        if (isExpired) {
+          const { data: profile } = await supabase.from("user_profiles").select("organisation_id, team_id").eq("id", staff.user_id).maybeSingle();
+          if (profile?.organisation_id) {
+            const { data: hrUsers } = await supabase
+              .from("user_roles")
+              .select("user_id")
+              .in("role", ["hr_admin", "super_admin"]);
+            for (const hr of hrUsers ?? []) {
+              const { data: hrProfile } = await supabase.from("user_profiles").select("organisation_id").eq("id", hr.user_id).maybeSingle();
+              if (hrProfile?.organisation_id === profile.organisation_id) {
+                await createNotification(supabase, {
+                  user_id: hr.user_id,
+                  title: "Staff clearance expired — assignment blocked",
+                  message: `A staff member's clearance has expired: ${items.join(", ")}. They have been automatically blocked from assignment.`,
+                  severity: "critical",
+                  notification_type: "critical",
+                  source_table: "staff_compliance",
+                  source_record_id: staff.id,
+                  link: "/staff",
+                  organisation_id: profile.organisation_id,
+                });
+              }
+            }
+          }
+        }
+        results.push(`${isExpired ? "Expired" : "Expiry warning"} notification for user ${staff.user_id}`);
       }
     }
 
-    // 2. Auto-suspend expired staff
+    // ── 2. Auto-suspend expired staff ──
     const { data: expiredStaff } = await supabase
       .from("staff_compliance")
       .select("id, user_id")
@@ -61,7 +125,7 @@ serve(async (req) => {
 
       await supabase.from("alerts").insert({
         title: "Staff clearance expired - assignment blocked",
-        message: `Staff member has been automatically blocked from participant assignment due to expired clearance.`,
+        message: "Staff member has been automatically blocked from participant assignment due to expired clearance.",
         alert_type: "staff_expired",
         severity: "high",
         assigned_to: staff.user_id,
@@ -71,32 +135,48 @@ serve(async (req) => {
       results.push(`Auto-suspended staff ${staff.user_id}`);
     }
 
-    // 3. Stale incidents (open > 5 days)
+    // ── 3. Stale incidents (open > 5 days) ──
     const fiveDaysAgo = new Date(now);
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
     const { data: staleIncidents } = await supabase
       .from("incidents")
-      .select("id, incident_number, assigned_to, reported_by, organisation_id")
+      .select("id, incident_number, assigned_to, reported_by, organisation_id, team_id")
       .in("status", ["reported", "review", "investigating", "submitted", "supervisor_review", "compliance_review"])
       .lt("created_at", fiveDaysAgo.toISOString());
 
     for (const inc of staleIncidents ?? []) {
-      const notifyUser = inc.assigned_to || inc.reported_by;
-      await supabase.from("alerts").insert({
-        title: `Stale incident: ${inc.incident_number}`,
-        message: "This incident has been open for more than 5 days without resolution.",
-        alert_type: "stale_incident",
-        severity: "high",
-        assigned_to: notifyUser,
-        source_module: "incidents",
-        source_record_id: inc.id,
-        organisation_id: inc.organisation_id,
-      });
+      const notifyUsers = new Set<string>();
+      if (inc.assigned_to) notifyUsers.add(inc.assigned_to);
+      if (inc.reported_by) notifyUsers.add(inc.reported_by);
+
+      // Also notify compliance officers in the org
+      const { data: complianceUsers } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["compliance_officer", "super_admin"]);
+      for (const cu of complianceUsers ?? []) {
+        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
+        if (p?.organisation_id === inc.organisation_id) notifyUsers.add(cu.user_id);
+      }
+
+      for (const uid of notifyUsers) {
+        await createNotification(supabase, {
+          user_id: uid,
+          title: `Stale incident: ${inc.incident_number}`,
+          message: "This incident has been open for more than 5 days without resolution. Immediate action required.",
+          severity: "urgent",
+          notification_type: "warning",
+          source_table: "incidents",
+          source_record_id: inc.id,
+          link: "/incidents",
+          organisation_id: inc.organisation_id,
+        });
+      }
       results.push(`Stale alert for incident ${inc.incident_number}`);
     }
 
-    // 4. Complaint acknowledgement overdue (2 days)
+    // ── 4. Complaint acknowledgement overdue (2 days) ──
     const twoDaysAgo = new Date(now);
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
@@ -108,20 +188,27 @@ serve(async (req) => {
       .lt("created_at", twoDaysAgo.toISOString());
 
     for (const comp of unackedComplaints ?? []) {
-      const notifyUser = comp.assigned_to || comp.submitted_by;
-      if (notifyUser) {
-        await supabase.from("notifications").insert({
-          user_id: notifyUser,
+      const notifyUsers = new Set<string>();
+      if (comp.assigned_to) notifyUsers.add(comp.assigned_to);
+      if (comp.submitted_by) notifyUsers.add(comp.submitted_by);
+
+      for (const uid of notifyUsers) {
+        await createNotification(supabase, {
+          user_id: uid,
           title: `Complaint ${comp.complaint_number} needs acknowledgement`,
-          message: "This complaint has not been acknowledged within 2 business days.",
+          message: "This complaint has not been acknowledged within 2 business days. NDIS requires timely acknowledgement.",
+          severity: "urgent",
           notification_type: "warning",
+          source_table: "complaints",
+          source_record_id: comp.id,
           link: "/complaints",
+          organisation_id: comp.organisation_id,
         });
       }
       results.push(`Ack reminder for complaint ${comp.complaint_number}`);
     }
 
-    // 5. Policy review overdue
+    // ── 5. Policy review overdue ──
     const { data: overduePolicies } = await supabase
       .from("policies")
       .select("id, title, owner_id, organisation_id")
@@ -131,26 +218,71 @@ serve(async (req) => {
 
     for (const pol of overduePolicies ?? []) {
       if (pol.owner_id) {
-        await supabase.from("notifications").insert({
+        await createNotification(supabase, {
           user_id: pol.owner_id,
           title: `Policy review overdue: ${pol.title}`,
-          message: "This policy has passed its scheduled review date.",
+          message: "This policy has passed its scheduled review date and must be reviewed immediately.",
+          severity: "warning",
           notification_type: "warning",
+          source_table: "policies",
+          source_record_id: pol.id,
           link: "/policies",
+          organisation_id: pol.organisation_id,
         });
       }
-      await supabase.from("alerts").insert({
-        title: `Policy review overdue: ${pol.title}`,
-        alert_type: "policy_overdue",
-        severity: "medium",
-        source_module: "policies",
-        source_record_id: pol.id,
-        organisation_id: pol.organisation_id,
-      });
+
+      // Notify compliance
+      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
+      for (const cu of compUsers ?? []) {
+        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
+        if (p?.organisation_id === pol.organisation_id && cu.user_id !== pol.owner_id) {
+          await createNotification(supabase, {
+            user_id: cu.user_id,
+            title: `Policy review overdue: ${pol.title}`,
+            message: "A policy in your organisation has passed its review date.",
+            severity: "warning",
+            notification_type: "warning",
+            source_table: "policies",
+            source_record_id: pol.id,
+            link: "/policies",
+            organisation_id: pol.organisation_id,
+          });
+        }
+      }
       results.push(`Overdue alert for policy ${pol.title}`);
     }
 
-    // 6. Safeguarding urgent response check (24 hours)
+    // ── 6. Policy review due in 30 days ──
+    const thirtyDaysFromNow = new Date(now);
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const thirtyDaysStr = thirtyDaysFromNow.toISOString().split("T")[0];
+
+    const { data: upcomingPolicies } = await supabase
+      .from("policies")
+      .select("id, title, owner_id, organisation_id")
+      .gte("next_review_date", todayStr)
+      .lte("next_review_date", thirtyDaysStr)
+      .neq("status", "archived")
+      .eq("record_status", "active");
+
+    for (const pol of upcomingPolicies ?? []) {
+      if (pol.owner_id) {
+        await createNotification(supabase, {
+          user_id: pol.owner_id,
+          title: `Policy review due soon: ${pol.title}`,
+          message: "This policy is due for review within the next 30 days.",
+          severity: "info",
+          notification_type: "info",
+          source_table: "policies",
+          source_record_id: pol.id,
+          link: "/policies",
+          organisation_id: pol.organisation_id,
+        });
+      }
+      results.push(`Upcoming review for policy ${pol.title}`);
+    }
+
+    // ── 7. Safeguarding urgent response check (24 hours) ──
     const oneDayAgo = new Date(now);
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
@@ -162,20 +294,41 @@ serve(async (req) => {
       .lt("created_at", oneDayAgo.toISOString());
 
     for (const sg of urgentSafeguarding ?? []) {
-      await supabase.from("alerts").insert({
-        title: "Urgent safeguarding concern unactioned for 24+ hours",
-        message: "An immediate safety risk concern has not been actioned within 24 hours.",
-        alert_type: "safeguarding_urgent",
-        severity: "high",
-        assigned_to: sg.raised_by,
-        source_module: "safeguarding_concerns",
+      // Notify raiser
+      await createNotification(supabase, {
+        user_id: sg.raised_by,
+        title: "URGENT: Safeguarding concern unactioned 24+ hours",
+        message: "An immediate safety risk concern has not been actioned within 24 hours. This requires immediate escalation.",
+        severity: "critical",
+        notification_type: "critical",
+        source_table: "safeguarding_concerns",
         source_record_id: sg.id,
+        link: "/safeguarding",
         organisation_id: sg.organisation_id,
       });
+
+      // Notify compliance
+      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
+      for (const cu of compUsers ?? []) {
+        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
+        if (p?.organisation_id === sg.organisation_id) {
+          await createNotification(supabase, {
+            user_id: cu.user_id,
+            title: "CRITICAL: Safeguarding concern unactioned 24+ hours",
+            message: "An immediate safety risk concern has been open for more than 24 hours without action.",
+            severity: "critical",
+            notification_type: "critical",
+            source_table: "safeguarding_concerns",
+            source_record_id: sg.id,
+            link: "/safeguarding",
+            organisation_id: sg.organisation_id,
+          });
+        }
+      }
       results.push(`Urgent safeguarding alert for concern ${sg.id}`);
     }
 
-    // 7. Risk review overdue
+    // ── 8. Risk review overdue ──
     const { data: overdueRisks } = await supabase
       .from("risks")
       .select("id, title, assigned_to, created_by, organisation_id")
@@ -185,20 +338,51 @@ serve(async (req) => {
 
     for (const risk of overdueRisks ?? []) {
       const notifyUser = risk.assigned_to || risk.created_by;
-      await supabase.from("alerts").insert({
+      await createNotification(supabase, {
+        user_id: notifyUser,
         title: `Risk review overdue: ${risk.title}`,
-        message: "This risk has passed its scheduled review date.",
-        alert_type: "risk_review_overdue",
-        severity: "medium",
-        assigned_to: notifyUser,
-        source_module: "risks",
+        message: "This risk has passed its scheduled review date and requires immediate attention.",
+        severity: "warning",
+        notification_type: "warning",
+        source_table: "risks",
         source_record_id: risk.id,
+        link: "/risks",
         organisation_id: risk.organisation_id,
       });
       results.push(`Review overdue alert for risk ${risk.title}`);
     }
 
-    // 8. Repeat complaint detection (3+ for same participant)
+    // ── 9. High/critical risks ──
+    const oneDayAgoStr = oneDayAgo.toISOString();
+    const { data: highRisks } = await supabase
+      .from("risks")
+      .select("id, title, assigned_to, created_by, organisation_id, risk_level")
+      .in("risk_level", ["High", "Critical"])
+      .gte("created_at", oneDayAgoStr)
+      .eq("record_status", "active");
+
+    for (const risk of highRisks ?? []) {
+      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
+      for (const cu of compUsers ?? []) {
+        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
+        if (p?.organisation_id === risk.organisation_id) {
+          await createNotification(supabase, {
+            user_id: cu.user_id,
+            title: `${risk.risk_level} risk created: ${risk.title}`,
+            message: `A ${risk.risk_level?.toLowerCase()} risk has been identified and requires compliance review.`,
+            severity: risk.risk_level === "Critical" ? "critical" : "urgent",
+            notification_type: risk.risk_level === "Critical" ? "critical" : "warning",
+            source_table: "risks",
+            source_record_id: risk.id,
+            link: "/risks",
+            organisation_id: risk.organisation_id,
+          });
+        }
+      }
+      results.push(`High risk notification for ${risk.title}`);
+    }
+
+    // ── 10. Repeat complaint detection (3+ for same participant) ──
     const { data: complaintCounts } = await supabase
       .from("complaints")
       .select("participant_id, organisation_id")
@@ -215,15 +399,23 @@ serve(async (req) => {
       }
       for (const [pid, info] of Object.entries(countMap)) {
         if (info.count >= 3) {
-          await supabase.from("alerts").insert({
-            title: `Repeat complaint trend detected`,
-            message: `Participant has ${info.count} complaints on record — review recommended.`,
-            alert_type: "repeat_complaint",
-            severity: "medium",
-            source_module: "complaints",
-            source_record_id: pid,
-            organisation_id: info.org,
-          });
+          const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
+          for (const cu of compUsers ?? []) {
+            const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
+            if (p?.organisation_id === info.org) {
+              await createNotification(supabase, {
+                user_id: cu.user_id,
+                title: "Repeat complaint trend detected",
+                message: `A participant has ${info.count} complaints on record — pattern review recommended.`,
+                severity: "warning",
+                notification_type: "warning",
+                source_table: "complaints",
+                source_record_id: pid,
+                link: "/complaints",
+                organisation_id: info.org,
+              });
+            }
+          }
           results.push(`Repeat complaint alert for participant ${pid}`);
         }
       }
