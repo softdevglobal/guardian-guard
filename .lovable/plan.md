@@ -1,55 +1,42 @@
 
 
-# Fix: Data Linkage and Relevancy Across Full Site
+# Seed Notifications for All Modules
 
-## Problems Found
+## Problem
+The `notifications` table has 0 records. Despite having 10 incidents, 8 complaints, 10 risks, safeguarding concerns, and privacy incidents in the database, no notification records were ever created. The Notifications page shows empty.
 
-1. **Complaints table is empty** (0 records) — complaints demo data was never seeded despite the Complaints Management system being built. The seeding edge function only ran for participants, incidents, and risks.
-
-2. **Safeguarding concerns empty** (0 records), **Privacy incidents empty** (0 records), **Alerts empty** (0 records) — no demo data seeded for these modules.
-
-3. **Dashboard shows all zeros** — The Dashboard queries for incidents, complaints, safeguarding, and privacy all return 0 or default 100% because either:
-   - Tables are empty (complaints, safeguarding, privacy, alerts)
-   - RLS blocks the current user from seeing data (user may not have `organisation_id` set or correct role)
-
-4. **User profile `organisation_id` may be null** — The primary user (`fffb42d5-...`, Sathindra Gurusinghe) has `organisation_id = null`, so all RLS policies using `get_user_organisation_id(auth.uid())` return null, blocking every query. This is the **root cause** of data not reflecting.
-
-5. **Risk linkage to complaints broken** — All 10 risks have `linked_complaint_id = null` because complaints table is empty.
-
-6. **Staff compliance only has 2 records**, both at 0% — no meaningful demo data.
+## Root Cause
+The `compliance-automation` edge function generates notifications when invoked, but it hasn't been triggered. The `incident_escalation_notify` trigger only fires on status changes, not for records inserted via seed migrations (which bypass triggers since they use `SECURITY DEFINER` context or direct SQL).
 
 ## Plan
 
-### Step 1: Fix user profile organisation linkage (Migration)
-- Update the primary user profile (`fffb42d5-...`) to set `organisation_id = '607ad2d2-6cb9-48c6-a0d0-8082a904adf1'` so RLS policies pass.
-- Ensure all demo user profiles have the correct `organisation_id`.
+### Step 1: Seed realistic notifications (Data insert, not migration)
+Insert ~15-20 notifications into the `notifications` table for the primary user (`fffb42d5-1558-4d85-8fcc-bde2eca867e4`, super_admin) covering:
 
-### Step 2: Seed complaints demo data (Migration)
-- Insert 8-10 complaint records across various statuses (submitted, acknowledged, under_review, investigating, resolved, closed).
-- Include realistic NDIS-relevant scenarios: service quality, staff conduct, communication failures.
-- Set correct `organisation_id`, `complaint_number`, timestamps, and acknowledgement dates.
-- Link some risks to these complaints via `linked_complaint_id` updates.
+- **Incidents** (5): Escalation alerts for high/critical incidents, NDIS deadline warnings, stale incident flags
+- **Complaints** (3): Acknowledgement overdue, complaint escalated, complaint resolved
+- **Risks** (3): Critical risk created, risk score escalated, overdue review
+- **Safeguarding** (2): Immediate safety risk raised, safeguarding escalation
+- **Privacy** (1): Data breach detected
+- **Staff Compliance** (2): Clearance expiring, clearance expired
 
-### Step 3: Seed safeguarding, privacy incidents, and alerts (Migration)
-- Insert 3-5 safeguarding concerns with varying severity and escalation levels.
-- Insert 2-3 privacy incidents.
-- Insert 5-8 alerts covering overdue reviews, critical risks, and stale complaints.
+Each notification will have:
+- Correct `user_id`, `organisation_id`
+- Appropriate `severity` (critical/urgent/warning/info)
+- `source_table` and `source_record_id` linking to real records
+- `link` for navigation (e.g., `/incidents`, `/risks`)
+- Mix of read/unread states
+- Realistic timestamps spread over the last 7 days
 
-### Step 4: Update staff compliance demo data (Migration)
-- Update existing 2 records with realistic compliance percentages and check statuses.
-- Add 3-4 more staff compliance records tied to existing user profiles.
+### Step 2: Also seed notifications for compliance officer
+Insert ~5 notifications for `feac6eb9-...` (compliance@dgtg.demo) so multi-user notification routing is demonstrated.
 
-### Step 5: Fix Dashboard queries resilience
-- Update `Dashboard.tsx` queries to handle cases where `record_status` column doesn't exist on some tables (safeguarding_concerns, complaints already have it, but ensure consistency).
-- Ensure the pulse score queries don't silently fail.
-
-### Step 6: Fix risks linkage to new complaints
-- Update risk records RSK-004 and RSK-005 to link to newly seeded complaint IDs.
+### No UI changes needed
+The Notifications page and NotificationBell component are already fully built with filtering, search, severity badges, tabs, and mark-as-read functionality. They just need data.
 
 ## Technical Details
-
-- All data seeding via SQL migration (single migration file)
-- Organisation ID `607ad2d2-6cb9-48c6-a0d0-8082a904adf1` used consistently
-- Complaint numbers follow `CMP-2026-XXXX` pattern
-- RLS fix is the critical path — without org_id on user profile, nothing displays
+- Use the Supabase insert tool (not migration) since this is data seeding
+- All `source_record_id` values will reference real existing record IDs
+- Timestamps will be staggered: some from 7 days ago, some from today
+- ~5 notifications marked as `is_read = true` to show read/unread contrast
 
