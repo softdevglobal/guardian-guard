@@ -2068,13 +2068,21 @@ export type Database = {
           assessment_passed: boolean | null
           certificate_url: string | null
           completion_date: string | null
+          compliance_outcome: string | null
           created_at: string
+          delivery_method: string | null
+          duration_hours: number | null
           evidence_file_url: string | null
+          evidence_type: string | null
           expiry_date: string | null
+          facilitator: string | null
           id: string
           module_id: string
+          notes: string | null
           organisation_id: string | null
           rejection_reason: string | null
+          retraining_due_date: string | null
+          retraining_reason: string | null
           score: number | null
           status: string
           training_code: string | null
@@ -2087,13 +2095,21 @@ export type Database = {
           assessment_passed?: boolean | null
           certificate_url?: string | null
           completion_date?: string | null
+          compliance_outcome?: string | null
           created_at?: string
+          delivery_method?: string | null
+          duration_hours?: number | null
           evidence_file_url?: string | null
+          evidence_type?: string | null
           expiry_date?: string | null
+          facilitator?: string | null
           id?: string
           module_id: string
+          notes?: string | null
           organisation_id?: string | null
           rejection_reason?: string | null
+          retraining_due_date?: string | null
+          retraining_reason?: string | null
           score?: number | null
           status?: string
           training_code?: string | null
@@ -2106,13 +2122,21 @@ export type Database = {
           assessment_passed?: boolean | null
           certificate_url?: string | null
           completion_date?: string | null
+          compliance_outcome?: string | null
           created_at?: string
+          delivery_method?: string | null
+          duration_hours?: number | null
           evidence_file_url?: string | null
+          evidence_type?: string | null
           expiry_date?: string | null
+          facilitator?: string | null
           id?: string
           module_id?: string
+          notes?: string | null
           organisation_id?: string | null
           rejection_reason?: string | null
+          retraining_due_date?: string | null
+          retraining_reason?: string | null
           score?: number | null
           status?: string
           training_code?: string | null
