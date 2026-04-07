@@ -12,6 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Switch } from "@/components/ui/switch";
 import { Plus, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { logAudit } from "@/lib/auditLog";
 
 const INITIAL_FORM = {
   title: "",
@@ -32,6 +33,10 @@ const INITIAL_FORM = {
   medical_attention_required: false,
   emergency_service_contacted: false,
   investigation_required: false,
+  participant_id: "",
+  linked_staff_id: "",
+  witnesses: "",
+  other_persons_involved: "",
 };
 
 export function IncidentFormDialog() {
@@ -48,6 +53,14 @@ export function IncidentFormDialog() {
     },
   });
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["staff-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_profiles").select("id, full_name, email").limit(200);
+      return data ?? [];
+    },
+  });
+
   const isReportable =
     (form.injury_involved && form.incident_type === "participant") ||
     form.incident_category === "abuse_allegation" ||
@@ -59,6 +72,9 @@ export function IncidentFormDialog() {
       const { data: countData } = await supabase.from("incidents").select("id", { count: "exact", head: true });
       const num = `INC-${String((countData as any)?.length ?? 0 + 1).padStart(4, "0")}`;
       const severity = isReportable ? "high" : form.medical_attention_required ? "medium" : "low";
+
+      const witnessesArr = form.witnesses ? form.witnesses.split(",").map(w => w.trim()).filter(Boolean) : [];
+      const otherArr = form.other_persons_involved ? form.other_persons_involved.split(",").map(w => w.trim()).filter(Boolean) : [];
 
       const { error } = await supabase.from("incidents").insert({
         incident_number: num,
@@ -94,8 +110,13 @@ export function IncidentFormDialog() {
         status: "draft",
         reported_by: user.id,
         organisation_id: user.organisation_id!,
+        participant_id: form.participant_id || null,
+        linked_staff_id: form.linked_staff_id || null,
+        witnesses: witnessesArr,
+        other_persons_involved: otherArr,
       });
       if (error) throw error;
+      await logAudit({ action: "created", module: "incidents", details: { title: form.title, is_reportable: isReportable } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
@@ -116,7 +137,7 @@ export function IncidentFormDialog() {
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Report New Incident</DialogTitle></DialogHeader>
         <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }}>
-          <Accordion type="multiple" defaultValue={["basics", "type", "description"]} className="w-full">
+          <Accordion type="multiple" defaultValue={["basics", "people", "type", "description"]} className="w-full">
             {/* Section 1 — Basics */}
             <AccordionItem value="basics">
               <AccordionTrigger>Incident Basics</AccordionTrigger>
@@ -157,7 +178,40 @@ export function IncidentFormDialog() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 2 — Type & Classification */}
+            {/* Section 2 — People Involved */}
+            <AccordionItem value="people">
+              <AccordionTrigger>People Involved</AccordionTrigger>
+              <AccordionContent className="space-y-3 px-1">
+                <div className="space-y-2">
+                  <Label>Participant</Label>
+                  <Select value={form.participant_id} onValueChange={(v) => set("participant_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select participant (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      {participants.map((p) => <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Linked Staff Member</Label>
+                  <Select value={form.linked_staff_id} onValueChange={(v) => set("linked_staff_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select staff (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      {staffList.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Witnesses (comma-separated)</Label>
+                  <Input value={form.witnesses} onChange={(e) => set("witnesses", e.target.value)} placeholder="e.g. Jane Doe, John Smith" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Other Persons Involved (comma-separated)</Label>
+                  <Input value={form.other_persons_involved} onChange={(e) => set("other_persons_involved", e.target.value)} placeholder="e.g. External contractor" />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 3 — Type & Classification */}
             <AccordionItem value="type">
               <AccordionTrigger>Type & Classification</AccordionTrigger>
               <AccordionContent className="space-y-3 px-1">
@@ -196,35 +250,24 @@ export function IncidentFormDialog() {
                   <Input value={form.sub_category} onChange={(e) => set("sub_category", e.target.value)} placeholder="Optional sub-category" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Participant Harmed?</Label>
-                    <Switch checked={form.participant_harmed} onCheckedChange={(v) => set("participant_harmed", v)} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Staff Harmed?</Label>
-                    <Switch checked={form.staff_harmed} onCheckedChange={(v) => set("staff_harmed", v)} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Injury Involved?</Label>
-                    <Switch checked={form.injury_involved} onCheckedChange={(v) => set("injury_involved", v)} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Medical Attention?</Label>
-                    <Switch checked={form.medical_attention_required} onCheckedChange={(v) => set("medical_attention_required", v)} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Emergency Services?</Label>
-                    <Switch checked={form.emergency_service_contacted} onCheckedChange={(v) => set("emergency_service_contacted", v)} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Investigation Required?</Label>
-                    <Switch checked={form.investigation_required} onCheckedChange={(v) => set("investigation_required", v)} />
-                  </div>
+                  {[
+                    { label: "Participant Harmed?", field: "participant_harmed" },
+                    { label: "Staff Harmed?", field: "staff_harmed" },
+                    { label: "Injury Involved?", field: "injury_involved" },
+                    { label: "Medical Attention?", field: "medical_attention_required" },
+                    { label: "Emergency Services?", field: "emergency_service_contacted" },
+                    { label: "Investigation Required?", field: "investigation_required" },
+                  ].map(item => (
+                    <div key={item.field} className="flex items-center justify-between">
+                      <Label>{item.label}</Label>
+                      <Switch checked={(form as any)[item.field]} onCheckedChange={(v) => set(item.field, v)} />
+                    </div>
+                  ))}
                 </div>
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 3 — Description */}
+            {/* Section 4 — Description */}
             <AccordionItem value="description">
               <AccordionTrigger>Description & Immediate Actions</AccordionTrigger>
               <AccordionContent className="space-y-3 px-1">
@@ -248,7 +291,6 @@ export function IncidentFormDialog() {
             </AccordionItem>
           </Accordion>
 
-          {/* Smart Classification Warning */}
           {isReportable && (
             <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3">
               <p className="text-sm font-medium flex items-center gap-2">

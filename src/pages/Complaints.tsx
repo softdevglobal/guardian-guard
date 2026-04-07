@@ -14,12 +14,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, MessageSquareWarning, Clock, CheckCircle } from "lucide-react";
+import { Plus, MessageSquareWarning, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { logAudit } from "@/lib/auditLog";
+
+const STATUS_FLOW: Record<string, string> = {
+  submitted: "acknowledged",
+  acknowledged: "under_review",
+  under_review: "investigating",
+  investigating: "resolved",
+  resolved: "closed",
+};
+
+const STATUS_ROLE_GATE: Record<string, string[]> = {
+  acknowledged: ["super_admin", "compliance_officer", "supervisor"],
+  under_review: ["super_admin", "compliance_officer"],
+  investigating: ["super_admin", "compliance_officer"],
+  resolved: ["super_admin", "compliance_officer"],
+  closed: ["super_admin", "compliance_officer"],
+};
 
 const statusColors: Record<string, string> = {
   submitted: "bg-info text-info-foreground",
+  acknowledged: "bg-info text-info-foreground",
   under_review: "bg-warning text-warning-foreground",
   investigating: "bg-destructive text-destructive-foreground",
   resolved: "bg-success text-success-foreground",
@@ -41,6 +59,8 @@ export default function Complaints() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [selected, setSelected] = useState<any>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editFields, setEditFields] = useState<Record<string, any>>({});
+  const [closureErrors, setClosureErrors] = useState<string[]>([]);
 
   const { data: complaints = [], isLoading } = useQuery({
     queryKey: ["complaints"],
@@ -48,6 +68,15 @@ export default function Complaints() {
       const { data, error } = await supabase.from("complaints").select("*").eq("record_status", "active").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: workflowHistory = [] } = useQuery({
+    queryKey: ["complaint-workflow", selected?.id],
+    enabled: !!selected,
+    queryFn: async () => {
+      const { data } = await supabase.from("complaint_workflow_history").select("*").eq("complaint_id", selected!.id).order("created_at", { ascending: true });
+      return data ?? [];
     },
   });
 
@@ -74,6 +103,7 @@ export default function Complaints() {
         organisation_id: user.organisation_id!,
       });
       if (error) throw error;
+      await logAudit({ action: "created", module: "complaints", details: { subject: form.subject, category: form.complaint_category } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["complaints"] });
@@ -84,11 +114,91 @@ export default function Complaints() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async (fields: Record<string, any>) => {
+      if (!selected) return;
+      const { error } = await supabase.from("complaints").update(fields as any).eq("id", selected.id);
+      if (error) throw error;
+      await logAudit({ action: "field_updated", module: "complaints", record_id: selected.id, details: fields });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["complaints"] });
+      toast({ title: "Saved" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const advanceMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected || !user) return;
+      const nextStatus = STATUS_FLOW[selected.status];
+      if (!nextStatus) throw new Error("No next status");
+
+      if (nextStatus === "closed") {
+        const errors: string[] = [];
+        const ra = editFields.resolution_actions ?? selected.resolution_actions;
+        const oc = editFields.outcome_communicated_date ?? selected.outcome_communicated_date;
+        if (!ra) errors.push("Resolution actions are required");
+        if (!oc) errors.push("Outcome communicated date is required");
+        if (errors.length > 0) {
+          setClosureErrors(errors);
+          throw new Error("Closure criteria not met");
+        }
+      }
+      setClosureErrors([]);
+
+      const updatePayload: any = { status: nextStatus, ...editFields };
+      if (nextStatus === "acknowledged") {
+        updatePayload.acknowledgement_date = new Date().toISOString();
+      }
+      if (nextStatus === "resolved") {
+        updatePayload.resolved_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase.from("complaints").update(updatePayload).eq("id", selected.id);
+      if (error) throw error;
+
+      await supabase.from("complaint_workflow_history").insert({
+        complaint_id: selected.id,
+        from_status: selected.status,
+        to_status: nextStatus as any,
+        changed_by: user.id,
+      });
+
+      await logAudit({
+        action: "status_advanced",
+        module: "complaints",
+        record_id: selected.id,
+        details: { from: selected.status, to: nextStatus },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["complaints"] });
+      queryClient.invalidateQueries({ queryKey: ["complaint-workflow", selected?.id] });
+      setEditFields({});
+      // Refresh selected
+      setSelected((prev: any) => prev ? { ...prev, status: STATUS_FLOW[prev.status], ...editFields } : null);
+      toast({ title: "Status updated" });
+    },
+    onError: (err: any) => {
+      if (err.message !== "Closure criteria not met") {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+    },
+  });
+
   const set = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
+  const setEdit = (key: string, val: any) => setEditFields(prev => ({ ...prev, [key]: val }));
+  const getField = (key: string) => editFields[key] ?? selected?.[key] ?? "";
 
   const openCount = complaints.filter((c) => !["resolved", "closed"].includes(c.status)).length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
-  const pendingAck = complaints.filter((c) => c.status === "submitted" && !(c as any).acknowledgement_date).length;
+  const pendingAck = complaints.filter((c) => c.status === "submitted" && !c.acknowledgement_date).length;
+
+  const nextStatus = selected ? STATUS_FLOW[selected.status] : null;
+  const canAdvance = nextStatus && user && STATUS_ROLE_GATE[nextStatus]?.includes(user.role);
+  const isSafeguardingCategory = selected?.complaint_category === "safeguarding";
+  const isEditable = selected?.status !== "closed";
 
   return (
     <div className="space-y-6">
@@ -200,11 +310,11 @@ export default function Complaints() {
                 <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Subject</TableHead><TableHead>Source</TableHead><TableHead>Category</TableHead><TableHead>Priority</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {complaints.map((c) => (
-                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(c); setSheetOpen(true); }}>
+                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(c); setSheetOpen(true); setEditFields({}); setClosureErrors([]); }}>
                       <TableCell className="font-mono text-sm">{c.complaint_number}</TableCell>
                       <TableCell className="font-medium max-w-[180px] truncate">{c.subject}</TableCell>
-                      <TableCell className="text-sm capitalize">{((c as any).complaint_source ?? "—").replace(/_/g, " ")}</TableCell>
-                      <TableCell className="text-sm capitalize">{((c as any).complaint_category ?? "—").replace(/_/g, " ")}</TableCell>
+                      <TableCell className="text-sm capitalize">{(c.complaint_source ?? "—").replace(/_/g, " ")}</TableCell>
+                      <TableCell className="text-sm capitalize">{(c.complaint_category ?? "—").replace(/_/g, " ")}</TableCell>
                       <TableCell><Badge variant={c.priority === "high" ? "destructive" : "outline"} className="capitalize">{c.priority}</Badge></TableCell>
                       <TableCell><Badge className={`${statusColors[c.status] ?? ""} capitalize`}>{c.status.replace(/_/g, " ")}</Badge></TableCell>
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(c.created_at), "PP")}</TableCell>
@@ -230,29 +340,149 @@ export default function Complaints() {
               </SheetHeader>
               <div className="mt-4 space-y-4">
                 <h3 className="font-semibold">{selected.subject}</h3>
+
+                {/* Safeguarding crossover warning */}
+                {isSafeguardingCategory && (
+                  <div className="rounded-md bg-warning/10 border border-warning/30 p-3">
+                    <p className="text-sm font-medium flex items-center gap-2 text-warning">
+                      <AlertTriangle className="h-4 w-4" /> Safeguarding-related complaint — consider creating a safeguarding concern
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        window.open(`/safeguarding?linked_complaint=${selected.id}`, "_self");
+                      }}
+                    >
+                      Create Safeguarding Concern
+                    </Button>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
-                  <div><p className="text-xs text-muted-foreground">Source</p><p className="text-sm capitalize">{((selected as any).complaint_source ?? "—").replace(/_/g, " ")}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Channel</p><p className="text-sm capitalize">{((selected as any).submission_channel ?? "—").replace(/_/g, " ")}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Category</p><p className="text-sm capitalize">{((selected as any).complaint_category ?? "—").replace(/_/g, " ")}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Source</p><p className="text-sm capitalize">{(selected.complaint_source ?? "—").replace(/_/g, " ")}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Channel</p><p className="text-sm capitalize">{(selected.submission_channel ?? "—").replace(/_/g, " ")}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Category</p><p className="text-sm capitalize">{(selected.complaint_category ?? "—").replace(/_/g, " ")}</p></div>
                   <div><p className="text-xs text-muted-foreground">Priority</p><Badge variant={selected.priority === "high" ? "destructive" : "outline"} className="capitalize">{selected.priority}</Badge></div>
-                  <div><p className="text-xs text-muted-foreground">Anonymous</p><p className="text-sm">{(selected as any).anonymous ? "Yes" : "No"}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Complainant</p><p className="text-sm">{(selected as any).complainant_name ?? selected.submitted_by_name ?? "—"}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Immediate Risk</p><p className="text-sm">{(selected as any).immediate_risk_identified ? "Yes" : "No"}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Escalation Required</p><p className="text-sm">{(selected as any).escalation_required ? "Yes" : "No"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Anonymous</p><p className="text-sm">{selected.anonymous ? "Yes" : "No"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Complainant</p><p className="text-sm">{selected.complainant_name ?? selected.submitted_by_name ?? "—"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Immediate Risk</p><p className="text-sm">{selected.immediate_risk_identified ? "Yes" : "No"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Escalation Required</p><p className="text-sm">{selected.escalation_required ? "Yes" : "No"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Acknowledgement</p><p className="text-sm">{selected.acknowledgement_date ? format(new Date(selected.acknowledgement_date), "PPp") : "Pending"}</p></div>
                 </div>
+
                 <Separator />
                 <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm whitespace-pre-wrap">{selected.description ?? "—"}</p></div>
-                {(selected as any).requested_outcome && (
-                  <div><p className="text-xs text-muted-foreground">Requested Outcome</p><p className="text-sm whitespace-pre-wrap">{(selected as any).requested_outcome}</p></div>
-                )}
-                {(selected as any).resolution_actions && (
+                {selected.requested_outcome && <div><p className="text-xs text-muted-foreground">Requested Outcome</p><p className="text-sm whitespace-pre-wrap">{selected.requested_outcome}</p></div>}
+
+                {/* Editable Investigation & Resolution */}
+                {["investigating", "resolved", "closed"].includes(selected.status) && (
                   <>
                     <Separator />
-                    <div><p className="text-xs text-muted-foreground">Resolution Actions</p><p className="text-sm whitespace-pre-wrap">{(selected as any).resolution_actions}</p></div>
+                    <h4 className="text-sm font-semibold">Investigation & Resolution</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Investigation Summary</Label>
+                        {isEditable ? (
+                          <Textarea
+                            value={getField("investigation_summary")}
+                            onChange={e => setEdit("investigation_summary", e.target.value)}
+                            onBlur={() => editFields.investigation_summary !== undefined && saveMutation.mutate({ investigation_summary: editFields.investigation_summary })}
+                            rows={2}
+                          />
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">{selected.investigation_summary ?? "—"}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Resolution Actions</Label>
+                        {isEditable ? (
+                          <Textarea
+                            value={getField("resolution_actions")}
+                            onChange={e => setEdit("resolution_actions", e.target.value)}
+                            onBlur={() => editFields.resolution_actions !== undefined && saveMutation.mutate({ resolution_actions: editFields.resolution_actions })}
+                            rows={2}
+                          />
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">{selected.resolution_actions ?? "—"}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Final Outcome</Label>
+                        {isEditable ? (
+                          <Textarea
+                            value={getField("final_outcome")}
+                            onChange={e => setEdit("final_outcome", e.target.value)}
+                            onBlur={() => editFields.final_outcome !== undefined && saveMutation.mutate({ final_outcome: editFields.final_outcome })}
+                            rows={2}
+                          />
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">{selected.final_outcome ?? "—"}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Outcome Communicated Date</Label>
+                        {isEditable ? (
+                          <Input
+                            type="date"
+                            value={getField("outcome_communicated_date") ? String(getField("outcome_communicated_date")).split("T")[0] : ""}
+                            onChange={e => {
+                              setEdit("outcome_communicated_date", e.target.value ? new Date(e.target.value).toISOString() : null);
+                            }}
+                            onBlur={() => editFields.outcome_communicated_date !== undefined && saveMutation.mutate({ outcome_communicated_date: editFields.outcome_communicated_date })}
+                          />
+                        ) : (
+                          <p className="text-sm">{selected.outcome_communicated_date ? format(new Date(selected.outcome_communicated_date), "PP") : "—"}</p>
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
-                {(selected as any).final_outcome && (
-                  <div><p className="text-xs text-muted-foreground">Final Outcome</p><p className="text-sm whitespace-pre-wrap">{(selected as any).final_outcome}</p></div>
+
+                {/* Closure errors */}
+                {closureErrors.length > 0 && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4" /> Cannot close — criteria not met:
+                    </p>
+                    <ul className="text-xs text-destructive space-y-0.5 list-disc list-inside">
+                      {closureErrors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Workflow History */}
+                <Separator />
+                <h4 className="text-sm font-semibold">Workflow History</h4>
+                {workflowHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No status changes yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {workflowHistory.map((h) => (
+                      <div key={h.id} className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="capitalize text-xs">{(h.from_status ?? "new").replace(/_/g, " ")}</Badge>
+                        <span>→</span>
+                        <Badge variant="outline" className="capitalize text-xs">{h.to_status.replace(/_/g, " ")}</Badge>
+                        <span className="text-muted-foreground text-xs">{format(new Date(h.created_at), "PPp")}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Advance button */}
+                {nextStatus && (
+                  <div className="pt-2">
+                    <Button
+                      className="w-full"
+                      disabled={!canAdvance || advanceMutation.isPending}
+                      onClick={() => advanceMutation.mutate()}
+                    >
+                      {canAdvance
+                        ? `Advance to ${nextStatus.replace(/_/g, " ")}`
+                        : `Requires ${STATUS_ROLE_GATE[nextStatus]?.join(", ")} role`}
+                    </Button>
+                  </div>
                 )}
               </div>
             </>
