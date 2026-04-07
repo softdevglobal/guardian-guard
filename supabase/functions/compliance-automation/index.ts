@@ -16,6 +16,7 @@ serve(async (req) => {
 
     const now = new Date();
     const results: string[] = [];
+    const todayStr = now.toISOString().split("T")[0];
 
     // 1. Staff clearance expiry warnings (60 days)
     const sixtyDaysFromNow = new Date(now);
@@ -46,7 +47,6 @@ serve(async (req) => {
     }
 
     // 2. Auto-suspend expired staff
-    const todayStr = now.toISOString().split("T")[0];
     const { data: expiredStaff } = await supabase
       .from("staff_compliance")
       .select("id, user_id")
@@ -148,6 +148,85 @@ serve(async (req) => {
         organisation_id: pol.organisation_id,
       });
       results.push(`Overdue alert for policy ${pol.title}`);
+    }
+
+    // 6. Safeguarding urgent response check (24 hours)
+    const oneDayAgo = new Date(now);
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+    const { data: urgentSafeguarding } = await supabase
+      .from("safeguarding_concerns")
+      .select("id, participant_id, raised_by, organisation_id")
+      .eq("immediate_safety_risk", true)
+      .eq("status", "raised")
+      .lt("created_at", oneDayAgo.toISOString());
+
+    for (const sg of urgentSafeguarding ?? []) {
+      await supabase.from("alerts").insert({
+        title: "Urgent safeguarding concern unactioned for 24+ hours",
+        message: "An immediate safety risk concern has not been actioned within 24 hours.",
+        alert_type: "safeguarding_urgent",
+        severity: "high",
+        assigned_to: sg.raised_by,
+        source_module: "safeguarding_concerns",
+        source_record_id: sg.id,
+        organisation_id: sg.organisation_id,
+      });
+      results.push(`Urgent safeguarding alert for concern ${sg.id}`);
+    }
+
+    // 7. Risk review overdue
+    const { data: overdueRisks } = await supabase
+      .from("risks")
+      .select("id, title, assigned_to, created_by, organisation_id")
+      .lt("review_date", todayStr)
+      .not("status", "eq", "closed")
+      .eq("record_status", "active");
+
+    for (const risk of overdueRisks ?? []) {
+      const notifyUser = risk.assigned_to || risk.created_by;
+      await supabase.from("alerts").insert({
+        title: `Risk review overdue: ${risk.title}`,
+        message: "This risk has passed its scheduled review date.",
+        alert_type: "risk_review_overdue",
+        severity: "medium",
+        assigned_to: notifyUser,
+        source_module: "risks",
+        source_record_id: risk.id,
+        organisation_id: risk.organisation_id,
+      });
+      results.push(`Review overdue alert for risk ${risk.title}`);
+    }
+
+    // 8. Repeat complaint detection (3+ for same participant)
+    const { data: complaintCounts } = await supabase
+      .from("complaints")
+      .select("participant_id, organisation_id")
+      .not("participant_id", "is", null)
+      .eq("record_status", "active");
+
+    if (complaintCounts) {
+      const countMap: Record<string, { count: number; org: string }> = {};
+      for (const c of complaintCounts) {
+        if (c.participant_id) {
+          if (!countMap[c.participant_id]) countMap[c.participant_id] = { count: 0, org: c.organisation_id };
+          countMap[c.participant_id].count++;
+        }
+      }
+      for (const [pid, info] of Object.entries(countMap)) {
+        if (info.count >= 3) {
+          await supabase.from("alerts").insert({
+            title: `Repeat complaint trend detected`,
+            message: `Participant has ${info.count} complaints on record — review recommended.`,
+            alert_type: "repeat_complaint",
+            severity: "medium",
+            source_module: "complaints",
+            source_record_id: pid,
+            organisation_id: info.org,
+          });
+          results.push(`Repeat complaint alert for participant ${pid}`);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ success: true, actions: results }), {
