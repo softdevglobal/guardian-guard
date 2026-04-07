@@ -1,174 +1,132 @@
 
 
-# Full Compliance System Build Plan
+# Audit-Grade Policy Enforcement Implementation
 
-This plan transforms the current basic CRUD scaffolding into the complete NDIS audit-proof compliance operating system described in the specification. Given the massive scope (~53 non-functional items + 15 new specification sections), implementation is split into 5 phases.
-
----
-
-## Phase 1 — Database Schema Expansion
-
-Add missing tables, columns, and enums to support all 15 specification sections.
-
-**New tables (5):**
-- `safeguarding_concerns` — full form fields per spec (concern_type, source, escalation_level, linked records, etc.)
-- `privacy_incidents` — breach tracking (incident_type, data_type_involved, containment_action, notification fields, etc.)
-- `policy_acknowledgements` — staff acknowledgement tracking (policy_id, user_id, acknowledged_at, due_date)
-- `tasks` — cross-module task system (title, task_type, source_module, source_record_id, assigned_to, due_date, status)
-- `incident_actions` — corrective/preventive actions linked to incidents
-
-**Expanded columns on existing tables:**
-
-`incidents` — add: date_of_incident, time_of_incident, date_reported, reporter_role, incident_location, environment_type, incident_category, sub_category, participant_harmed, staff_harmed, medical_attention_required, emergency_service_contacted, immediate_action_taken, current_participant_condition, ai_suggested_classification, supervisor_classification, reportable_reason, investigation_required, assigned_investigator, root_cause, contributing_factors, corrective_actions, preventive_actions, participant_followup_completed, outcome_summary, closure_recommendation, witnesses (jsonb), other_persons_involved (jsonb)
-
-`risks` — add: date_identified, linked_participant_id, linked_staff_id, linked_incident_id, linked_complaint_id, likelihood_score (int 1-5), impact_score (int 1-5), risk_score (int computed), risk_level, existing_controls, review_date, escalation_required, residual_risk_score
-
-`complaints` — add: complaint_source, submission_channel, complainant_name, anonymous, complaint_category, requested_outcome, immediate_risk_identified, escalation_required, assigned_handler, acknowledgement_date, investigation_summary, resolution_actions, outcome_communicated_date, final_outcome
-
-`staff_compliance` — add: identity_verification, mandatory_induction, worker_orientation, cyber_safety_completed, incident_mgmt_training, safeguarding_training, code_of_conduct_acknowledged, code_of_conduct_date, restrictions_notes, eligible_for_assignment, start_date, ndis_screening_required
-
-`policies` — add: category, effective_date, policy_text, linked_training_module_id, staff_acknowledgement_required, acknowledgement_due_date
-
-**Expanded enums:**
-- `incident_status` → draft, submitted, supervisor_review, compliance_review, investigating, actioned, closed
-- New: `risk_status` (open, assessed, mitigating, monitoring, closed)
-- New: `safeguarding_status` (raised, screened, action_required, monitoring, resolved, closed)
-- New: `privacy_incident_status` (detected, contained, assessed, actioned, closed)
-- New: `complaint_category`, `safeguarding_concern_type`, `privacy_incident_type`
-
-**RLS policies** for all new tables following existing pattern (org-scoped for admins/compliance, team-scoped for supervisors, self-scoped for staff).
-
-**Audit trail triggers** — create DB trigger function that auto-inserts into `audit_logs` on INSERT/UPDATE for: incidents, risks, complaints, safeguarding_concerns, privacy_incidents, policies, staff_compliance, participants.
+This plan bridges the gap between the expanded policy documents and the current system. The core issue: forms capture data but modules lack **edit capabilities**, **closure validation**, **workflow enforcement**, **cross-module linking**, and **mandatory field enforcement**.
 
 ---
 
-## Phase 2 — Enhanced Module Forms (Incidents, Risks, Complaints)
+## What Needs to Change
 
-Rebuild the three highest-priority module forms with all specification fields.
+### 1. Incident Detail Sheet — Full Edit + Closure Enforcement
+**Current**: Read-only detail view with a single "advance status" button.
+**Required**: Editable sections that unlock based on workflow stage.
 
-**Incidents page rewrite:**
-- Multi-section accordion form: Basics, People Involved (participant/staff picker), Type & Classification, Description, Investigation, Closure
-- Smart classification: auto-set reportable if injury + participant harm or abuse/neglect selected
-- Incident detail view (sheet/drawer) with full read view + status workflow panel
-- Status transition buttons with role gates (only supervisor can advance past supervisor_review, etc.)
-- Workflow history timeline showing all status changes
+- Add "People Involved" section with participant/staff pickers (linked records)
+- Add editable Investigation section (root cause, contributing factors, corrective/preventive actions) — only visible and editable when status = `investigating` or later
+- Add editable Closure section (outcome summary, follow-up completed, closure recommendation)
+- **Closure validation**: Block advancement to `closed` unless:
+  - All corrective actions recorded
+  - Participant follow-up marked complete
+  - Investigation fields filled (root cause, contributing factors)
+  - Description is non-empty
+- Show validation errors when closure criteria are not met
+- Add `logAudit()` calls on every status change and field edit
 
-**Risks page rewrite:**
-- Full form with linked record pickers (participant, staff, incident, complaint)
-- Auto-calculated risk_score = likelihood_score x impact_score
-- Risk level auto-assignment (1-4 Low, 5-9 Medium, 10-15 High, 16-25 Critical)
-- Detail view with mitigation actions list
-- Status workflow: Open → Assessed → Mitigating → Monitoring → Closed
+### 2. Incident Form — People Involved Section
+- Add Section 2 accordion: "People Involved"
+  - Participant picker (existing query)
+  - Staff picker (from user_profiles)
+  - Witnesses text/jsonb field
+  - Other persons involved text/jsonb field
+- Save `participant_id`, `linked_staff_id`, `witnesses`, `other_persons_involved` on create
 
-**Complaints page rewrite:**
-- Full intake form per spec (source, channel, anonymous flag, category, requested outcome)
-- Workflow: Received → Acknowledged → Under Review → Investigating → Resolved → Closed
-- Acknowledgement tracking with deadline display
+### 3. Risk Detail Sheet — Editable + Workflow Buttons
+**Current**: Read-only detail sheet.
+**Required**: Status workflow buttons + editable mitigation fields.
 
----
+- Add status advancement: Open → Assessed → Mitigating → Monitoring → Closed
+- Role gates: only compliance_officer/super_admin can close
+- Add linked record display (participant, staff, incident, complaint)
+- Add linked record pickers in the create form
+- Add editable mitigation actions section
+- **Escalation enforcement**: If score >= 7 (spec threshold), require review_date within 7 days and mitigation owner
 
-## Phase 3 — New Modules (Safeguarding, Privacy) + Participant & Staff Enhancement
+### 4. Complaint Detail Sheet — Workflow + Acknowledgement
+**Current**: Read-only detail sheet, no workflow.
+**Required**: Full workflow with acknowledgement tracking.
 
-**New Safeguarding page:**
-- Concern form with all spec fields
-- Linked record display (incident, complaint, risk)
-- Escalation level badges
-- Workflow: Raised → Screened → Action Required → Monitoring → Resolved → Closed
+- Add workflow buttons: Received → Acknowledged → Under Review → Investigating → Resolved → Closed
+- Auto-set `acknowledgement_date` when advanced to "acknowledged"
+- Role gates on transitions
+- Add editable fields: investigation_summary, resolution_actions, final_outcome, outcome_communicated_date
+- **Safeguarding crossover**: When complaint category is "safeguarding", show a warning and a "Create Safeguarding Concern" button that pre-fills a linked concern
+- **Closure enforcement**: Require resolution_actions and outcome_communicated_date before closing
 
-**New Privacy Incidents page:**
-- Breach/privacy incident form
-- Data type classification
-- Containment tracking
-- Workflow: Detected → Contained → Assessed → Actioned → Closed
+### 5. Safeguarding Detail Sheet — Workflow + Linked Records
+**Current**: Read-only detail sheet.
+**Required**: Full workflow with linked record display.
 
-**Participant profile enhancement:**
-- Detail view with tabs: Profile, Goals, Progress, Safeguarding Concerns, Incidents, Risk Score
-- Safeguarding banner if 2+ concerns
+- Add workflow buttons: Raised → Screened → Action Required → Monitoring → Resolved → Closed
+- Display linked incident, complaint, risk records
+- Add editable: review_notes, support_actions, outcome
+- **Linkage enforcement**: If linked to complaint or incident, prevent closure until linked record is reviewed
+- Show repeat concern banner if same participant has 2+ concerns
 
-**Staff Compliance enhancement:**
-- Full compliance record form with all clearance fields
-- Training completion status
-- Eligible-for-assignment indicator
-- Expiry warning badges
+### 6. Privacy Detail Sheet — Workflow + Data Types
+**Current**: Read-only detail sheet.
+**Required**: Workflow + data type selection.
 
-**Policy enhancement:**
-- Full form with category, text editor, linked training module
-- Version history view
-- Staff acknowledgement tracking table
-- Review date warnings
+- Add workflow buttons: Detected → Contained → Assessed → Actioned → Closed
+- Add data_type_involved multi-select checkboxes (personal_info, sensitive_info, participant_notes, staff_records, ai_logs, uploaded_files)
+- Add access_source selector (office_device, remote_device, unknown_device)
+- Add editable corrective_action field
+- Add notification_completed_date field
 
----
+### 7. Staff Compliance — Clearance Date Editing + Conduct Breach
+**Current**: Can toggle training switches and change status dropdowns.
+**Required**: Date fields for clearance issue/expiry.
 
-## Phase 4 — Automation, Cross-Module Triggers & Compliance Pulse
+- Add editable date fields: police_check_date, police_check_expiry, wwcc_expiry, worker_screening_expiry
+- Add WWCC number field
+- Show conduct breach linkage: if complaints or incidents reference this staff member, display them in the detail sheet
 
-**Database triggers / edge functions for automation:**
-- Incident submitted → create audit log, check reportable rules, create NDIS deadline task
-- Serious incident → create alert for supervisor + compliance
-- Stale investigation (5+ days) → create reminder alert
-- Complaint acknowledgement overdue (2 days) → create reminder
-- Safeguarding crossover (complaint category = safeguarding) → auto-create safeguarding concern
-- Staff clearance expiry (60 days) → create notification
-- Staff expired → auto-suspend, remove assignment eligibility
-- Policy review due (30 days) → create alert
-- Risk score threshold → create escalation alert
-- Incident → Risk linking (prompt on closure if root cause = system weakness)
+### 8. Cross-Module Triggers (Client-Side)
+Since database triggers are limited, implement these as client-side logic in mutation handlers:
 
-**Cross-module event triggers:**
-- Complaint mentioning harm → auto-create safeguarding review
-- Safeguarding escalation → require linked incident
-- Staff conduct complaint → create conduct review task
-- Policy update → assign acknowledgement tasks
-- AI alert → supervisor review queue
+- **Complaint → Safeguarding**: When a complaint with category "safeguarding" is created, prompt to create a linked safeguarding concern
+- **Incident closure → Risk prompt**: When closing an incident with root cause indicating system weakness, show "Create linked risk?" dialog
+- **Staff conduct complaint**: When complaint category is "staff_conduct", show link to staff compliance record
 
-**Compliance Pulse Engine:**
-- Edge function or computed view that calculates scores across 4 categories
-- Governance & Operational Management (policy currency, screening, audit completeness)
-- Provision of Supports (progress notes, complaint response time, incident response)
-- Support Environment (safeguarding response, privacy controls)
-- AI Oversight (AI interventions, unresolved alerts, human review rate)
-- Dashboard gauge updates from real computed scores
+### 9. Audit Trail Integration
+- Add `logAudit()` to every status change across all modules (currently only in Policies and StaffCompliance)
+- Log field-level changes for severity, classification, and outcome fields in incidents
+- Log every workflow advancement in complaints, safeguarding, privacy
 
----
-
-## Phase 5 — Notification System, Global Search, AI Heartbeat
-
-**Notification system:**
-- Bell dropdown in header showing real notifications from `notifications` table
-- Real-time subscription via Supabase channels
-- Mark as read, link to source record
-- Notification matrix: real-time for critical, daily digest for medium, escalation reminders
-
-**Global search (Ctrl+K):**
-- Command palette searching across incidents, risks, complaints, participants, policies
-- Result navigation to record detail
-
-**AI Heartbeat edge function:**
-- Lovable AI integration for sentiment analysis
-- Processes training session notes for distress markers
-- Auto-creates draft safeguarding concerns
-- Risk score recalculation
-
-**Audit log wiring:**
-- Utility function `logAudit()` called on every create/update/status-change across all modules
-- Field-level change tracking for classification, severity, outcome changes
+### 10. Compliance Automation Edge Function — Add Missing Triggers
+Current function handles: staff expiry, stale incidents, complaint ack overdue, policy review overdue.
+**Add**:
+- Safeguarding urgent response check: if immediate_safety_risk = true and no action within 24 hours, create alert
+- Risk review overdue: if review_date passed and status not closed, create alert
+- Repeat complaint detection: if same participant has 3+ complaints, create trend alert
 
 ---
 
-## Technical Notes
+## Files to Create/Edit
 
-- All new tables follow the existing pattern: RLS enabled, org-scoped policies using `has_role()` / `has_any_role()` / `get_user_organisation_id()` security definer functions
-- No hard deletes — all records use `record_status` enum (active/archived/deleted)
-- New routes added to App.tsx: `/safeguarding`, `/privacy`
-- New sidebar entries for Safeguarding and Privacy modules
-- ROLE_MODULES in AuthContext updated for new modules
-- All forms use the existing shadcn/ui component library
-- Status enums that need expanding will use ALTER TYPE ... ADD VALUE (non-breaking)
+| File | Action |
+|---|---|
+| `src/components/incidents/IncidentDetailSheet.tsx` | Major rewrite: add editable sections, closure validation, audit logging |
+| `src/components/incidents/IncidentFormDialog.tsx` | Add People Involved section |
+| `src/pages/Risks.tsx` | Add workflow buttons, linked record pickers, mitigation editing |
+| `src/pages/Complaints.tsx` | Add workflow buttons, acknowledgement tracking, safeguarding crossover, editable resolution fields |
+| `src/pages/Safeguarding.tsx` | Add workflow buttons, linked records display, repeat concern banner |
+| `src/pages/Privacy.tsx` | Add workflow buttons, data type checkboxes, editable fields |
+| `src/pages/StaffCompliance.tsx` | Add clearance date fields, conduct breach display |
+| `supabase/functions/compliance-automation/index.ts` | Add safeguarding response check, risk review overdue, repeat complaint detection |
+
+No database migrations needed — all required columns already exist from Phase 1.
 
 ---
 
-## Implementation Order
+## Implementation Priority
 
-Phase 1 is the foundation — everything else depends on the schema being correct. Phases 2-3 can partially overlap. Phase 4 requires phases 2-3 complete. Phase 5 is independent polish.
-
-Given the scope, I recommend implementing **Phase 1 (schema) + Phase 2 (Incidents, Risks, Complaints forms)** first, then continuing with subsequent phases.
+1. Incident detail sheet (highest audit impact — this is the core compliance object)
+2. Complaint workflow + safeguarding crossover
+3. Safeguarding workflow + linked records
+4. Risk workflow + linked records
+5. Privacy workflow
+6. Staff compliance date editing
+7. Automation edge function updates
+8. Audit trail wiring across all modules
 
