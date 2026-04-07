@@ -64,6 +64,14 @@ export function IncidentFormDialog() {
     },
   });
 
+  const { data: practiceStandards = [] } = useQuery({
+    queryKey: ["practice-standards"],
+    queryFn: async () => {
+      const { data } = await supabase.from("practice_standards").select("id, code, name, category").order("code");
+      return data ?? [];
+    },
+  });
+
   const isReportable =
     (form.injury_involved && form.incident_type === "participant") ||
     form.incident_category === "abuse_allegation" ||
