@@ -1461,6 +1461,7 @@ export type Database = {
           record_status: Database["public"]["Enums"]["record_status"]
           residual_risk_score: number | null
           review_date: string | null
+          review_frequency: string | null
           risk_level: string | null
           risk_score: number | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
@@ -1491,6 +1492,7 @@ export type Database = {
           record_status?: Database["public"]["Enums"]["record_status"]
           residual_risk_score?: number | null
           review_date?: string | null
+          review_frequency?: string | null
           risk_level?: string | null
           risk_score?: number | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
@@ -1521,6 +1523,7 @@ export type Database = {
           record_status?: Database["public"]["Enums"]["record_status"]
           residual_risk_score?: number | null
           review_date?: string | null
+          review_frequency?: string | null
           risk_level?: string | null
           risk_score?: number | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
