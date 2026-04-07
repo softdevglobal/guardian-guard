@@ -64,7 +64,7 @@ export function AppSidebar() {
           <div className="flex items-center gap-2">
             <img src={logoImg} alt="DGTG Logo" className="h-8 w-8 rounded-lg object-cover" />
             <div>
-              <p className="text-sm font-semibold">DGTG NDIS</p>
+              <p className="text-xl font-serif font-bold">DGTG Guardian</p>
               <p className="text-xs text-muted-foreground">Compliance OS</p>
             </div>
           </div>
