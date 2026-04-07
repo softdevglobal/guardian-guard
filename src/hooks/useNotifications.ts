@@ -74,7 +74,7 @@ export function useNotifications(options?: { limit?: number }) {
     if (!user) return;
     // Unique channel name per user prevents other authenticated users from
     // observing INSERT event metadata on the same channel
-    const channelName = `notifications-${user.id}`;
+    const channelName = `notifications-${user.id}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on("postgres_changes", {
