@@ -18,9 +18,12 @@ import { format, differenceInHours, differenceInDays } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import {
   AlertTriangle, Timer, CheckCircle, XCircle, Plus, Clock,
-  ShieldAlert, Siren, ArrowRight, Loader2, GraduationCap
+  ShieldAlert, Siren, ArrowRight, Loader2, GraduationCap, Download
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
+import { IncidentExportButton } from "@/components/incidents/IncidentExportButtons";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Incident = Tables<"incidents">;
 
@@ -605,46 +608,64 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
 
           <Separator />
 
-          {/* Workflow History */}
-          <h4 className="text-sm font-semibold">Workflow Audit Trail</h4>
-          <div className="space-y-2">
-            {/* Creation event */}
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-2 w-2 rounded-full bg-primary" />
-              <span className="text-muted-foreground">Created</span>
-              <span className="text-xs text-muted-foreground">{format(new Date(incident.created_at), "PPp")}</span>
-            </div>
-            {history.map(h => (
-              <div key={h.id} className="flex items-center gap-2 text-sm">
-                <div className="h-2 w-2 rounded-full bg-primary" />
-                <Badge variant="outline" className="capitalize text-xs">{(h.from_status ?? "new").replace(/_/g, " ")}</Badge>
-                <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                <Badge variant="outline" className="capitalize text-xs">{h.to_status.replace(/_/g, " ")}</Badge>
-                <span className="text-xs text-muted-foreground">{format(new Date(h.created_at), "PPp")}</span>
-              </div>
-            ))}
+          {/* Export Button */}
+          <div className="flex justify-end">
+            <IncidentExportButton incidentId={incident.id} incidentNumber={incident.incident_number} />
           </div>
 
-          {/* Workflow stages visualization */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-2">
-            {["draft", "submitted", "supervisor_review", "compliance_review", "investigating", "actioned", "closed"].map((status, idx) => {
-              const isCurrent = incident.status === status;
-              const isPast = ["draft", "submitted", "supervisor_review", "compliance_review", "investigating", "actioned", "closed"]
-                .indexOf(incident.status) > idx;
-              return (
-                <div key={status} className="flex items-center">
-                  <div className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${
-                    isCurrent ? "bg-primary text-primary-foreground font-bold" :
-                    isPast ? "bg-success/20 text-success" :
-                    "bg-muted text-muted-foreground"
-                  }`}>
-                    {STATUS_LABELS[status] ?? status.replace(/_/g, " ")}
-                  </div>
-                  {idx < 6 && <ArrowRight className="h-3 w-3 text-muted-foreground mx-0.5 shrink-0" />}
+          {/* Timeline & Audit Tabs */}
+          <Tabs defaultValue="timeline" className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
+              <TabsTrigger value="workflow" className="flex-1">Workflow</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="timeline" className="mt-3">
+              <IncidentTimeline incidentId={incident.id} createdAt={incident.created_at} />
+            </TabsContent>
+
+            <TabsContent value="workflow" className="mt-3">
+              {/* Workflow History */}
+              <h4 className="text-sm font-semibold mb-2">Workflow Audit Trail</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Created</span>
+                  <span className="text-xs text-muted-foreground">{format(new Date(incident.created_at), "PPp")}</span>
                 </div>
-              );
-            })}
-          </div>
+                {history.map(h => (
+                  <div key={h.id} className="flex items-center gap-2 text-sm">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <Badge variant="outline" className="capitalize text-xs">{(h.from_status ?? "new").replace(/_/g, " ")}</Badge>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                    <Badge variant="outline" className="capitalize text-xs">{h.to_status.replace(/_/g, " ")}</Badge>
+                    <span className="text-xs text-muted-foreground">{format(new Date(h.created_at), "PPp")}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Workflow stages visualization */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-2 mt-4">
+                {["draft", "submitted", "supervisor_review", "compliance_review", "investigating", "actioned", "closed"].map((status, idx) => {
+                  const isCurrent = incident.status === status;
+                  const isPast = ["draft", "submitted", "supervisor_review", "compliance_review", "investigating", "actioned", "closed"]
+                    .indexOf(incident.status) > idx;
+                  return (
+                    <div key={status} className="flex items-center">
+                      <div className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${
+                        isCurrent ? "bg-primary text-primary-foreground font-bold" :
+                        isPast ? "bg-success/20 text-success" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {STATUS_LABELS[status] ?? status.replace(/_/g, " ")}
+                      </div>
+                      {idx < 6 && <ArrowRight className="h-3 w-3 text-muted-foreground mx-0.5 shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Advance Button */}
           {nextStatus && (

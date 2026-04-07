@@ -18,6 +18,7 @@ import { IncidentFormDialog } from "@/components/incidents/IncidentFormDialog";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
 import { AuditSimulation } from "@/components/incidents/AuditSimulation";
 import { FailureCasesDashboard } from "@/components/incidents/FailureCasesDashboard";
+import { BulkIncidentExportButton } from "@/components/incidents/IncidentExportButtons";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Incident = Tables<"incidents">;
@@ -121,7 +122,10 @@ export default function Incidents() {
           <h1 className="text-2xl font-bold tracking-tight">Incident Management</h1>
           <p className="text-muted-foreground">NDIS-compliant workflow with enforcement, escalation & audit trail</p>
         </div>
-        <IncidentFormDialog />
+        <div className="flex items-center gap-2">
+          <BulkIncidentExportButton incidents={incidents} />
+          <IncidentFormDialog />
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>

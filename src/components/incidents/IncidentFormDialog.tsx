@@ -38,6 +38,7 @@ const INITIAL_FORM = {
   linked_staff_id: "",
   witnesses: "",
   other_persons_involved: "",
+  practice_standard_id: "",
 };
 
 export function IncidentFormDialog() {
@@ -63,6 +64,14 @@ export function IncidentFormDialog() {
     },
   });
 
+  const { data: practiceStandards = [] } = useQuery({
+    queryKey: ["practice-standards"],
+    queryFn: async () => {
+      const { data } = await supabase.from("practice_standards").select("id, code, name, category").order("code");
+      return data ?? [];
+    },
+  });
+
   const isReportable =
     (form.injury_involved && form.incident_type === "participant") ||
     form.incident_category === "abuse_allegation" ||
@@ -78,6 +87,7 @@ export function IncidentFormDialog() {
       const witnessesArr = form.witnesses ? form.witnesses.split(",").map(w => w.trim()).filter(Boolean) : [];
       const otherArr = form.other_persons_involved ? form.other_persons_involved.split(",").map(w => w.trim()).filter(Boolean) : [];
 
+      if (!form.practice_standard_id) throw new Error("NDIS Practice Standard mapping is required before submission.");
       const { error } = await supabase.from("incidents").insert({
         incident_number: num,
         title: form.title,
@@ -116,6 +126,7 @@ export function IncidentFormDialog() {
         linked_staff_id: form.linked_staff_id || null,
         witnesses: witnessesArr,
         other_persons_involved: otherArr,
+        practice_standard_id: form.practice_standard_id || null,
       });
       if (error) throw error;
       await logAudit({ action: "created", module: "incidents", details: { title: form.title, is_reportable: isReportable } });
@@ -251,6 +262,20 @@ export function IncidentFormDialog() {
                 <div className="space-y-2">
                   <Label>Sub-category</Label>
                   <Input value={form.sub_category} onChange={(e) => set("sub_category", e.target.value)} placeholder="Optional sub-category" />
+                </div>
+                <div className="space-y-2">
+                  <Label>NDIS Practice Standard *</Label>
+                  <Select value={form.practice_standard_id} onValueChange={(v) => set("practice_standard_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select Practice Standard" /></SelectTrigger>
+                    <SelectContent>
+                      {practiceStandards.map((ps) => (
+                        <SelectItem key={ps.id} value={ps.id}>
+                          <span className="font-mono text-xs mr-1">{ps.code}</span> {ps.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Required — maps this incident to an NDIS Practice Standard for compliance reporting.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[

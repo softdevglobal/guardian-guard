@@ -580,6 +580,7 @@ export type Database = {
           participant_followup_completed: boolean | null
           participant_harmed: boolean | null
           participant_id: string | null
+          practice_standard_id: string | null
           preventive_actions: string | null
           record_status: Database["public"]["Enums"]["record_status"]
           reportable_reason: string | null
@@ -633,6 +634,7 @@ export type Database = {
           participant_followup_completed?: boolean | null
           participant_harmed?: boolean | null
           participant_id?: string | null
+          practice_standard_id?: string | null
           preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
           reportable_reason?: string | null
@@ -686,6 +688,7 @@ export type Database = {
           participant_followup_completed?: boolean | null
           participant_harmed?: boolean | null
           participant_id?: string | null
+          practice_standard_id?: string | null
           preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
           reportable_reason?: string | null
@@ -717,6 +720,13 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_practice_standard_id_fkey"
+            columns: ["practice_standard_id"]
+            isOneToOne: false
+            referencedRelation: "practice_standards"
             referencedColumns: ["id"]
           },
           {
@@ -1300,6 +1310,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      practice_standards: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       privacy_incidents: {
         Row: {

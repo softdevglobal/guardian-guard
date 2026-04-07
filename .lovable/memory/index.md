@@ -13,3 +13,4 @@ Semantic design tokens only — never hardcode colors in components.
 - [Incident classification](mem://features/incidents) — Smart auto-classification rules, workflow states
 - [System design spec](mem://features/system-design) — Full 15-section NDIS compliance spec: forms, workflows, automation triggers, audit rules
 - [Build progress](mem://features/build-progress) — Phase 1-2 complete, Phase 3-5 complete: staff compliance, policies, pulse engine, notifications, automation
+- [NDIS Compliance](mem://features/ndis-compliance) — Practice Standards mapping (PS1-PS14), incident timeline, CSV export, version tracking
