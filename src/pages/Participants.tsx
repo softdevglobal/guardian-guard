@@ -840,7 +840,7 @@ function ParticipantDetailSheet({
                                   {e.notes && <span className="text-muted-foreground truncate max-w-[150px]">{e.notes}</span>}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  {(e as any).evidence_notes && <FileText className="h-3 w-3 text-primary" title="Has evidence" />}
+                                  {(e as any).evidence_notes && <span title="Has evidence"><FileText className="h-3 w-3 text-primary" /></span>}
                                   <span className="text-muted-foreground">{format(new Date(e.created_at), "PP")}</span>
                                 </div>
                               </div>
