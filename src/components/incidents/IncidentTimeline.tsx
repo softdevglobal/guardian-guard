@@ -60,10 +60,10 @@ export function IncidentTimeline({ incidentId, createdAt }: Props) {
     meta?: Record<string, any>;
   };
 
-  const events: TimelineEvent[] = [
+  const events: TimelineEvent[] = ([
     {
       id: "creation",
-      type: "creation",
+      type: "creation" as const,
       timestamp: createdAt,
       title: "Incident Created",
       description: "Initial record created",
@@ -92,7 +92,7 @@ export function IncidentTimeline({ incidentId, createdAt }: Props) {
       severity: a.severity,
       meta: a.details as Record<string, any>,
     })),
-  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  ] as TimelineEvent[]).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   const typeIcon = (type: TimelineEvent["type"]) => {
     switch (type) {
