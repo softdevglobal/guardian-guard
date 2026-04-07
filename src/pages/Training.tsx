@@ -500,7 +500,7 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
       const { data: modules } = await supabase.from("training_modules").select("id").limit(1);
       const moduleId = params.moduleId || modules?.[0]?.id;
 
-      const { error } = await supabase.from("training_completions").insert({
+      const insertData: Record<string, unknown> = {
         user_id: staffId,
         module_id: moduleId,
         training_code: params.trainingCode,
@@ -511,7 +511,8 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
         evidence_file_url: fileUrl,
         assessment_passed: params.score ? params.score >= (requirements.find(r => r.training_code === params.trainingCode)?.min_pass_score ?? 0) : false,
         organisation_id: user.organisation_id,
-      } as any);
+      };
+      const { error } = await supabase.from("training_completions").insert(insertData as any);
       if (error) throw error;
 
       await logAudit({
