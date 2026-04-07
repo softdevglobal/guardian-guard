@@ -14,9 +14,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, HeartHandshake } from "lucide-react";
+import { Plus, HeartHandshake, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { logAudit } from "@/lib/auditLog";
+
+const STATUS_FLOW: Record<string, string> = {
+  raised: "screened",
+  screened: "action_required",
+  action_required: "monitoring",
+  monitoring: "resolved",
+  resolved: "closed",
+};
+
+const STATUS_ROLE_GATE: Record<string, string[]> = {
+  screened: ["super_admin", "compliance_officer", "supervisor"],
+  action_required: ["super_admin", "compliance_officer"],
+  monitoring: ["super_admin", "compliance_officer"],
+  resolved: ["super_admin", "compliance_officer"],
+  closed: ["super_admin", "compliance_officer"],
+};
 
 const statusColors: Record<string, string> = {
   raised: "bg-info text-info-foreground",
@@ -44,6 +61,7 @@ export default function Safeguarding() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [selected, setSelected] = useState<any>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editFields, setEditFields] = useState<Record<string, any>>({});
 
   const { data: concerns = [], isLoading } = useQuery({
     queryKey: ["safeguarding"],
@@ -78,6 +96,7 @@ export default function Safeguarding() {
         organisation_id: user.organisation_id!,
       });
       if (error) throw error;
+      await logAudit({ action: "created", module: "safeguarding_concerns", details: { concern_type: form.concern_type, participant_id: form.participant_id } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["safeguarding"] });
@@ -88,10 +107,59 @@ export default function Safeguarding() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async (fields: Record<string, any>) => {
+      if (!selected) return;
+      const { error } = await supabase.from("safeguarding_concerns").update(fields as any).eq("id", selected.id);
+      if (error) throw error;
+      await logAudit({ action: "field_updated", module: "safeguarding_concerns", record_id: selected.id, details: fields });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["safeguarding"] });
+      toast({ title: "Saved" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const advanceMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected || !user) return;
+      const nextStatus = STATUS_FLOW[selected.status];
+      if (!nextStatus) throw new Error("No next status");
+
+      const updatePayload: any = { status: nextStatus, ...editFields };
+      const { error } = await supabase.from("safeguarding_concerns").update(updatePayload).eq("id", selected.id);
+      if (error) throw error;
+
+      await logAudit({
+        action: "status_advanced",
+        module: "safeguarding_concerns",
+        record_id: selected.id,
+        details: { from: selected.status, to: nextStatus },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["safeguarding"] });
+      setEditFields({});
+      setSelected((prev: any) => prev ? { ...prev, status: STATUS_FLOW[prev.status], ...editFields } : null);
+      toast({ title: "Status updated" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
   const set = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
+  const setEdit = (key: string, val: any) => setEditFields(prev => ({ ...prev, [key]: val }));
+  const getField = (key: string) => editFields[key] ?? selected?.[key] ?? "";
 
   const activeCount = concerns.filter((c) => !["resolved", "closed"].includes(c.status)).length;
   const urgentCount = concerns.filter((c) => c.escalation_level === "immediate_intervention" || c.immediate_safety_risk).length;
+
+  // Repeat concern check
+  const participantConcernCount = selected ? concerns.filter(c => c.participant_id === selected.participant_id).length : 0;
+
+  const nextStatus = selected ? STATUS_FLOW[selected.status] : null;
+  const canAdvance = nextStatus && user && STATUS_ROLE_GATE[nextStatus]?.includes(user.role);
+  const isEditable = selected?.status !== "closed";
 
   return (
     <div className="space-y-6">
@@ -182,7 +250,7 @@ export default function Safeguarding() {
                 <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Source</TableHead><TableHead>Escalation</TableHead><TableHead>Status</TableHead><TableHead>Safety Risk</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {concerns.map((c) => (
-                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(c); setSheetOpen(true); }}>
+                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(c); setSheetOpen(true); setEditFields({}); }}>
                       <TableCell className="text-sm">{format(new Date(c.date_raised), "PP")}</TableCell>
                       <TableCell className="capitalize text-sm">{c.concern_type.replace(/_/g, " ")}</TableCell>
                       <TableCell className="capitalize text-sm">{c.source.replace(/_/g, " ")}</TableCell>
@@ -204,6 +272,15 @@ export default function Safeguarding() {
             <>
               <SheetHeader><SheetTitle>Safeguarding Concern</SheetTitle></SheetHeader>
               <div className="mt-4 space-y-4">
+                {/* Repeat concern banner */}
+                {participantConcernCount >= 2 && (
+                  <div className="rounded-md bg-warning/10 border border-warning/30 p-3">
+                    <p className="text-sm font-medium flex items-center gap-2 text-warning">
+                      <AlertTriangle className="h-4 w-4" /> This participant has {participantConcernCount} safeguarding concerns on record
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm capitalize">{selected.concern_type.replace(/_/g, " ")}</p></div>
                   <div><p className="text-xs text-muted-foreground">Source</p><p className="text-sm capitalize">{selected.source.replace(/_/g, " ")}</p></div>
@@ -212,10 +289,82 @@ export default function Safeguarding() {
                   <div><p className="text-xs text-muted-foreground">Status</p><Badge className={`${statusColors[selected.status] ?? ""} capitalize`}>{selected.status.replace(/_/g, " ")}</Badge></div>
                   <div><p className="text-xs text-muted-foreground">Date Raised</p><p className="text-sm">{format(new Date(selected.date_raised), "PP")}</p></div>
                 </div>
+
+                {/* Linked records display */}
+                {(selected.linked_incident_id || selected.linked_complaint_id || selected.linked_risk_id) && (
+                  <>
+                    <Separator />
+                    <h4 className="text-sm font-semibold">Linked Records</h4>
+                    <div className="space-y-1 text-sm">
+                      {selected.linked_incident_id && <p>Linked Incident: <span className="font-mono">{selected.linked_incident_id.slice(0, 8)}...</span></p>}
+                      {selected.linked_complaint_id && <p>Linked Complaint: <span className="font-mono">{selected.linked_complaint_id.slice(0, 8)}...</span></p>}
+                      {selected.linked_risk_id && <p>Linked Risk: <span className="font-mono">{selected.linked_risk_id.slice(0, 8)}...</span></p>}
+                    </div>
+                  </>
+                )}
+
                 <Separator />
                 <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm whitespace-pre-wrap">{selected.detailed_description ?? "—"}</p></div>
                 {selected.immediate_action_taken && <div><p className="text-xs text-muted-foreground">Immediate Action</p><p className="text-sm whitespace-pre-wrap">{selected.immediate_action_taken}</p></div>}
-                {selected.outcome && <div><p className="text-xs text-muted-foreground">Outcome</p><p className="text-sm whitespace-pre-wrap">{selected.outcome}</p></div>}
+
+                {/* Editable fields */}
+                {isEditable && (
+                  <>
+                    <Separator />
+                    <h4 className="text-sm font-semibold">Review & Actions</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Review Notes</Label>
+                        <Textarea
+                          value={getField("review_notes")}
+                          onChange={e => setEdit("review_notes", e.target.value)}
+                          onBlur={() => editFields.review_notes !== undefined && saveMutation.mutate({ review_notes: editFields.review_notes })}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Support Actions</Label>
+                        <Textarea
+                          value={getField("support_actions")}
+                          onChange={e => setEdit("support_actions", e.target.value)}
+                          onBlur={() => editFields.support_actions !== undefined && saveMutation.mutate({ support_actions: editFields.support_actions })}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Outcome</Label>
+                        <Textarea
+                          value={getField("outcome")}
+                          onChange={e => setEdit("outcome", e.target.value)}
+                          onBlur={() => editFields.outcome !== undefined && saveMutation.mutate({ outcome: editFields.outcome })}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!isEditable && selected.outcome && (
+                  <>
+                    <Separator />
+                    <div><p className="text-xs text-muted-foreground">Outcome</p><p className="text-sm whitespace-pre-wrap">{selected.outcome}</p></div>
+                  </>
+                )}
+
+                {/* Advance button */}
+                {nextStatus && (
+                  <div className="pt-2">
+                    <Button
+                      className="w-full"
+                      disabled={!canAdvance || advanceMutation.isPending}
+                      onClick={() => advanceMutation.mutate()}
+                    >
+                      {canAdvance
+                        ? `Advance to ${nextStatus.replace(/_/g, " ")}`
+                        : `Requires ${STATUS_ROLE_GATE[nextStatus]?.join(", ")} role`}
+                    </Button>
+                  </div>
+                )}
               </div>
             </>
           )}

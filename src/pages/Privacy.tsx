@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,6 +18,21 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { logAudit } from "@/lib/auditLog";
+
+const STATUS_FLOW: Record<string, string> = {
+  detected: "contained",
+  contained: "assessed",
+  assessed: "actioned",
+  actioned: "closed",
+};
+
+const STATUS_ROLE_GATE: Record<string, string[]> = {
+  contained: ["super_admin", "compliance_officer"],
+  assessed: ["super_admin", "compliance_officer"],
+  actioned: ["super_admin", "compliance_officer"],
+  closed: ["super_admin", "compliance_officer"],
+};
 
 const statusColors: Record<string, string> = {
   detected: "bg-info text-info-foreground",
@@ -26,6 +42,15 @@ const statusColors: Record<string, string> = {
   closed: "bg-muted text-muted-foreground",
 };
 
+const DATA_TYPES = [
+  { value: "personal_info", label: "Personal Information" },
+  { value: "sensitive_info", label: "Sensitive Information" },
+  { value: "participant_notes", label: "Participant Notes" },
+  { value: "staff_records", label: "Staff Records" },
+  { value: "ai_logs", label: "AI Logs" },
+  { value: "uploaded_files", label: "Uploaded Files" },
+];
+
 const INITIAL_FORM = {
   incident_type: "unauthorised_access",
   breach_description: "",
@@ -34,6 +59,7 @@ const INITIAL_FORM = {
   notification_required: false,
   data_type_involved: [] as string[],
   affected_records_count: 0,
+  access_source: "",
 };
 
 export default function Privacy() {
@@ -43,6 +69,7 @@ export default function Privacy() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [selected, setSelected] = useState<any>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editFields, setEditFields] = useState<Record<string, any>>({});
 
   const { data: incidents = [], isLoading } = useQuery({
     queryKey: ["privacy-incidents"],
@@ -63,10 +90,13 @@ export default function Privacy() {
         risk_rating: form.risk_rating,
         notification_required: form.notification_required,
         affected_records_count: form.affected_records_count,
+        data_type_involved: form.data_type_involved,
+        access_source: form.access_source || null,
         detected_by: user.id,
         organisation_id: user.organisation_id!,
       });
       if (error) throw error;
+      await logAudit({ action: "created", module: "privacy_incidents", details: { incident_type: form.incident_type, risk_rating: form.risk_rating } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["privacy-incidents"] });
@@ -77,8 +107,64 @@ export default function Privacy() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async (fields: Record<string, any>) => {
+      if (!selected) return;
+      const { error } = await supabase.from("privacy_incidents").update(fields as any).eq("id", selected.id);
+      if (error) throw error;
+      await logAudit({ action: "field_updated", module: "privacy_incidents", record_id: selected.id, details: fields });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["privacy-incidents"] });
+      toast({ title: "Saved" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const advanceMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected || !user) return;
+      const nextStatus = STATUS_FLOW[selected.status];
+      if (!nextStatus) throw new Error("No next status");
+
+      const updatePayload: any = { status: nextStatus, ...editFields };
+      const { error } = await supabase.from("privacy_incidents").update(updatePayload).eq("id", selected.id);
+      if (error) throw error;
+
+      await logAudit({
+        action: "status_advanced",
+        module: "privacy_incidents",
+        record_id: selected.id,
+        details: { from: selected.status, to: nextStatus },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["privacy-incidents"] });
+      setEditFields({});
+      setSelected((prev: any) => prev ? { ...prev, status: STATUS_FLOW[prev.status], ...editFields } : null);
+      toast({ title: "Status updated" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
   const set = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
+  const setEdit = (key: string, val: any) => setEditFields(prev => ({ ...prev, [key]: val }));
+  const getField = (key: string) => editFields[key] ?? selected?.[key] ?? "";
+
+  const toggleDataType = (val: string) => {
+    setForm(f => ({
+      ...f,
+      data_type_involved: f.data_type_involved.includes(val)
+        ? f.data_type_involved.filter(v => v !== val)
+        : [...f.data_type_involved, val],
+    }));
+  };
+
   const openCount = incidents.filter((i) => !["actioned", "closed"].includes(i.status)).length;
+
+  const nextStatus = selected ? STATUS_FLOW[selected.status] : null;
+  const canAdvance = nextStatus && user && STATUS_ROLE_GATE[nextStatus]?.includes(user.role);
+  const isEditable = selected?.status !== "closed";
 
   return (
     <div className="space-y-6">
@@ -125,6 +211,31 @@ export default function Privacy() {
                   <Input type="number" min={0} value={form.affected_records_count} onChange={(e) => set("affected_records_count", Number(e.target.value))} />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Access Source</Label>
+                <Select value={form.access_source} onValueChange={(v) => set("access_source", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="office_device">Office Device</SelectItem>
+                    <SelectItem value="remote_device">Remote Device</SelectItem>
+                    <SelectItem value="unknown_device">Unknown Device</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Data Types Involved</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {DATA_TYPES.map(dt => (
+                    <div key={dt.value} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={form.data_type_involved.includes(dt.value)}
+                        onCheckedChange={() => toggleDataType(dt.value)}
+                      />
+                      <Label className="text-xs font-normal">{dt.label}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2"><Label>Breach Description *</Label><Textarea value={form.breach_description} onChange={(e) => set("breach_description", e.target.value)} rows={3} required /></div>
               <div className="space-y-2"><Label>Containment Action</Label><Textarea value={form.containment_action} onChange={(e) => set("containment_action", e.target.value)} rows={2} /></div>
               <div className="flex items-center justify-between">
@@ -151,7 +262,7 @@ export default function Privacy() {
                 <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Risk Rating</TableHead><TableHead>Status</TableHead><TableHead>Records Affected</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {incidents.map((i) => (
-                    <TableRow key={i.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(i); setSheetOpen(true); }}>
+                    <TableRow key={i.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelected(i); setSheetOpen(true); setEditFields({}); }}>
                       <TableCell className="text-sm">{format(new Date(i.date_detected), "PP")}</TableCell>
                       <TableCell className="capitalize text-sm">{i.incident_type.replace(/_/g, " ")}</TableCell>
                       <TableCell><Badge variant={i.risk_rating === "critical" || i.risk_rating === "high" ? "destructive" : "outline"} className="capitalize">{i.risk_rating ?? "medium"}</Badge></TableCell>
@@ -179,11 +290,70 @@ export default function Privacy() {
                   <div><p className="text-xs text-muted-foreground">Records Affected</p><p className="text-sm">{selected.affected_records_count ?? 0}</p></div>
                   <div><p className="text-xs text-muted-foreground">Notification Required</p><p className="text-sm">{selected.notification_required ? "Yes" : "No"}</p></div>
                   <div><p className="text-xs text-muted-foreground">Date Detected</p><p className="text-sm">{format(new Date(selected.date_detected), "PP")}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Access Source</p><p className="text-sm capitalize">{(selected.access_source ?? "—").replace(/_/g, " ")}</p></div>
                 </div>
+
+                {selected.data_type_involved?.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Data Types Involved</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selected.data_type_involved.map((dt: string) => (
+                        <Badge key={dt} variant="outline" className="text-xs capitalize">{dt.replace(/_/g, " ")}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <Separator />
                 <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm whitespace-pre-wrap">{selected.breach_description ?? "—"}</p></div>
                 {selected.containment_action && <div><p className="text-xs text-muted-foreground">Containment Action</p><p className="text-sm whitespace-pre-wrap">{selected.containment_action}</p></div>}
-                {selected.corrective_action && <div><p className="text-xs text-muted-foreground">Corrective Action</p><p className="text-sm whitespace-pre-wrap">{selected.corrective_action}</p></div>}
+
+                {/* Editable fields */}
+                {isEditable && (
+                  <>
+                    <Separator />
+                    <h4 className="text-sm font-semibold">Corrective Action & Notification</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Corrective Action</Label>
+                        <Textarea
+                          value={getField("corrective_action")}
+                          onChange={e => setEdit("corrective_action", e.target.value)}
+                          onBlur={() => editFields.corrective_action !== undefined && saveMutation.mutate({ corrective_action: editFields.corrective_action })}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Notification Completed Date</Label>
+                        <Input
+                          type="date"
+                          value={getField("notification_completed_date") ? String(getField("notification_completed_date")).split("T")[0] : ""}
+                          onChange={e => setEdit("notification_completed_date", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                          onBlur={() => editFields.notification_completed_date !== undefined && saveMutation.mutate({ notification_completed_date: editFields.notification_completed_date })}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!isEditable && selected.corrective_action && (
+                  <div><p className="text-xs text-muted-foreground">Corrective Action</p><p className="text-sm whitespace-pre-wrap">{selected.corrective_action}</p></div>
+                )}
+
+                {/* Advance button */}
+                {nextStatus && (
+                  <div className="pt-2">
+                    <Button
+                      className="w-full"
+                      disabled={!canAdvance || advanceMutation.isPending}
+                      onClick={() => advanceMutation.mutate()}
+                    >
+                      {canAdvance
+                        ? `Advance to ${nextStatus.replace(/_/g, " ")}`
+                        : `Requires ${STATUS_ROLE_GATE[nextStatus]?.join(", ")} role`}
+                    </Button>
+                  </div>
+                )}
               </div>
             </>
           )}

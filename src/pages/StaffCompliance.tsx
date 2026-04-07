@@ -42,8 +42,6 @@ export default function StaffCompliance() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<StaffRecord | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  // Form state
   const [formUserId, setFormUserId] = useState("");
   const [formStartDate, setFormStartDate] = useState("");
 
@@ -190,7 +188,6 @@ export default function StaffCompliance() {
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
-                {/* Eligibility Banner */}
                 {!selected.eligible_for_assignment && (
                   <div className="rounded-lg border border-destructive bg-destructive/10 p-3">
                     <p className="text-sm font-medium text-destructive flex items-center gap-2">
@@ -200,31 +197,94 @@ export default function StaffCompliance() {
                   </div>
                 )}
 
-                {/* Clearances Section */}
+                {/* Clearances Section with Date Editing */}
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Clearances & Screening</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Police Check</span>
-                      <div className="flex items-center gap-2">
+                  <div className="space-y-4">
+                    {/* Police Check */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Police Check</span>
                         {clearanceBadge(selected.police_check_status)}
-                        {expiryWarning(selected.police_check_expiry)}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Issue Date</Label>
+                          <Input
+                            type="date"
+                            value={selected.police_check_date ?? ""}
+                            onChange={e => {
+                              updateMutation.mutate({ id: selected.id, police_check_date: e.target.value || null });
+                              setSelected({ ...selected, police_check_date: e.target.value || null });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Expiry Date</Label>
+                          <Input
+                            type="date"
+                            value={selected.police_check_expiry ?? ""}
+                            onChange={e => {
+                              updateMutation.mutate({ id: selected.id, police_check_expiry: e.target.value || null });
+                              setSelected({ ...selected, police_check_expiry: e.target.value || null });
+                            }}
+                          />
+                          {expiryWarning(selected.police_check_expiry)}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">WWCC ({selected.wwcc_number || "No number"})</span>
-                      <div className="flex items-center gap-2">
+
+                    {/* WWCC */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">WWCC</span>
                         {clearanceBadge(selected.wwcc_status)}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">WWCC Number</Label>
+                        <Input
+                          value={selected.wwcc_number ?? ""}
+                          onChange={e => {
+                            updateMutation.mutate({ id: selected.id, wwcc_number: e.target.value || null });
+                            setSelected({ ...selected, wwcc_number: e.target.value || null });
+                          }}
+                          placeholder="Enter WWCC number"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Expiry Date</Label>
+                        <Input
+                          type="date"
+                          value={selected.wwcc_expiry ?? ""}
+                          onChange={e => {
+                            updateMutation.mutate({ id: selected.id, wwcc_expiry: e.target.value || null });
+                            setSelected({ ...selected, wwcc_expiry: e.target.value || null });
+                          }}
+                        />
                         {expiryWarning(selected.wwcc_expiry)}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">NDIS Worker Screening</span>
-                      <div className="flex items-center gap-2">
+
+                    {/* Worker Screening */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">NDIS Worker Screening</span>
                         {clearanceBadge(selected.worker_screening_status)}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Expiry Date</Label>
+                        <Input
+                          type="date"
+                          value={selected.worker_screening_expiry ?? ""}
+                          onChange={e => {
+                            updateMutation.mutate({ id: selected.id, worker_screening_expiry: e.target.value || null });
+                            setSelected({ ...selected, worker_screening_expiry: e.target.value || null });
+                          }}
+                        />
                         {expiryWarning(selected.worker_screening_expiry)}
                       </div>
                     </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Identity Verification</span>
                       <Badge variant={selected.identity_verification ? "default" : "outline"}>{selected.identity_verification ? "Verified" : "Pending"}</Badge>
@@ -283,9 +343,9 @@ export default function StaffCompliance() {
 
                 <Separator />
 
-                {/* Clearance Updates */}
+                {/* Clearance Status Updates */}
                 <div>
-                  <h3 className="text-sm font-semibold mb-3">Update Clearances</h3>
+                  <h3 className="text-sm font-semibold mb-3">Update Clearance Status</h3>
                   <div className="grid gap-3">
                     {[
                       { label: "Police Check Status", field: "police_check_status" },
@@ -337,8 +397,17 @@ export default function StaffCompliance() {
                         updateMutation.mutate({ id: selected.id, restrictions_notes: e.target.value });
                       }
                     }}
-                    className="text-sm"
                   />
+                </div>
+
+                {/* Overall Compliance */}
+                <Separator />
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Overall Compliance</h3>
+                  <div className="flex items-center gap-3">
+                    <Progress value={selected.overall_compliance_pct ?? 0} className="flex-1 h-3" />
+                    <span className="text-lg font-bold">{selected.overall_compliance_pct ?? 0}%</span>
+                  </div>
                 </div>
               </div>
             </>
