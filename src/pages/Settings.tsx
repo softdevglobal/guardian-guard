@@ -46,7 +46,7 @@ export default function Settings() {
   });
 
   const upsertPrefs = useMutation({
-    mutationFn: async (updates: Record<string, unknown>) => {
+    mutationFn: async (updates: { email_enabled?: boolean; in_app_enabled?: boolean; critical_only?: boolean; digest_frequency?: string }) => {
       if (!user) throw new Error("Not authenticated");
       const existing = prefs;
       if (existing) {
