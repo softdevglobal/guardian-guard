@@ -13,6 +13,9 @@ import {
   HeartHandshake,
   Lock,
   Bell,
+  Grid3X3,
+  Award,
+  Archive,
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { NavLink } from "@/components/NavLink";
@@ -49,6 +52,12 @@ const navItems = [
   { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
 
+const governanceItems = [
+  { title: "Controls Matrix", url: "/controls", icon: Grid3X3, module: "controls" },
+  { title: "Competency Vault", url: "/competency-vault", icon: Award, module: "competency" },
+  { title: "Evidence Room", url: "/evidence-room", icon: Archive, module: "evidence_room" },
+];
+
 const settingsItem = { title: "Settings", url: "/settings", icon: Settings, module: "settings" };
 
 export function AppSidebar() {
@@ -58,6 +67,7 @@ export function AppSidebar() {
   const { hasModule, user } = useAuth();
 
   const filteredItems = navItems.filter((item) => hasModule(item.module));
+  const filteredGovernance = governanceItems.filter((item) => hasModule(item.module));
 
   return (
     <Sidebar collapsible="icon" aria-label="Main navigation">
@@ -104,6 +114,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {filteredGovernance.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Governance</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredGovernance.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-sidebar-accent touch-target flex items-center"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                        {!collapsed && <span className="flex-1">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">

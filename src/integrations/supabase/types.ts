@@ -229,8 +229,15 @@ export type Database = {
           issue_date: string
           issuer: string | null
           name: string
+          organisation_id: string | null
+          qualification_type:
+            | Database["public"]["Enums"]["qualification_type"]
+            | null
+          role_requirement: Json | null
           status: string
           user_id: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           certificate_url?: string | null
@@ -240,8 +247,15 @@ export type Database = {
           issue_date: string
           issuer?: string | null
           name: string
+          organisation_id?: string | null
+          qualification_type?:
+            | Database["public"]["Enums"]["qualification_type"]
+            | null
+          role_requirement?: Json | null
           status?: string
           user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           certificate_url?: string | null
@@ -251,10 +265,25 @@ export type Database = {
           issue_date?: string
           issuer?: string | null
           name?: string
+          organisation_id?: string | null
+          qualification_type?:
+            | Database["public"]["Enums"]["qualification_type"]
+            | null
+          role_requirement?: Json | null
           status?: string
           user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "certifications_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       complaint_workflow_history: {
         Row: {
@@ -417,6 +446,73 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controls_matrix: {
+        Row: {
+          created_at: string
+          created_by: string
+          evidence_description: string | null
+          evidence_table: string | null
+          id: string
+          linked_policy_id: string | null
+          organisation_id: string
+          practice_standard_id: string
+          quality_indicator: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          updated_at: string
+          workflow_module: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          evidence_description?: string | null
+          evidence_table?: string | null
+          id?: string
+          linked_policy_id?: string | null
+          organisation_id: string
+          practice_standard_id: string
+          quality_indicator: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+          workflow_module?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          evidence_description?: string | null
+          evidence_table?: string | null
+          id?: string
+          linked_policy_id?: string | null
+          organisation_id?: string
+          practice_standard_id?: string
+          quality_indicator?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+          workflow_module?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controls_matrix_linked_policy_id_fkey"
+            columns: ["linked_policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controls_matrix_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controls_matrix_practice_standard_id_fkey"
+            columns: ["practice_standard_id"]
+            isOneToOne: false
+            referencedRelation: "practice_standards"
             referencedColumns: ["id"]
           },
         ]
@@ -1168,6 +1264,7 @@ export type Database = {
           effective_date: string | null
           id: string
           last_review_date: string | null
+          linked_standard_id: string | null
           linked_training_module_id: string | null
           next_review_date: string | null
           organisation_id: string
@@ -1190,6 +1287,7 @@ export type Database = {
           effective_date?: string | null
           id?: string
           last_review_date?: string | null
+          linked_standard_id?: string | null
           linked_training_module_id?: string | null
           next_review_date?: string | null
           organisation_id: string
@@ -1212,6 +1310,7 @@ export type Database = {
           effective_date?: string | null
           id?: string
           last_review_date?: string | null
+          linked_standard_id?: string | null
           linked_training_module_id?: string | null
           next_review_date?: string | null
           organisation_id?: string
@@ -1225,6 +1324,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "policies_linked_standard_id_fkey"
+            columns: ["linked_standard_id"]
+            isOneToOne: false
+            referencedRelation: "practice_standards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "policies_linked_training_module_id_fkey"
             columns: ["linked_training_module_id"]
@@ -2575,6 +2681,11 @@ export type Database = {
         | "oversharing"
         | "export_misuse"
         | "other"
+      qualification_type:
+        | "qualification"
+        | "licence"
+        | "induction"
+        | "certification"
       record_status: "active" | "archived" | "deleted"
       risk_status: "open" | "assessed" | "mitigating" | "monitoring" | "closed"
       safeguarding_concern_type:
@@ -2831,6 +2942,12 @@ export const Constants = {
         "oversharing",
         "export_misuse",
         "other",
+      ],
+      qualification_type: [
+        "qualification",
+        "licence",
+        "induction",
+        "certification",
       ],
       record_status: ["active", "archived", "deleted"],
       risk_status: ["open", "assessed", "mitigating", "monitoring", "closed"],
