@@ -537,7 +537,7 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
       if (!user) throw new Error("Not authenticated");
       if (action === "reject" && !reason?.trim()) throw new Error("Rejection reason is required");
 
-      const update: Record<string, unknown> = action === "verify"
+      const update = action === "verify"
         ? { verified_by: user.id, verified_at: new Date().toISOString(), assessment_passed: true }
         : { rejection_reason: reason, verified_by: user.id, verified_at: new Date().toISOString() };
 
