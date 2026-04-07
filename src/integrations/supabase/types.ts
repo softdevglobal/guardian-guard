@@ -902,38 +902,47 @@ export type Database = {
       }
       participant_goals: {
         Row: {
+          baseline_score: number | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           linked_training_module_id: string | null
+          measurement_unit: string | null
           participant_id: string
           status: string
           target_date: string | null
+          target_score: number | null
           title: string
           updated_at: string
         }
         Insert: {
+          baseline_score?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           linked_training_module_id?: string | null
+          measurement_unit?: string | null
           participant_id: string
           status?: string
           target_date?: string | null
+          target_score?: number | null
           title: string
           updated_at?: string
         }
         Update: {
+          baseline_score?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           linked_training_module_id?: string | null
+          measurement_unit?: string | null
           participant_id?: string
           status?: string
           target_date?: string | null
+          target_score?: number | null
           title?: string
           updated_at?: string
         }
@@ -950,6 +959,9 @@ export type Database = {
       participant_progress: {
         Row: {
           created_at: string
+          evidence_file_url: string | null
+          evidence_notes: string | null
+          evidence_type: string | null
           goal_id: string | null
           id: string
           metric_name: string
@@ -960,6 +972,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          evidence_file_url?: string | null
+          evidence_notes?: string | null
+          evidence_type?: string | null
           goal_id?: string | null
           id?: string
           metric_name: string
@@ -970,6 +985,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          evidence_file_url?: string | null
+          evidence_notes?: string | null
+          evidence_type?: string | null
           goal_id?: string | null
           id?: string
           metric_name?: string
@@ -1040,6 +1058,8 @@ export type Database = {
         Row: {
           address: string | null
           assigned_trainer_id: string | null
+          consent_date: string | null
+          consent_status: Database["public"]["Enums"]["consent_status"]
           created_at: string
           created_by: string | null
           date_of_birth: string | null
@@ -1052,14 +1072,18 @@ export type Database = {
           organisation_id: string
           phone: string | null
           record_status: Database["public"]["Enums"]["record_status"]
+          risk_flags: string[] | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
           status: string
+          support_type: string | null
           team_id: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           assigned_trainer_id?: string | null
+          consent_date?: string | null
+          consent_status?: Database["public"]["Enums"]["consent_status"]
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
@@ -1072,14 +1096,18 @@ export type Database = {
           organisation_id: string
           phone?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          risk_flags?: string[] | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
+          support_type?: string | null
           team_id?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           assigned_trainer_id?: string | null
+          consent_date?: string | null
+          consent_status?: Database["public"]["Enums"]["consent_status"]
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
@@ -1092,8 +1120,10 @@ export type Database = {
           organisation_id?: string
           phone?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          risk_flags?: string[] | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
+          support_type?: string | null
           team_id?: string | null
           updated_at?: string
         }
@@ -2358,6 +2388,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_declining_outcomes: {
+        Args: { _goal_id: string; _participant_id: string }
+        Returns: boolean
+      }
       check_incident_handler_training: {
         Args: { _user_id: string }
         Returns: Json
@@ -2440,6 +2474,7 @@ export type Database = {
         | "expired"
         | "rejected"
       conduct_source_type: "incident" | "complaint" | "manual_review"
+      consent_status: "granted" | "withdrawn" | "pending"
       eligibility_status:
         | "compliant"
         | "expiring_soon"
@@ -2690,6 +2725,7 @@ export const Constants = {
         "rejected",
       ],
       conduct_source_type: ["incident", "complaint", "manual_review"],
+      consent_status: ["granted", "withdrawn", "pending"],
       eligibility_status: [
         "compliant",
         "expiring_soon",
