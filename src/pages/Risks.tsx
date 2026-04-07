@@ -135,11 +135,33 @@ export default function Risks() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const [closureErrors, setClosureErrors] = useState<string[]>([]);
+
+  const validateRiskClosure = (): string[] => {
+    if (!selected) return [];
+    const errors: string[] = [];
+    const desc = editFields.description ?? selected.description;
+    const controls = editFields.existing_controls ?? selected.existing_controls;
+    if (!desc || !desc.trim()) errors.push("Description is required before closure");
+    if (!controls || !controls.trim()) errors.push("Existing controls must be documented before closure");
+    if (!selected.review_date && !editFields.review_date) errors.push("Review date must be set before closure");
+    return errors;
+  };
+
   const advanceMutation = useMutation({
     mutationFn: async () => {
       if (!selected || !user) return;
       const nextStatus = STATUS_FLOW[selected.status];
       if (!nextStatus) throw new Error("No next status");
+
+      if (nextStatus === "closed") {
+        const errors = validateRiskClosure();
+        if (errors.length > 0) {
+          setClosureErrors(errors);
+          throw new Error("Closure criteria not met");
+        }
+      }
+      setClosureErrors([]);
 
       const updatePayload: any = { status: nextStatus, ...editFields };
       const { error } = await supabase.from("risks").update(updatePayload).eq("id", selected.id);
@@ -158,7 +180,11 @@ export default function Risks() {
       setSelected((prev: any) => prev ? { ...prev, status: STATUS_FLOW[prev.status], ...editFields } : null);
       toast({ title: "Status updated" });
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) => {
+      if (err.message !== "Closure criteria not met") {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+    },
   });
 
   const set = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
@@ -339,6 +365,18 @@ export default function Risks() {
                       </div>
                     </div>
                   </>
+                )}
+
+                {/* Closure Validation Errors */}
+                {closureErrors.length > 0 && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-3 w-3" /> Cannot close — criteria not met:
+                    </p>
+                    <ul className="text-xs text-destructive space-y-0.5 list-disc list-inside">
+                      {closureErrors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
                 )}
 
                 {/* Advance button */}
