@@ -1,94 +1,120 @@
 
 
-# Strengthen Evidence Completeness, Audit Aggregation, Workflow Proof, and Test Coverage
+# Controls Matrix, Document Register, Competency Vault, Evidence Room, Mock Audit Mode
 
-## Problem Summary
+Five new features that close the remaining audit-readiness gaps.
 
-Three gaps remain in the compliance system:
+---
 
-1. **Audit-log aggregation is shallow** — Evidence chain export and timeline only query `audit_logs` by `record_id = participantId`. They miss audit logs for the participant's linked incidents, risks, complaints, and safeguarding records. An auditor exporting a participant's evidence chain gets only direct participant-level audit entries, not the full chain.
+## Step 1: Database Changes (1 migration)
 
-2. **End-to-end workflow proof is absent from exports** — The per-incident export includes `incident_workflow_history` and `incident_versions`, but the participant-level evidence chain export does not. Complaint workflow history (`complaint_workflow_history`) is never included in any export. There is no unified "workflow completeness" indicator showing whether each record has a valid start-to-finish status progression.
+**New table: `controls_matrix`**
+Maps Practice Standards → Quality Indicators → Policies → Workflow rules → Evidence records.
 
-3. **Automated test coverage is minimal** — Only 3 test files exist: `example.test.ts` (trivial), `notificationRules.test.ts`, and `complianceAutomation.test.ts`. Zero tests cover: evidence chain export logic, CSV formatting, staff eligibility rules, incident export, linked records resolution, or timeline construction.
+```
+id, practice_standard_id (FK), quality_indicator text, linked_policy_id (FK nullable),
+workflow_module text, evidence_table text, evidence_description text,
+organisation_id, created_by, created_at, updated_at, record_status
+```
+RLS: admins/compliance read+write, others read-only within org.
 
-## Plan
+**Alter `certifications` table**: add `qualification_type` (enum: qualification, licence, induction, certification), `role_requirement` (jsonb, maps to roles), `organisation_id`, `verified_by`, `verified_at`.
 
-### Step 1: Deep audit-log aggregation in evidence chain
+**Alter `policies` table**: add `linked_standard_id` (FK to practice_standards, nullable) for document control register linkage.
 
-**File: `src/lib/evidenceChainExport.ts`**
+---
 
-Update `fetchParticipantEvidenceChain` to:
-- Collect all record IDs (incident IDs, risk IDs, complaint IDs, safeguarding IDs)
-- Query `audit_logs` with `record_id IN (all linked record IDs)` instead of just the participant ID
-- Also fetch `incident_workflow_history` for all linked incidents
-- Also fetch `complaint_workflow_history` for all linked complaints
-- Add `incidentWorkflow`, `complaintWorkflow` to `EvidenceChainData` interface
+## Step 2: Controls Matrix Page
 
-Update `exportEvidenceChainCSV` to include:
-- New "INCIDENT WORKFLOW HISTORY" section (from_status, to_status, changed_by, date, notes)
-- New "COMPLAINT WORKFLOW HISTORY" section
-- Expanded audit log section now covering all linked records, not just the participant
+**New file: `src/pages/ControlsMatrix.tsx`**
+- Route: `/controls` in App.tsx, sidebar label "Controls Matrix"
+- Table view: Practice Standard Code | Standard Name | Quality Indicator | Linked Policy | Workflow Module | Evidence Record | Status
+- Pre-seeded from `practice_standards` (PS1-PS14) with editable quality indicators
+- Filter by standard category (Core/Supplementary)
+- Admin can add/edit rows linking a standard → policy → evidence source
+- Click a row to see the full chain: Standard → Policy (with version/approval date) → Workflow status → Evidence count
 
-### Step 2: Workflow completeness indicator
+---
 
-**File: `src/lib/evidenceChainExport.ts`**
+## Step 3: Document Control Register (enhance Policies page)
 
-Add a `computeWorkflowCompleteness` function that, for each incident and complaint:
-- Checks whether the workflow history forms a valid chain from initial status to current status
-- Flags gaps (e.g., jumped from `submitted` to `investigating` without `supervisor_review`)
-- Returns a summary included in the CSV export header
+**Modified file: `src/pages/Policies.tsx`**
+- Add a "Document Control" tab alongside existing tabs
+- Shows: Policy Title | Owner (from `owner_id` join) | Version | Approval Date | Next Review Date | Linked Standard | Status
+- Sortable by next review date to surface overdue reviews
+- Filter by linked practice standard
+- Export to CSV button
 
-**File: `src/components/compliance/ParticipantTimeline.tsx`**
+---
 
-- Add workflow history entries (status transitions) to the timeline as discrete events with a "Workflow" module type
-- Show them inline with other events so auditors see the full progression
+## Step 4: Staff Competency Vault
 
-### Step 3: Comprehensive unit tests
+**New file: `src/pages/CompetencyVault.tsx`**
+- Route: `/competency-vault`, sidebar label "Competency Vault"
+- Unified view merging: `certifications` + `training_completions` + `staff_compliance_records`
+- Columns: Staff Name | Qualification/Cert | Type (qualification/licence/induction/refresher) | Issuer | Issue Date | Expiry Date | Status | Role Mapping
+- Filter by: staff member, type, expiry status (current/expiring/expired)
+- Role-to-competency matrix view: rows = roles, columns = required qualifications, cells = count of staff meeting each
+- Bulk expiry alerts highlighted
 
-**File: `src/lib/__tests__/evidenceChainExport.test.ts`** (new)
+---
 
-Test `exportEvidenceChainCSV`:
-- Correct CSV headers for each section
-- csvSafe escaping (commas, quotes, newlines, nulls)
-- Empty data produces section headers with no rows
-- Workflow sections included when data present
-- Workflow completeness flags gaps correctly
+## Step 5: Audit Evidence Room
 
-**File: `src/lib/__tests__/incidentExport.test.ts`** (new)
+**New file: `src/pages/EvidenceRoom.tsx`**
+- Route: `/evidence-room`, sidebar label "Evidence Room"
+- Module selector cards: Incidents, Complaints, Risks, Governance (policies), HR (staff compliance), Training, Safeguarding
+- Click a module → generates a one-click evidence pack:
+  - Queries all active records for that module
+  - Pulls linked audit logs, workflow history, versions
+  - Generates a downloadable ZIP-like CSV bundle (one CSV per section)
+  - Shows summary stats: total records, complete workflows, gaps found
+- "Full Pack" button: generates evidence across ALL modules in one export
+- Uses existing `exportEvidenceChainCSV` and `exportBulkIncidentsCSV` functions, plus new module-specific exporters
 
-Test `exportIncidentCSV`:
-- Correct field ordering
-- Boolean rendering (Yes/No)
-- Null handling
-- Workflow history, versions, audit logs, actions sections
-- `exportBulkIncidentsCSV` header count matches row column count
+---
 
-**File: `src/lib/__tests__/staffEligibility.test.ts`** (new)
+## Step 6: Mock Audit Mode
 
-Test `ELIGIBILITY_BADGE_MAP` and `RECORD_STATUS_BADGE`:
-- All expected statuses have entries
-- Badge variants are correct
-- No missing statuses
+**Modified files: `src/contexts/AuthContext.tsx`, `src/components/AppHeader.tsx`, multiple pages**
 
-### Step 4: Update linked records to include workflow status
+- Add `isMockAudit` boolean to AuthContext
+- Toggle in header: "Enter Mock Audit" button (visible to super_admin, compliance_officer)
+- When active:
+  - Purple banner across top: "MOCK AUDIT MODE — Read-Only View"
+  - All create/edit/delete buttons hidden via a `useAuth().isMockAudit` check
+  - All mutation calls blocked (early return with toast "Read-only in mock audit mode")
+  - Navigation fully functional — auditor can browse every module
+  - Evidence Room and Controls Matrix remain fully accessible
+  - Audit log records the mock audit session start/end
+- Exit via banner "Exit Mock Audit" button
 
-**File: `src/components/compliance/LinkedRecords.tsx`**
+---
 
-- For each linked incident, show a small "workflow: 4/6 steps" indicator from `incident_workflow_history` count
-- This gives a quick visual proof of how far through the workflow each linked record is
+## Step 7: Routing and Sidebar Updates
 
-## Technical Details
+**Modified: `src/App.tsx`** — Add routes for `/controls`, `/competency-vault`, `/evidence-room`
 
-- All new queries use `.in("record_id", allIds)` with proper chunking if >100 IDs (Supabase has no hard limit on `IN` but we should be practical)
-- `EvidenceChainData` interface gets two new fields: `incidentWorkflow: any[]` and `complaintWorkflow: any[]`
-- Test files use Vitest with no Supabase mocking — they test pure functions only (CSV formatting, badge maps, workflow validation logic)
-- Approximately 5 files changed, 3 new test files, ~60 new test cases
+**Modified: `src/components/AppSidebar.tsx`** — Add nav items under a new "Governance" group:
+- Controls Matrix (Grid3x3 icon)
+- Competency Vault (Award icon)  
+- Evidence Room (Archive icon)
 
-## Expected Outcome
+**Modified: `src/contexts/AuthContext.tsx`** — Add `controls`, `competency`, `evidence_room` to ROLE_MODULES for super_admin, compliance_officer, executive (read-only for executive)
 
-- Participant evidence export includes ALL audit logs across every linked record
-- Every status transition is visible in both timeline and CSV export
-- Workflow completeness gaps are flagged automatically
-- ~60 automated tests covering export logic, CSV safety, eligibility maps, and workflow validation
+---
+
+## Files Changed/Created
+
+| File | Action |
+|------|--------|
+| 1 migration SQL | New `controls_matrix` table, alter `certifications`, alter `policies` |
+| `src/pages/ControlsMatrix.tsx` | New |
+| `src/pages/CompetencyVault.tsx` | New |
+| `src/pages/EvidenceRoom.tsx` | New |
+| `src/pages/Policies.tsx` | Add Document Control tab |
+| `src/contexts/AuthContext.tsx` | Add `isMockAudit`, new modules |
+| `src/components/AppHeader.tsx` | Mock audit toggle button |
+| `src/components/AppSidebar.tsx` | New nav items |
+| `src/App.tsx` | New routes |
 
