@@ -1754,6 +1754,215 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_compliance_records: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          notes: string | null
+          organisation_id: string
+          rejection_reason: string | null
+          requirement_code: string
+          requirement_name: string
+          staff_id: string
+          status: Database["public"]["Enums"]["compliance_record_status"]
+          updated_at: string
+          uploaded_file_url: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          notes?: string | null
+          organisation_id: string
+          rejection_reason?: string | null
+          requirement_code: string
+          requirement_name: string
+          staff_id: string
+          status?: Database["public"]["Enums"]["compliance_record_status"]
+          updated_at?: string
+          uploaded_file_url?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          notes?: string | null
+          organisation_id?: string
+          rejection_reason?: string | null
+          requirement_code?: string
+          requirement_name?: string
+          staff_id?: string
+          status?: Database["public"]["Enums"]["compliance_record_status"]
+          updated_at?: string
+          uploaded_file_url?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_compliance_records_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_compliance_requirements: {
+        Row: {
+          applies_to_roles: Json | null
+          created_at: string
+          description: string | null
+          expiry_required: boolean
+          id: string
+          is_mandatory: boolean
+          organisation_id: string
+          requirement_code: string
+          requirement_name: string
+          role_name: string
+          updated_at: string
+          validity_months: number | null
+        }
+        Insert: {
+          applies_to_roles?: Json | null
+          created_at?: string
+          description?: string | null
+          expiry_required?: boolean
+          id?: string
+          is_mandatory?: boolean
+          organisation_id: string
+          requirement_code: string
+          requirement_name: string
+          role_name: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Update: {
+          applies_to_roles?: Json | null
+          created_at?: string
+          description?: string | null
+          expiry_required?: boolean
+          id?: string
+          is_mandatory?: boolean
+          organisation_id?: string
+          requirement_code?: string
+          requirement_name?: string
+          role_name?: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_compliance_requirements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_conduct_events: {
+        Row: {
+          action_taken: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          event_type: string
+          id: string
+          organisation_id: string
+          source_record_id: string | null
+          source_type: Database["public"]["Enums"]["conduct_source_type"]
+          staff_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_type: string
+          id?: string
+          organisation_id: string
+          source_record_id?: string | null
+          source_type?: Database["public"]["Enums"]["conduct_source_type"]
+          staff_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          organisation_id?: string
+          source_record_id?: string | null
+          source_type?: Database["public"]["Enums"]["conduct_source_type"]
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_conduct_events_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_eligibility_status: {
+        Row: {
+          created_at: string
+          eligibility_status: Database["public"]["Enums"]["eligibility_status"]
+          evaluated_by_system: boolean
+          id: string
+          is_eligible_for_assignment: boolean
+          last_evaluated_at: string
+          organisation_id: string
+          reason_summary: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eligibility_status?: Database["public"]["Enums"]["eligibility_status"]
+          evaluated_by_system?: boolean
+          id?: string
+          is_eligible_for_assignment?: boolean
+          last_evaluated_at?: string
+          organisation_id: string
+          reason_summary?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eligibility_status?: Database["public"]["Enums"]["eligibility_status"]
+          evaluated_by_system?: boolean
+          id?: string
+          is_eligible_for_assignment?: boolean
+          last_evaluated_at?: string
+          organisation_id?: string
+          reason_summary?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_eligibility_status_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -2037,6 +2246,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_staff_assignment_eligible: {
+        Args: { _staff_id: string }
+        Returns: boolean
+      }
+      evaluate_staff_eligibility: { Args: { _staff_id: string }; Returns: Json }
       get_user_organisation_id: { Args: { _user_id: string }; Returns: string }
       get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_any_role: {
@@ -2101,6 +2315,19 @@ export type Database = {
         | "investigating"
         | "resolved"
         | "closed"
+      compliance_record_status:
+        | "missing"
+        | "pending_review"
+        | "verified"
+        | "expiring_soon"
+        | "expired"
+        | "rejected"
+      conduct_source_type: "incident" | "complaint" | "manual_review"
+      eligibility_status:
+        | "compliant"
+        | "expiring_soon"
+        | "non_compliant"
+        | "suspended"
       environment_type:
         | "office"
         | "remote"
@@ -2336,6 +2563,21 @@ export const Constants = {
         "investigating",
         "resolved",
         "closed",
+      ],
+      compliance_record_status: [
+        "missing",
+        "pending_review",
+        "verified",
+        "expiring_soon",
+        "expired",
+        "rejected",
+      ],
+      conduct_source_type: ["incident", "complaint", "manual_review"],
+      eligibility_status: [
+        "compliant",
+        "expiring_soon",
+        "non_compliant",
+        "suspended",
       ],
       environment_type: [
         "office",
