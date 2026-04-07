@@ -27,6 +27,16 @@ function makeFingerprint(payload: NotificationPayload, dateBucket: string): stri
   return `${payload.notification_type}:${payload.source_table}:${payload.source_record_id ?? "none"}:${payload.user_id}:${dateBucket}`;
 }
 
+/**
+ * Atomic deduplication via database function using INSERT ... ON CONFLICT DO NOTHING.
+ * Eliminates the race condition in SELECT-then-INSERT by making the check and insert
+ * a single atomic operation at the database level.
+ *
+ * If two concurrent invocations attempt the same fingerprint:
+ * - First one inserts successfully (returns true)
+ * - Second one hits the unique index conflict and is silently ignored (returns false)
+ * - No error is thrown in either case
+ */
 async function createNotificationDeduped(
   supabase: ReturnType<typeof createClient>,
   payload: NotificationPayload,
@@ -34,33 +44,33 @@ async function createNotificationDeduped(
 ): Promise<{ created: boolean; fingerprint: string }> {
   const fingerprint = makeFingerprint(payload, dateBucket);
 
-  // Check if notification with this fingerprint already exists
-  const { data: existing } = await supabase
-    .from("notifications")
-    .select("id")
-    .eq("fingerprint", fingerprint)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase.rpc("insert_notification_deduped", {
+      _user_id: payload.user_id,
+      _title: payload.title,
+      _message: payload.message ?? "",
+      _severity: payload.severity,
+      _notification_type: payload.notification_type,
+      _source_table: payload.source_table,
+      _source_record_id: payload.source_record_id ?? null,
+      _link: payload.link,
+      _organisation_id: payload.organisation_id ?? null,
+      _fingerprint: fingerprint,
+      _dedupe_bucket: dateBucket,
+    });
 
-  if (existing) {
-    // Already sent today — skip
+    if (error) {
+      // Log but do not fail the automation run
+      console.warn(`Non-fatal: notification insert failed for fingerprint ${fingerprint}:`, error.message);
+      return { created: false, fingerprint };
+    }
+
+    return { created: !!data, fingerprint };
+  } catch (err) {
+    // Catch any unexpected error — never let a single notification failure kill the run
+    console.warn(`Non-fatal: unexpected error for fingerprint ${fingerprint}:`, err);
     return { created: false, fingerprint };
   }
-
-  await supabase.from("notifications").insert({
-    user_id: payload.user_id,
-    title: payload.title,
-    message: payload.message,
-    severity: payload.severity,
-    notification_type: payload.notification_type,
-    source_table: payload.source_table,
-    source_record_id: payload.source_record_id,
-    link: payload.link,
-    organisation_id: payload.organisation_id,
-    fingerprint,
-    dedupe_bucket: dateBucket,
-  });
-
-  return { created: true, fingerprint };
 }
 
 async function getOrgComplianceUsers(
