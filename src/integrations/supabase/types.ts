@@ -311,6 +311,7 @@ export type Database = {
           id: string
           immediate_risk_identified: boolean | null
           investigation_summary: string | null
+          linked_staff_id: string | null
           organisation_id: string
           outcome_communicated_date: string | null
           participant_id: string | null
@@ -344,6 +345,7 @@ export type Database = {
           id?: string
           immediate_risk_identified?: boolean | null
           investigation_summary?: string | null
+          linked_staff_id?: string | null
           organisation_id: string
           outcome_communicated_date?: string | null
           participant_id?: string | null
@@ -377,6 +379,7 @@ export type Database = {
           id?: string
           immediate_risk_identified?: boolean | null
           investigation_summary?: string | null
+          linked_staff_id?: string | null
           organisation_id?: string
           outcome_communicated_date?: string | null
           participant_id?: string | null
@@ -2147,6 +2150,7 @@ export type Database = {
           expiry_date: string | null
           facilitator: string | null
           id: string
+          linked_incident_id: string | null
           module_id: string
           notes: string | null
           organisation_id: string | null
@@ -2174,6 +2178,7 @@ export type Database = {
           expiry_date?: string | null
           facilitator?: string | null
           id?: string
+          linked_incident_id?: string | null
           module_id: string
           notes?: string | null
           organisation_id?: string | null
@@ -2201,6 +2206,7 @@ export type Database = {
           expiry_date?: string | null
           facilitator?: string | null
           id?: string
+          linked_incident_id?: string | null
           module_id?: string
           notes?: string | null
           organisation_id?: string | null
@@ -2216,6 +2222,13 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "training_completions_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "training_completions_module_id_fkey"
             columns: ["module_id"]
