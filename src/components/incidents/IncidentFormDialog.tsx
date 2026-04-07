@@ -38,6 +38,7 @@ const INITIAL_FORM = {
   linked_staff_id: "",
   witnesses: "",
   other_persons_involved: "",
+  practice_standard_id: "",
 };
 
 export function IncidentFormDialog() {
