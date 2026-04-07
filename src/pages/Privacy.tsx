@@ -121,11 +121,30 @@ export default function Privacy() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const [closureErrors, setClosureErrors] = useState<string[]>([]);
+
+  const validatePrivacyClosure = (): string[] => {
+    if (!selected) return [];
+    const errors: string[] = [];
+    const ca = editFields.corrective_action ?? selected.corrective_action;
+    if (!ca || !ca.trim()) errors.push("Corrective action is required before closure");
+    return errors;
+  };
+
   const advanceMutation = useMutation({
     mutationFn: async () => {
       if (!selected || !user) return;
       const nextStatus = STATUS_FLOW[selected.status];
       if (!nextStatus) throw new Error("No next status");
+
+      if (nextStatus === "closed") {
+        const errors = validatePrivacyClosure();
+        if (errors.length > 0) {
+          setClosureErrors(errors);
+          throw new Error("Closure criteria not met");
+        }
+      }
+      setClosureErrors([]);
 
       const updatePayload: any = { status: nextStatus, ...editFields };
       const { error } = await supabase.from("privacy_incidents").update(updatePayload).eq("id", selected.id);
@@ -144,7 +163,11 @@ export default function Privacy() {
       setSelected((prev: any) => prev ? { ...prev, status: STATUS_FLOW[prev.status], ...editFields } : null);
       toast({ title: "Status updated" });
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) => {
+      if (err.message !== "Closure criteria not met") {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+    },
   });
 
   const set = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
@@ -338,6 +361,18 @@ export default function Privacy() {
 
                 {!isEditable && selected.corrective_action && (
                   <div><p className="text-xs text-muted-foreground">Corrective Action</p><p className="text-sm whitespace-pre-wrap">{selected.corrective_action}</p></div>
+                )}
+
+                {/* Closure Validation Errors */}
+                {closureErrors.length > 0 && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4" /> Cannot close — criteria not met:
+                    </p>
+                    <ul className="text-xs text-destructive space-y-0.5 list-disc list-inside">
+                      {closureErrors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
                 )}
 
                 {/* Advance button */}
