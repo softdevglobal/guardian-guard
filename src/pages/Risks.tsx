@@ -411,30 +411,30 @@ export default function Risks() {
               <h4 className="text-sm font-semibold">Link Records (optional)</h4>
               <div className="space-y-2">
                 <Label className="text-xs">Linked Incident</Label>
-                <Select value={form.linked_incident_id} onValueChange={(v) => set("linked_incident_id", v)}>
+                <Select value={form.linked_incident_id || "__none__"} onValueChange={(v) => set("linked_incident_id", v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {incidents.map(i => <SelectItem key={i.id} value={i.id}>{i.incident_number} — {i.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Linked Participant</Label>
-                <Select value={form.linked_participant_id} onValueChange={(v) => set("linked_participant_id", v)}>
+                <Select value={form.linked_participant_id || "__none__"} onValueChange={(v) => set("linked_participant_id", v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Risk Owner</Label>
-                <Select value={form.linked_staff_id} onValueChange={(v) => set("linked_staff_id", v)}>
+                <Select value={form.linked_staff_id || "__none__"} onValueChange={(v) => set("linked_staff_id", v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {staffProfiles.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -817,10 +817,10 @@ export default function Risks() {
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Owner</Label>
-                          <Select value={getField("assigned_to") || ""} onValueChange={v => { setEdit("assigned_to", v || null); saveMutation.mutate({ assigned_to: v || null }); }}>
+                          <Select value={getField("assigned_to") || "__none__"} onValueChange={v => { const val = v === "__none__" ? null : v; setEdit("assigned_to", val); saveMutation.mutate({ assigned_to: val }); }}>
                             <SelectTrigger className="h-9"><SelectValue placeholder="Assign..." /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Unassigned</SelectItem>
+                              <SelectItem value="__none__">Unassigned</SelectItem>
                               {staffProfiles.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
                             </SelectContent>
                           </Select>
@@ -854,10 +854,10 @@ export default function Risks() {
                           <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={mitigationForm.due_date} onChange={e => setMitigationForm(f => ({ ...f, due_date: e.target.value }))} /></div>
                           <div className="space-y-2">
                             <Label>Assigned To</Label>
-                            <Select value={mitigationForm.assigned_to} onValueChange={v => setMitigationForm(f => ({ ...f, assigned_to: v }))}>
+                            <Select value={mitigationForm.assigned_to || "__none__"} onValueChange={v => setMitigationForm(f => ({ ...f, assigned_to: v === "__none__" ? "" : v }))}>
                               <SelectTrigger><SelectValue placeholder="Select owner..." /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Unassigned</SelectItem>
+                                <SelectItem value="__none__">Unassigned</SelectItem>
                                 {staffProfiles.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
                               </SelectContent>
                             </Select>
