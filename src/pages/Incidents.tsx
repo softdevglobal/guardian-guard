@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Search, Filter, AlertTriangle, Clock, CheckCircle, ShieldAlert,
-  Timer, FileWarning, BarChart3, Siren
+  Timer, FileWarning, BarChart3, Siren, Shield, XCircle
 } from "lucide-react";
 import { format, differenceInHours, differenceInDays } from "date-fns";
 import { IncidentFormDialog } from "@/components/incidents/IncidentFormDialog";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
+import { AuditSimulation } from "@/components/incidents/AuditSimulation";
+import { FailureCasesDashboard } from "@/components/incidents/FailureCasesDashboard";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Incident = Tables<"incidents">;
@@ -127,6 +129,12 @@ export default function Incidents() {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="register">Incident Register</TabsTrigger>
           <TabsTrigger value="reporting">Reporting</TabsTrigger>
+          <TabsTrigger value="audit-sim" className="flex items-center gap-1">
+            <Shield className="h-3.5 w-3.5" />Audit Simulation
+          </TabsTrigger>
+          <TabsTrigger value="failures" className="flex items-center gap-1">
+            <XCircle className="h-3.5 w-3.5" />Failure Cases
+          </TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD */}
@@ -393,6 +401,15 @@ export default function Incidents() {
               })()}
             </CardContent>
           </Card>
+        </TabsContent>
+        {/* AUDIT SIMULATION */}
+        <TabsContent value="audit-sim" className="mt-4">
+          <AuditSimulation />
+        </TabsContent>
+
+        {/* FAILURE CASES */}
+        <TabsContent value="failures" className="mt-4">
+          <FailureCasesDashboard />
         </TabsContent>
       </Tabs>
 
