@@ -2,19 +2,22 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, Shield, Bell, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Settings as SettingsIcon, Shield, Bell, Users, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Organisation query
   const { data: org } = useQuery({
     queryKey: ["organisation", user?.organisation_id],
     queryFn: async () => {
@@ -24,6 +27,46 @@ export default function Settings() {
       return data;
     },
     enabled: !!user?.organisation_id,
+  });
+
+  // Notification preferences
+  const { data: prefs } = useQuery({
+    queryKey: ["notification_preferences", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const upsertPrefs = useMutation({
+    mutationFn: async (updates: Record<string, unknown>) => {
+      if (!user) throw new Error("Not authenticated");
+      const existing = prefs;
+      if (existing) {
+        const { error } = await supabase
+          .from("notification_preferences")
+          .update(updates)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("notification_preferences")
+          .insert({ user_id: user.id, ...updates });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification_preferences", user?.id] });
+      toast({ title: "Notification preferences saved" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const [orgForm, setOrgForm] = useState<{ name: string; abn: string; ndis_registration: string; primary_contact_email: string } | null>(null);
@@ -51,8 +94,15 @@ export default function Settings() {
       toast({ title: "Settings saved" });
       setOrgForm(null);
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
+
+  const currentPrefs = {
+    email_enabled: prefs?.email_enabled ?? true,
+    in_app_enabled: prefs?.in_app_enabled ?? true,
+    critical_only: prefs?.critical_only ?? false,
+    digest_frequency: prefs?.digest_frequency ?? "instant",
+  };
 
   return (
     <div className="space-y-6">
@@ -98,15 +148,93 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="notifications">
-          <Card>
-            <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between"><div><Label>Incident Alerts</Label><p className="text-sm text-muted-foreground">Notify on new incident reports</p></div><Switch defaultChecked /></div>
-              <div className="flex items-center justify-between"><div><Label>Compliance Score Drops</Label><p className="text-sm text-muted-foreground">Alert when compliance score falls below threshold</p></div><Switch defaultChecked /></div>
-              <div className="flex items-center justify-between"><div><Label>AI Heartbeat Alerts</Label><p className="text-sm text-muted-foreground">Notify on high-severity AI detections</p></div><Switch defaultChecked /></div>
-              <div className="flex items-center justify-between"><div><Label>Staff Expiry Reminders</Label><p className="text-sm text-muted-foreground">60-day advance warning for expiring clearances</p></div><Switch defaultChecked /></div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Delivery</CardTitle>
+                <CardDescription>Control how you receive compliance notifications</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>In-App Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Show notifications in the bell menu and notifications page</p>
+                  </div>
+                  <Switch
+                    checked={currentPrefs.in_app_enabled}
+                    onCheckedChange={(checked) => upsertPrefs.mutate({ in_app_enabled: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Email Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive notification emails for compliance events</p>
+                  </div>
+                  <Switch
+                    checked={currentPrefs.email_enabled}
+                    onCheckedChange={(checked) => upsertPrefs.mutate({ email_enabled: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Critical Only Mode</Label>
+                    <p className="text-sm text-muted-foreground">Only receive critical and urgent notifications (info/warning suppressed)</p>
+                  </div>
+                  <Switch
+                    checked={currentPrefs.critical_only}
+                    onCheckedChange={(checked) => upsertPrefs.mutate({ critical_only: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Non-Critical Digest Frequency</Label>
+                    <p className="text-sm text-muted-foreground">How often to batch non-critical notifications</p>
+                  </div>
+                  <Select
+                    value={currentPrefs.digest_frequency}
+                    onValueChange={(val) => upsertPrefs.mutate({ digest_frequency: val })}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="instant">Instant</SelectItem>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  Mandatory Notifications
+                </CardTitle>
+                <CardDescription>These compliance notifications cannot be disabled per NDIS requirements</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  "Reportable incident alerts",
+                  "Expired staff clearance warnings",
+                  "Privacy breach notifications",
+                  "Urgent safeguarding concerns",
+                  "Policy review overdue alerts",
+                ].map(item => (
+                  <div key={item} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="text-[9px]">Required</Badge>
+                      <span className="text-sm">{item}</span>
+                    </div>
+                    <Switch checked disabled />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="roles">
