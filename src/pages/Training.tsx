@@ -50,6 +50,14 @@ interface TrainingCompletion {
   assessment_passed: boolean;
   created_at: string;
   updated_at: string;
+  delivery_method: string | null;
+  evidence_type: string | null;
+  facilitator: string | null;
+  duration_hours: number | null;
+  notes: string | null;
+  compliance_outcome: string | null;
+  retraining_due_date: string | null;
+  retraining_reason: string | null;
 }
 
 const TRAINING_STATUS_BADGE: Record<string, { label: string; className: string }> = {
