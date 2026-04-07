@@ -1,42 +1,94 @@
 
 
-# Fix Plan: Seed Missing Data for Demo Accounts
+# Strengthen Evidence Completeness, Audit Aggregation, Workflow Proof, and Test Coverage
 
-## Issues Found
+## Problem Summary
 
-1. **Staff Compliance Records missing for 8 of 9 demo users** — Only Sathindra (`fffb42d5`) has `staff_compliance_records`. The eligibility engine requires BOTH `staff_compliance_records` (Identity Verification, Police Check, WWCC, etc.) AND `training_completions`. Result: 0 Compliant, 7 Non-Compliant, 8 Blocked on the Staff Compliance page.
+Three gaps remain in the compliance system:
 
-2. **Notifications empty for Sarah Chen (`admin@dgtg.demo`)** — All 21 notifications were seeded for Sathindra's user_id and the compliance officer. Sarah Chen (`f06ede31`) sees 0 notifications when logged in.
+1. **Audit-log aggregation is shallow** — Evidence chain export and timeline only query `audit_logs` by `record_id = participantId`. They miss audit logs for the participant's linked incidents, risks, complaints, and safeguarding records. An auditor exporting a participant's evidence chain gets only direct participant-level audit entries, not the full chain.
 
-3. **Alex Thompson missing 1 training completion** — Shows 7/8 on Training page (Partial instead of Compliant).
+2. **End-to-end workflow proof is absent from exports** — The per-incident export includes `incident_workflow_history` and `incident_versions`, but the participant-level evidence chain export does not. Complaint workflow history (`complaint_workflow_history`) is never included in any export. There is no unified "workflow completeness" indicator showing whether each record has a valid start-to-finish status progression.
 
-## Fix Steps
+3. **Automated test coverage is minimal** — Only 3 test files exist: `example.test.ts` (trivial), `notificationRules.test.ts`, and `complianceAutomation.test.ts`. Zero tests cover: evidence chain export logic, CSV formatting, staff eligibility rules, incident export, linked records resolution, or timeline construction.
 
-### Step 1: Seed `staff_compliance_records` for all 8 remaining demo users
-Insert 9 records per user (matching the 9 mandatory requirements: `identity_verification`, `police_check`, `wwcc`, `worker_orientation`, `code_of_conduct`, `privacy_training`, `incident_training`, `safeguarding_training`, `cyber_safety`) with:
-- `status = 'verified'`
-- `issue_date = '2026-04-01'`, `expiry_date = '2026-05-02'`
-- `verified_by` set to a different staff member
-- Correct `organisation_id`
+## Plan
 
-This is ~72 rows (8 users × 9 requirements).
+### Step 1: Deep audit-log aggregation in evidence chain
 
-### Step 2: Seed notifications for Sarah Chen (`admin@dgtg.demo`)
-Insert ~10 notifications for user_id `f06ede31-498a-49f2-9c4b-52b82b222969` covering the same compliance scenarios (incident escalations, risk alerts, complaint overdue, etc.).
+**File: `src/lib/evidenceChainExport.ts`**
 
-### Step 3: Fix Alex Thompson's missing training
-Insert the 1 missing `training_completions` record (likely `ADV_SAFEGUARDING` or similar) for `b855e1af`.
+Update `fetchParticipantEvidenceChain` to:
+- Collect all record IDs (incident IDs, risk IDs, complaint IDs, safeguarding IDs)
+- Query `audit_logs` with `record_id IN (all linked record IDs)` instead of just the participant ID
+- Also fetch `incident_workflow_history` for all linked incidents
+- Also fetch `complaint_workflow_history` for all linked complaints
+- Add `incidentWorkflow`, `complaintWorkflow` to `EvidenceChainData` interface
 
-### Step 4: Re-evaluate all staff eligibility
-After inserting compliance records, trigger `evaluate_staff_eligibility()` for each demo user so the `staff_eligibility_status` table is updated to `compliant` or `expiring_soon`.
+Update `exportEvidenceChainCSV` to include:
+- New "INCIDENT WORKFLOW HISTORY" section (from_status, to_status, changed_by, date, notes)
+- New "COMPLAINT WORKFLOW HISTORY" section
+- Expanded audit log section now covering all linked records, not just the participant
 
-## Expected Result
-- Staff Compliance page: ~9 Compliant (or Expiring Soon), 0 Non-Compliant, 0 Blocked
-- Notifications page: Sarah Chen sees 10+ notifications
-- Training page: All 9 staff show 8/8 Compliant
-- All pages load without errors
+### Step 2: Workflow completeness indicator
 
-## Technical Approach
-- Use Supabase data insert tool (not migrations) for all data seeding
-- `verified_by` must differ from `staff_id` to satisfy `prevent_self_verification` trigger
+**File: `src/lib/evidenceChainExport.ts`**
+
+Add a `computeWorkflowCompleteness` function that, for each incident and complaint:
+- Checks whether the workflow history forms a valid chain from initial status to current status
+- Flags gaps (e.g., jumped from `submitted` to `investigating` without `supervisor_review`)
+- Returns a summary included in the CSV export header
+
+**File: `src/components/compliance/ParticipantTimeline.tsx`**
+
+- Add workflow history entries (status transitions) to the timeline as discrete events with a "Workflow" module type
+- Show them inline with other events so auditors see the full progression
+
+### Step 3: Comprehensive unit tests
+
+**File: `src/lib/__tests__/evidenceChainExport.test.ts`** (new)
+
+Test `exportEvidenceChainCSV`:
+- Correct CSV headers for each section
+- csvSafe escaping (commas, quotes, newlines, nulls)
+- Empty data produces section headers with no rows
+- Workflow sections included when data present
+- Workflow completeness flags gaps correctly
+
+**File: `src/lib/__tests__/incidentExport.test.ts`** (new)
+
+Test `exportIncidentCSV`:
+- Correct field ordering
+- Boolean rendering (Yes/No)
+- Null handling
+- Workflow history, versions, audit logs, actions sections
+- `exportBulkIncidentsCSV` header count matches row column count
+
+**File: `src/lib/__tests__/staffEligibility.test.ts`** (new)
+
+Test `ELIGIBILITY_BADGE_MAP` and `RECORD_STATUS_BADGE`:
+- All expected statuses have entries
+- Badge variants are correct
+- No missing statuses
+
+### Step 4: Update linked records to include workflow status
+
+**File: `src/components/compliance/LinkedRecords.tsx`**
+
+- For each linked incident, show a small "workflow: 4/6 steps" indicator from `incident_workflow_history` count
+- This gives a quick visual proof of how far through the workflow each linked record is
+
+## Technical Details
+
+- All new queries use `.in("record_id", allIds)` with proper chunking if >100 IDs (Supabase has no hard limit on `IN` but we should be practical)
+- `EvidenceChainData` interface gets two new fields: `incidentWorkflow: any[]` and `complaintWorkflow: any[]`
+- Test files use Vitest with no Supabase mocking — they test pure functions only (CSV formatting, badge maps, workflow validation logic)
+- Approximately 5 files changed, 3 new test files, ~60 new test cases
+
+## Expected Outcome
+
+- Participant evidence export includes ALL audit logs across every linked record
+- Every status transition is visible in both timeline and CSV export
+- Workflow completeness gaps are flagged automatically
+- ~60 automated tests covering export logic, CSV safety, eligibility maps, and workflow validation
 
