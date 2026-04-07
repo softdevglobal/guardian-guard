@@ -50,7 +50,7 @@ export function AppHeader() {
                 {user.role.replace(/_/g, " ")}
               </Badge>
             </div>
-            <Button variant="ghost" size="icon" onClick={logout} className="touch-target" aria-label="Log out">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="touch-target" aria-label="Log out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
