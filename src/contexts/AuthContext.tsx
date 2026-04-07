@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
 export type AppRole =
   | "super_admin"
@@ -16,15 +18,17 @@ export interface UserProfile {
   full_name: string;
   role: AppRole;
   team_id: string | null;
-  organisation_id: string;
+  organisation_id: string | null;
   avatar_url?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   hasRole: (role: AppRole | AppRole[]) => boolean;
   hasModule: (module: string) => boolean;
 }
@@ -38,8 +42,8 @@ export function useAuth() {
 }
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
-  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "settings"],
-  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit"],
+  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "settings"],
+  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat"],
   supervisor: ["dashboard", "incidents", "risks", "complaints", "participants", "staff", "training"],
   trainer: ["dashboard", "incidents", "complaints", "participants", "training"],
   support_worker: ["dashboard", "incidents", "participants"],
@@ -48,26 +52,76 @@ const ROLE_MODULES: Record<AppRole, string[]> = {
   participant: ["dashboard", "training", "complaints"],
 };
 
-// Demo user for development
-const DEMO_USER: UserProfile = {
-  id: "demo-001",
-  email: "admin@dgtg.com.au",
-  full_name: "DGTG Admin",
-  role: "super_admin",
-  team_id: null,
-  organisation_id: "org-001",
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(DEMO_USER);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (_email: string, _password: string) => {
-    // TODO: Replace with Supabase auth
-    setUser(DEMO_USER);
+  const fetchUserProfile = useCallback(async (authUser: User) => {
+    // Get profile
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("id, email, full_name, avatar_url, team_id, organisation_id")
+      .eq("id", authUser.id)
+      .single();
+
+    // Get role
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", authUser.id)
+      .limit(1)
+      .single();
+
+    if (profile) {
+      setUser({
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        role: (roleData?.role as AppRole) || "support_worker",
+        team_id: profile.team_id,
+        organisation_id: profile.organisation_id,
+        avatar_url: profile.avatar_url ?? undefined,
+      });
+    }
   }, []);
 
-  const logout = useCallback(() => {
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          // Use setTimeout to avoid Supabase client deadlock
+          setTimeout(() => fetchUserProfile(newSession.user), 0);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        fetchUserProfile(existingSession.user);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   }, []);
 
   const hasRole = useCallback(
@@ -88,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, hasRole, hasModule }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, login, logout, hasRole, hasModule }}>
       {children}
     </AuthContext.Provider>
   );
