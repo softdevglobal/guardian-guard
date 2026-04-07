@@ -42,12 +42,12 @@ export function useAuth() {
 }
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
-  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "settings"],
-  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat"],
-  supervisor: ["dashboard", "incidents", "risks", "complaints", "participants", "staff", "training"],
-  trainer: ["dashboard", "incidents", "complaints", "participants", "training"],
-  support_worker: ["dashboard", "incidents", "participants"],
-  hr_admin: ["dashboard", "staff", "training"],
+  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings"],
+  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy"],
+  supervisor: ["dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
+  trainer: ["dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],
+  support_worker: ["dashboard", "incidents", "participants", "safeguarding"],
+  hr_admin: ["dashboard", "staff", "training", "privacy"],
   executive: ["dashboard", "incidents", "risks", "complaints", "policies", "audit"],
   participant: ["dashboard", "training", "complaints"],
 };

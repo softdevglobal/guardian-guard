@@ -18,6 +18,8 @@ import Training from "./pages/Training";
 import AuditLogs from "./pages/AuditLogs";
 import Heartbeat from "./pages/Heartbeat";
 import Settings from "./pages/Settings";
+import Safeguarding from "./pages/Safeguarding";
+import Privacy from "./pages/Privacy";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +54,8 @@ const App = () => (
               <Route path="/training" element={<ProtectedPage><Training /></ProtectedPage>} />
               <Route path="/audit" element={<ProtectedPage><AuditLogs /></ProtectedPage>} />
               <Route path="/heartbeat" element={<ProtectedPage><Heartbeat /></ProtectedPage>} />
+              <Route path="/safeguarding" element={<ProtectedPage><Safeguarding /></ProtectedPage>} />
+              <Route path="/privacy" element={<ProtectedPage><Privacy /></ProtectedPage>} />
               <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
