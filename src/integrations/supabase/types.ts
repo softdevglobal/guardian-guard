@@ -2358,6 +2358,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_incident_handler_training: {
+        Args: { _user_id: string }
+        Returns: Json
+      }
+      check_incident_time_breaches: { Args: never; Returns: Json }
       check_staff_assignment_eligible: {
         Args: { _staff_id: string }
         Returns: boolean
