@@ -1,11 +1,12 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AccessibilityToolbar } from "@/components/AccessibilityToolbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Search, LogOut } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
@@ -33,13 +34,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="touch-target relative" aria-label="Notifications - 4 unread">
-          <Bell className="h-5 w-5" />
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]" variant="destructive">
-            4
-          </Badge>
-        </Button>
-
+        <NotificationBell />
         <AccessibilityToolbar />
 
         {user && (
