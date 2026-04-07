@@ -87,6 +87,7 @@ export function IncidentFormDialog() {
       const witnessesArr = form.witnesses ? form.witnesses.split(",").map(w => w.trim()).filter(Boolean) : [];
       const otherArr = form.other_persons_involved ? form.other_persons_involved.split(",").map(w => w.trim()).filter(Boolean) : [];
 
+      if (!form.practice_standard_id) throw new Error("NDIS Practice Standard mapping is required before submission.");
       const { error } = await supabase.from("incidents").insert({
         incident_number: num,
         title: form.title,
@@ -125,6 +126,7 @@ export function IncidentFormDialog() {
         linked_staff_id: form.linked_staff_id || null,
         witnesses: witnessesArr,
         other_persons_involved: otherArr,
+        practice_standard_id: form.practice_standard_id || null,
       });
       if (error) throw error;
       await logAudit({ action: "created", module: "incidents", details: { title: form.title, is_reportable: isReportable } });
