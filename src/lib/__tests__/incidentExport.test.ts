@@ -4,7 +4,7 @@ import { exportIncidentCSV, exportBulkIncidentsCSV } from "../incidentExport";
 // Use `as any` to avoid needing to specify all 48 incident fields in tests
 
 describe("exportIncidentCSV", () => {
-  const makeData = (overrides?: Partial<any>) => ({
+  const makeData = (overrides?: Partial<any>): any => ({
     incident: {
       incident_number: "INC-001",
       title: "Test Incident",
