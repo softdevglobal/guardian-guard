@@ -18,6 +18,7 @@ import { Plus, ShieldAlert, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 const RISK_CATEGORIES = [
   { value: "participant_safety", label: "Participant Safety" },
@@ -75,6 +76,7 @@ export default function Risks() {
   const [selected, setSelected] = useState<any>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editFields, setEditFields] = useState<Record<string, any>>({});
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const { data: risks = [], isLoading } = useQuery({
     queryKey: ["risks"],
@@ -116,6 +118,7 @@ export default function Risks() {
       queryClient.invalidateQueries({ queryKey: ["risks"] });
       setDialogOpen(false);
       setForm(INITIAL_FORM);
+      setPhotos([]);
       toast({ title: "Risk added" });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -248,6 +251,12 @@ export default function Risks() {
                 <Label>Escalation Required?</Label>
                 <Switch checked={form.escalation_required || riskScore >= 7} onCheckedChange={(v) => set("escalation_required", v)} />
               </div>
+              {user && (
+                <div className="space-y-2">
+                  <Label>Photos & Evidence</Label>
+                  <PhotoUpload folder="risks" userId={user.id} photos={photos} onPhotosChange={setPhotos} />
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={createMutation.isPending}>{createMutation.isPending ? "Saving..." : "Add Risk"}</Button>
             </form>
           </DialogContent>
