@@ -10,6 +10,8 @@ import {
   ClipboardList,
   Settings,
   Activity,
+  HeartHandshake,
+  Lock,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -40,6 +42,8 @@ const navItems = [
   { title: "Training", url: "/training", icon: GraduationCap, module: "training" },
   { title: "Audit Logs", url: "/audit", icon: ClipboardList, module: "audit" },
   { title: "Heartbeat", url: "/heartbeat", icon: Activity, module: "dashboard" },
+  { title: "Safeguarding", url: "/safeguarding", icon: HeartHandshake, module: "safeguarding" },
+  { title: "Privacy", url: "/privacy", icon: Lock, module: "privacy" },
 ];
 
 const settingsItem = { title: "Settings", url: "/settings", icon: Settings, module: "settings" };
