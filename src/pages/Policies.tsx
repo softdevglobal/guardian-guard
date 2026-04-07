@@ -20,7 +20,6 @@ import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import { csvSafe, downloadCSV } from "@/lib/evidenceChainExport";
-import { useAuth } from "@/contexts/AuthContext";
 
 const statusColor = (s: string) => {
   if (s === "published") return "bg-success text-success-foreground";
