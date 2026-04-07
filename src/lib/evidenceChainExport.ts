@@ -9,21 +9,122 @@ export interface EvidenceChainData {
   incidentActions: any[];
   auditLogs: any[];
   staffInvolved: any[];
+  incidentWorkflow: any[];
+  complaintWorkflow: any[];
+}
+
+// Incident workflow steps in order
+const INCIDENT_WORKFLOW_STEPS = [
+  "draft", "submitted", "supervisor_review", "compliance_review", "investigating", "actioned", "closed",
+];
+
+// Complaint workflow steps in order
+const COMPLAINT_WORKFLOW_STEPS = [
+  "submitted", "acknowledged", "under_review", "investigating", "resolved", "closed",
+];
+
+export interface WorkflowCompletenessResult {
+  recordId: string;
+  recordType: "incident" | "complaint";
+  recordLabel: string;
+  currentStatus: string;
+  expectedSteps: string[];
+  recordedSteps: string[];
+  missingSteps: string[];
+  isComplete: boolean;
+}
+
+/**
+ * Compute workflow completeness for incidents and complaints.
+ * Checks if the workflow history covers all expected transitions up to the current status.
+ */
+export function computeWorkflowCompleteness(
+  incidents: any[],
+  complaints: any[],
+  incidentWorkflow: any[],
+  complaintWorkflow: any[],
+): WorkflowCompletenessResult[] {
+  const results: WorkflowCompletenessResult[] = [];
+
+  for (const inc of incidents) {
+    const currentIdx = INCIDENT_WORKFLOW_STEPS.indexOf(inc.status);
+    const expectedSteps = currentIdx > 0
+      ? INCIDENT_WORKFLOW_STEPS.slice(1, currentIdx + 1) // transitions land on these statuses
+      : [];
+    const recordedSteps = incidentWorkflow
+      .filter(w => w.incident_id === inc.id)
+      .map(w => w.to_status as string);
+    const missingSteps = expectedSteps.filter(s => !recordedSteps.includes(s));
+
+    results.push({
+      recordId: inc.id,
+      recordType: "incident",
+      recordLabel: inc.incident_number ?? inc.id,
+      currentStatus: inc.status,
+      expectedSteps,
+      recordedSteps,
+      missingSteps,
+      isComplete: missingSteps.length === 0 && expectedSteps.length > 0,
+    });
+  }
+
+  for (const cmp of complaints) {
+    const currentIdx = COMPLAINT_WORKFLOW_STEPS.indexOf(cmp.status);
+    const expectedSteps = currentIdx > 0
+      ? COMPLAINT_WORKFLOW_STEPS.slice(1, currentIdx + 1)
+      : [];
+    const recordedSteps = complaintWorkflow
+      .filter(w => w.complaint_id === cmp.id)
+      .map(w => w.to_status as string);
+    const missingSteps = expectedSteps.filter(s => !recordedSteps.includes(s));
+
+    results.push({
+      recordId: cmp.id,
+      recordType: "complaint",
+      recordLabel: cmp.complaint_number ?? cmp.id,
+      currentStatus: cmp.status,
+      expectedSteps,
+      recordedSteps,
+      missingSteps,
+      isComplete: missingSteps.length === 0 && expectedSteps.length > 0,
+    });
+  }
+
+  return results;
 }
 
 export async function fetchParticipantEvidenceChain(participantId: string): Promise<EvidenceChainData> {
-  const [participant, incidents, risks, complaints, safeguarding, auditLogs] = await Promise.all([
+  const [participant, incidents, risks, complaints, safeguarding] = await Promise.all([
     supabase.from("participants").select("*").eq("id", participantId).single(),
     supabase.from("incidents").select("*").eq("participant_id", participantId).eq("record_status", "active").order("created_at", { ascending: false }),
     supabase.from("risks").select("*").eq("linked_participant_id", participantId).eq("record_status", "active").order("created_at", { ascending: false }),
     supabase.from("complaints").select("*").eq("participant_id", participantId).eq("record_status", "active").order("created_at", { ascending: false }),
     supabase.from("safeguarding_concerns").select("*").eq("participant_id", participantId).eq("record_status", "active").order("date_raised", { ascending: false }),
-    supabase.from("audit_logs").select("*").eq("record_id", participantId).order("created_at", { ascending: false }).limit(100),
   ]);
 
   const incidentIds = (incidents.data ?? []).map(i => i.id);
+  const riskIds = (risks.data ?? []).map(r => r.id);
+  const complaintIds = (complaints.data ?? []).map(c => c.id);
+  const safeguardingIds = (safeguarding.data ?? []).map(s => s.id);
+
+  // Deep audit-log aggregation: query across ALL linked record IDs
+  const allRecordIds = [participantId, ...incidentIds, ...riskIds, ...complaintIds, ...safeguardingIds];
+  const auditLogs = allRecordIds.length > 0
+    ? (await supabase.from("audit_logs").select("*").in("record_id", allRecordIds).order("created_at", { ascending: false }).limit(500)).data ?? []
+    : [];
+
+  // Fetch incident actions
   const incidentActions = incidentIds.length > 0
     ? (await supabase.from("incident_actions").select("*").in("incident_id", incidentIds).order("created_at")).data ?? []
+    : [];
+
+  // Fetch workflow histories
+  const incidentWorkflow = incidentIds.length > 0
+    ? (await supabase.from("incident_workflow_history").select("*").in("incident_id", incidentIds).order("created_at")).data ?? []
+    : [];
+
+  const complaintWorkflow = complaintIds.length > 0
+    ? (await supabase.from("complaint_workflow_history").select("*").in("complaint_id", complaintIds).order("created_at")).data ?? []
     : [];
 
   // Collect unique staff IDs
@@ -52,8 +153,10 @@ export async function fetchParticipantEvidenceChain(participantId: string): Prom
     complaints: complaints.data ?? [],
     safeguarding: safeguarding.data ?? [],
     incidentActions,
-    auditLogs: auditLogs.data ?? [],
+    auditLogs,
     staffInvolved,
+    incidentWorkflow,
+    complaintWorkflow,
   };
 }
 
@@ -68,6 +171,24 @@ export function exportEvidenceChainCSV(data: EvidenceChainData): string {
   lines.push(`Export Date,${new Date().toISOString()}`);
   lines.push("");
 
+  // Workflow completeness summary
+  const completeness = computeWorkflowCompleteness(
+    data.incidents, data.complaints,
+    data.incidentWorkflow, data.complaintWorkflow,
+  );
+  lines.push("--- WORKFLOW COMPLETENESS ---");
+  lines.push("Record Type,Record Label,Current Status,Expected Steps,Recorded Steps,Missing Steps,Complete");
+  completeness.forEach(wc => {
+    lines.push([
+      wc.recordType, wc.recordLabel, wc.currentStatus,
+      wc.expectedSteps.join(";") || "N/A",
+      wc.recordedSteps.join(";") || "N/A",
+      wc.missingSteps.join(";") || "None",
+      wc.isComplete ? "Yes" : "No",
+    ].join(","));
+  });
+  lines.push("");
+
   // Incidents
   lines.push("--- INCIDENTS ---");
   lines.push("Number,Title,Type,Severity,Status,Date,Reportable,NDIS Deadline");
@@ -76,6 +197,17 @@ export function exportEvidenceChainCSV(data: EvidenceChainData): string {
       i.incident_number, csvSafe(i.title), i.incident_type, i.severity, i.status,
       i.date_of_incident ?? i.created_at, i.is_reportable ? "Yes" : "No",
       i.ndis_notification_deadline ?? "N/A",
+    ].join(","));
+  });
+  lines.push("");
+
+  // Incident Workflow History
+  lines.push("--- INCIDENT WORKFLOW HISTORY ---");
+  lines.push("Incident ID,From Status,To Status,Changed By,Date,Notes");
+  data.incidentWorkflow.forEach(w => {
+    lines.push([
+      w.incident_id, w.from_status ?? "new", w.to_status,
+      w.changed_by, w.created_at, csvSafe(w.notes),
     ].join(","));
   });
   lines.push("");
@@ -97,6 +229,17 @@ export function exportEvidenceChainCSV(data: EvidenceChainData): string {
   data.complaints.forEach(c => {
     lines.push([
       c.complaint_number, csvSafe(c.subject), c.priority, c.status, c.created_at,
+    ].join(","));
+  });
+  lines.push("");
+
+  // Complaint Workflow History
+  lines.push("--- COMPLAINT WORKFLOW HISTORY ---");
+  lines.push("Complaint ID,From Status,To Status,Changed By,Date,Notes");
+  data.complaintWorkflow.forEach(w => {
+    lines.push([
+      w.complaint_id, w.from_status ?? "new", w.to_status,
+      w.changed_by, w.created_at, csvSafe(w.notes),
     ].join(","));
   });
   lines.push("");
@@ -131,19 +274,19 @@ export function exportEvidenceChainCSV(data: EvidenceChainData): string {
   });
   lines.push("");
 
-  // Audit Logs
-  lines.push("--- AUDIT LOG ---");
-  lines.push("Action,Module,User,Severity,Timestamp");
+  // Audit Logs (deep — all linked records)
+  lines.push("--- AUDIT LOG (ALL LINKED RECORDS) ---");
+  lines.push("Action,Module,Record ID,User,Severity,Timestamp");
   data.auditLogs.forEach(a => {
     lines.push([
-      a.action, a.module, csvSafe(a.user_name ?? "System"), a.severity, a.created_at,
+      a.action, a.module, a.record_id ?? "", csvSafe(a.user_name ?? "System"), a.severity, a.created_at,
     ].join(","));
   });
 
   return lines.join("\n");
 }
 
-function csvSafe(val: string | null | undefined): string {
+export function csvSafe(val: string | null | undefined): string {
   if (!val) return "";
   if (val.includes(",") || val.includes('"') || val.includes("\n")) {
     return `"${val.replace(/"/g, '""')}"`;
