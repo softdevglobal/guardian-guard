@@ -1,63 +1,31 @@
 
-# Full Relational Integrity Refactor
 
-## Current State (Already Built)
-✅ FK constraints on incidents→participants, risks→participants/incidents/complaints, safeguarding→participants/incidents/risks/complaints
-✅ Audit trail triggers on all major tables (audit_trail_trigger)
-✅ Workflow enforcement (incident + complaint status machines)
-✅ Soft delete with `record_status` + `prevent_record_deletion` triggers
-✅ Severity downgrade prevention
-✅ Incident versioning + workflow history
-✅ Risk mitigation enforcement before closure
-✅ Training completions with score, verified_by, assessment_passed
-✅ Staff eligibility auto-evaluation
+# Fix: Seed Training Completions for Sathindra Gurusinghe
 
-## What Needs Building
+## Problem
+The eligibility engine checks both `staff_compliance_records` and `training_completions`. While all 9 compliance records are verified, the `training_completions` table has **zero rows** for this user. The 8 mandatory training requirements all fail, blocking assignment.
 
-### Phase 1: Schema Gaps (Migration)
-1. Add `linked_incident_id` to `training_completions` — links training to skill-gap incidents
-2. Add `linked_staff_id` FK to `complaints` — tracks staff involved in complaint
-3. Ensure all existing demo data has proper cross-links (no orphan records)
+## Root Cause
+The seed migration created `staff_compliance_records` but never inserted corresponding `training_completions` records. These are two independent checks in `evaluate_staff_eligibility()`.
 
-### Phase 2: Participant Compliance Timeline (New Component)
-- New page/component: `/participants/:id/timeline`
-- Unified chronological view merging:
-  - Risks (date_identified)
-  - Incidents (date_of_incident)
-  - Complaints (created_at)
-  - Safeguarding concerns (date_raised)
-  - Training completions (for assigned staff)
-  - Audit log entries
-- Filterable by module type
-- Shows linked entities inline
+## Fix
 
-### Phase 3: Linked Records UI
-- Add "Linked Records" card to:
-  - Incident detail → shows linked participant, risk, staff, complaints
-  - Risk detail → shows linked participant, incidents, complaints, staff
-  - Complaint detail → shows linked participant, staff, incidents
-- Clickable links to navigate between records
+### Step 1: Seed training completions for all demo staff
+Insert `training_completions` rows for Sathindra (`fffb42d5-...`) and all other demo users who have compliance records but missing training records. Each row needs:
+- `user_id`, `training_code` (matching all 8 mandatory codes)
+- `status = 'completed'`, `score = 95`, `completion_date` in the past
+- `verified_by` set to a different staff member (compliance officer)
+- `expiry_date` set to match their compliance record expiry (~May 2, 2026)
+- `organisation_id` matching their profile
 
-### Phase 4: Evidence Chain Export
-- Participant-centric export: for a given participant, gather ALL linked records
-- Incident-centric export: already partially built, extend with training + staff compliance
-- Export as CSV (structured) with all linked entity IDs and details
-- PDF generation (formatted audit-ready report)
+### Step 2: Re-evaluate eligibility
+After inserting training records, the `reevaluate_on_training_change` trigger will automatically call `evaluate_staff_eligibility()`, updating the status from "non_compliant/blocked" to "compliant/eligible".
 
-### Phase 5: Seed Interconnected Demo Data (Data Insert)
-- Ensure 10 participants each have at least 1 risk + 1 incident linked
-- Link complaints to participants and involved staff
-- Link training completions to incidents (skill-gap scenarios)
-- Link risks to incidents that triggered them
-- Result: zero orphan records, full traceability chains
+### No code changes needed
+The UI and eligibility logic are correct. This is purely a data gap from incomplete seeding.
 
-### Phase 6: Compliance Chain Visualization
-- Simple visual on participant detail showing:
-  `Participant → Risks → Incidents → Actions → Training`
-- Uses existing data relationships, rendered as a flow diagram
+## Technical Detail
+- Use the Supabase insert tool (not migration) for data seeding
+- 8 training codes x ~9 demo users = ~72 rows
+- `verified_by` must differ from `user_id` (enforced by `prevent_training_self_verification` trigger)
 
-## Technical Approach
-- Phase 1: Single migration for schema changes
-- Phases 2-4: New React components + lib functions
-- Phase 5: Supabase insert tool for data
-- Phase 6: Simple React component with lines/connections
