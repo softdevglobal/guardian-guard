@@ -7,13 +7,13 @@ import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import {
   AlertTriangle, ShieldAlert, FileText, GraduationCap,
-  Users, Activity, Clock, ChevronRight
+  Users, Activity, Clock, ChevronRight, GitBranch
 } from "lucide-react";
 
 interface TimelineEvent {
   id: string;
   date: string;
-  module: "incident" | "risk" | "complaint" | "safeguarding" | "training" | "audit";
+  module: "incident" | "risk" | "complaint" | "safeguarding" | "training" | "audit" | "workflow";
   title: string;
   description?: string;
   severity?: string;
@@ -28,6 +28,7 @@ const MODULE_CONFIG = {
   safeguarding: { icon: ShieldAlert, color: "text-red-600", bg: "bg-red-600/10", label: "Safeguarding" },
   training: { icon: GraduationCap, color: "text-primary", bg: "bg-primary/10", label: "Training" },
   audit: { icon: Clock, color: "text-muted-foreground", bg: "bg-muted", label: "Audit" },
+  workflow: { icon: GitBranch, color: "text-blue-500", bg: "bg-blue-500/10", label: "Workflow" },
 };
 
 interface Props {
@@ -90,15 +91,56 @@ export function ParticipantTimeline({ participantId, participantName }: Props) {
     },
   });
 
+  // Deep audit logs: query by participant AND all linked record IDs
+  const allLinkedIds = useMemo(() => {
+    const ids = [participantId];
+    incidents.forEach(i => ids.push(i.id));
+    risks.forEach(r => ids.push(r.id));
+    complaints.forEach(c => ids.push(c.id));
+    safeguarding.forEach(s => ids.push(s.id));
+    return ids;
+  }, [participantId, incidents, risks, complaints, safeguarding]);
+
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ["timeline-audit", participantId],
+    queryKey: ["timeline-audit", allLinkedIds],
+    enabled: allLinkedIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("audit_logs")
-        .select("id, action, module, created_at, user_name, severity")
-        .eq("record_id", participantId)
+        .select("id, action, module, record_id, created_at, user_name, severity")
+        .in("record_id", allLinkedIds)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
+      return data ?? [];
+    },
+  });
+
+  // Workflow histories
+  const incidentIds = useMemo(() => incidents.map(i => i.id), [incidents]);
+  const complaintIds = useMemo(() => complaints.map(c => c.id), [complaints]);
+
+  const { data: incidentWorkflow = [] } = useQuery({
+    queryKey: ["timeline-incident-workflow", incidentIds],
+    enabled: incidentIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("incident_workflow_history")
+        .select("id, incident_id, from_status, to_status, changed_by, created_at, notes")
+        .in("incident_id", incidentIds)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const { data: complaintWorkflow = [] } = useQuery({
+    queryKey: ["timeline-complaint-workflow", complaintIds],
+    enabled: complaintIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("complaint_workflow_history")
+        .select("id, complaint_id, from_status, to_status, changed_by, created_at, notes")
+        .in("complaint_id", complaintIds)
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
   });
@@ -134,6 +176,27 @@ export function ParticipantTimeline({ participantId, participantName }: Props) {
       status: s.status,
     }));
 
+    // Workflow transitions as discrete events
+    incidentWorkflow.forEach(w => {
+      const inc = incidents.find(i => i.id === w.incident_id);
+      events.push({
+        id: `wf-i-${w.id}`, date: w.created_at, module: "workflow",
+        title: `${inc?.incident_number ?? "Incident"}: ${(w.from_status ?? "new").replace(/_/g, " ")} → ${w.to_status.replace(/_/g, " ")}`,
+        description: w.notes ?? undefined,
+        status: w.to_status,
+      });
+    });
+
+    complaintWorkflow.forEach(w => {
+      const cmp = complaints.find(c => c.id === w.complaint_id);
+      events.push({
+        id: `wf-c-${w.id}`, date: w.created_at, module: "workflow",
+        title: `${cmp?.complaint_number ?? "Complaint"}: ${(w.from_status ?? "new").replace(/_/g, " ")} → ${w.to_status.replace(/_/g, " ")}`,
+        description: w.notes ?? undefined,
+        status: w.to_status,
+      });
+    });
+
     auditLogs.forEach(a => events.push({
       id: a.id, date: a.created_at, module: "audit",
       title: `${a.action.replace(/_/g, " ")} (${a.module})`,
@@ -143,9 +206,11 @@ export function ParticipantTimeline({ participantId, participantName }: Props) {
 
     events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return events;
-  }, [incidents, risks, complaints, safeguarding, auditLogs]);
+  }, [incidents, risks, complaints, safeguarding, auditLogs, incidentWorkflow, complaintWorkflow]);
 
   const filtered = moduleFilter === "all" ? timeline : timeline.filter(e => e.module === moduleFilter);
+
+  const workflowCount = incidentWorkflow.length + complaintWorkflow.length;
 
   const getSeverityVariant = (s?: string) => {
     if (!s) return "secondary" as const;
@@ -175,6 +240,7 @@ export function ParticipantTimeline({ participantId, participantName }: Props) {
             <SelectItem value="risk">Risks ({risks.length})</SelectItem>
             <SelectItem value="complaint">Complaints ({complaints.length})</SelectItem>
             <SelectItem value="safeguarding">Safeguarding ({safeguarding.length})</SelectItem>
+            <SelectItem value="workflow">Workflow ({workflowCount})</SelectItem>
             <SelectItem value="audit">Audit Logs ({auditLogs.length})</SelectItem>
           </SelectContent>
         </Select>
