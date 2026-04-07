@@ -5,9 +5,16 @@ import { Bell, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth");
+  };
 
   return (
     <header className="flex h-14 items-center gap-2 border-b bg-background px-4" role="banner">
@@ -43,7 +50,7 @@ export function AppHeader() {
                 {user.role.replace(/_/g, " ")}
               </Badge>
             </div>
-            <Button variant="ghost" size="icon" onClick={logout} className="touch-target" aria-label="Log out">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="touch-target" aria-label="Log out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

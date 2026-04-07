@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Incidents from "./pages/Incidents";
@@ -17,9 +18,18 @@ import Training from "./pages/Training";
 import AuditLogs from "./pages/AuditLogs";
 import Heartbeat from "./pages/Heartbeat";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function ProtectedPage({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AppLayout>{children}</AppLayout>
+    </ProtectedRoute>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,24 +41,18 @@ const App = () => (
           <BrowserRouter>
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                }
-              />
-              <Route path="/incidents" element={<AppLayout><Incidents /></AppLayout>} />
-              <Route path="/risks" element={<AppLayout><Risks /></AppLayout>} />
-              <Route path="/complaints" element={<AppLayout><Complaints /></AppLayout>} />
-              <Route path="/policies" element={<AppLayout><Policies /></AppLayout>} />
-              <Route path="/participants" element={<AppLayout><Participants /></AppLayout>} />
-              <Route path="/staff" element={<AppLayout><StaffCompliance /></AppLayout>} />
-              <Route path="/training" element={<AppLayout><Training /></AppLayout>} />
-              <Route path="/audit" element={<AppLayout><AuditLogs /></AppLayout>} />
-              <Route path="/heartbeat" element={<AppLayout><Heartbeat /></AppLayout>} />
-              <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+              <Route path="/incidents" element={<ProtectedPage><Incidents /></ProtectedPage>} />
+              <Route path="/risks" element={<ProtectedPage><Risks /></ProtectedPage>} />
+              <Route path="/complaints" element={<ProtectedPage><Complaints /></ProtectedPage>} />
+              <Route path="/policies" element={<ProtectedPage><Policies /></ProtectedPage>} />
+              <Route path="/participants" element={<ProtectedPage><Participants /></ProtectedPage>} />
+              <Route path="/staff" element={<ProtectedPage><StaffCompliance /></ProtectedPage>} />
+              <Route path="/training" element={<ProtectedPage><Training /></ProtectedPage>} />
+              <Route path="/audit" element={<ProtectedPage><AuditLogs /></ProtectedPage>} />
+              <Route path="/heartbeat" element={<ProtectedPage><Heartbeat /></ProtectedPage>} />
+              <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
