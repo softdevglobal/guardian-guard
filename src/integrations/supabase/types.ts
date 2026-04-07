@@ -728,38 +728,141 @@ export type Database = {
           },
         ]
       }
+      notification_audit_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          notification_id: string | null
+          source_record_id: string | null
+          source_table: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+          source_record_id?: string | null
+          source_table?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+          source_record_id?: string | null
+          source_table?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_audit_log_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          critical_only: boolean
+          digest_frequency: string
+          email_enabled: boolean
+          id: string
+          in_app_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          critical_only?: boolean
+          digest_frequency?: string
+          email_enabled?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          critical_only?: boolean
+          digest_frequency?: string
+          email_enabled?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           is_read: boolean
           link: string | null
           message: string | null
+          metadata: Json | null
           notification_type: string
+          organisation_id: string | null
+          read_at: string | null
+          severity: string
+          source_record_id: string | null
+          source_table: string | null
           title: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
           message?: string | null
+          metadata?: Json | null
           notification_type?: string
+          organisation_id?: string | null
+          read_at?: string | null
+          severity?: string
+          source_record_id?: string | null
+          source_table?: string | null
           title: string
           user_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
           message?: string | null
+          metadata?: Json | null
           notification_type?: string
+          organisation_id?: string | null
+          read_at?: string | null
+          severity?: string
+          source_record_id?: string | null
+          source_table?: string | null
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organisations: {
         Row: {

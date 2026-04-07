@@ -20,6 +20,7 @@ import Heartbeat from "./pages/Heartbeat";
 import Settings from "./pages/Settings";
 import Safeguarding from "./pages/Safeguarding";
 import Privacy from "./pages/Privacy";
+import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/heartbeat" element={<ProtectedPage><Heartbeat /></ProtectedPage>} />
               <Route path="/safeguarding" element={<ProtectedPage><Safeguarding /></ProtectedPage>} />
               <Route path="/privacy" element={<ProtectedPage><Privacy /></ProtectedPage>} />
+              <Route path="/notifications" element={<ProtectedPage><Notifications /></ProtectedPage>} />
               <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
