@@ -1,25 +1,59 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Plus, FileText } from "lucide-react";
-
-const mockPolicies = [
-  { id: "POL-001", title: "Privacy & Data Protection Policy", version: "3.2", status: "Published", lastReview: "2026-01-15", nextReview: "2027-01-15", owner: "Compliance Officer" },
-  { id: "POL-002", title: "Incident Reporting & Management", version: "2.1", status: "Published", lastReview: "2025-11-20", nextReview: "2026-11-20", owner: "Compliance Officer" },
-  { id: "POL-003", title: "Safeguarding & Child Protection", version: "4.0", status: "Under Review", lastReview: "2025-06-01", nextReview: "2026-06-01", owner: "Super Admin" },
-  { id: "POL-004", title: "Staff Code of Conduct", version: "1.5", status: "Draft", lastReview: "N/A", nextReview: "N/A", owner: "HR Admin" },
-  { id: "POL-005", title: "Digital Training Delivery Standards", version: "2.0", status: "Approved", lastReview: "2026-03-01", nextReview: "2027-03-01", owner: "Compliance Officer" },
-];
+import { toast } from "@/hooks/use-toast";
 
 const statusColor = (s: string) => {
-  if (s === "Published") return "bg-success text-success-foreground";
-  if (s === "Approved") return "bg-info text-info-foreground";
-  if (s === "Under Review") return "bg-warning text-warning-foreground";
+  if (s === "published") return "bg-success text-success-foreground";
+  if (s === "approved") return "bg-info text-info-foreground";
+  if (s === "review") return "bg-warning text-warning-foreground";
   return "bg-muted text-muted-foreground";
 };
 
 export default function Policies() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [title, setTitle] = useState("");
+
+  const { data: policies = [], isLoading } = useQuery({
+    queryKey: ["policies"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("policies").select("*").eq("record_status", "active").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("policies").insert({
+        title, organisation_id: user.organisation_id!, owner_id: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      setDialogOpen(false); setTitle("");
+      toast({ title: "Policy created" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const publishedCount = policies.filter(p => p.status === "published").length;
+  const reviewCount = policies.filter(p => p.status === "review").length;
+  const draftCount = policies.filter(p => p.status === "draft").length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -27,67 +61,45 @@ export default function Policies() {
           <h1 className="text-2xl font-bold tracking-tight">Policy Management</h1>
           <p className="text-muted-foreground">Version-controlled policies with approval workflows</p>
         </div>
-        <Button className="touch-target">
-          <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Create Policy
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild><Button className="touch-target"><Plus className="mr-2 h-4 w-4" />Create Policy</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Create Policy</DialogTitle></DialogHeader>
+            <form className="space-y-4" onSubmit={e => { e.preventDefault(); createMutation.mutate(); }}>
+              <div className="space-y-2"><Label>Policy Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} required /></div>
+              <Button type="submit" className="w-full" disabled={createMutation.isPending}>{createMutation.isPending ? "Creating..." : "Create"}</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <FileText className="h-4 w-4 text-success" aria-hidden="true" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">2</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-            <FileText className="h-4 w-4 text-warning" aria-hidden="true" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">1</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Draft</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">1</div></CardContent>
-        </Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Published</CardTitle><FileText className="h-4 w-4 text-success" /></CardHeader><CardContent><div className="text-2xl font-bold">{publishedCount}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle><FileText className="h-4 w-4 text-warning" /></CardHeader><CardContent><div className="text-2xl font-bold">{reviewCount}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Draft</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{draftCount}</div></CardContent></Card>
       </div>
 
       <Card>
         <CardHeader><CardTitle>All Policies</CardTitle></CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Policy</TableHead>
-                  <TableHead>Version</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Review</TableHead>
-                  <TableHead>Next Review</TableHead>
-                  <TableHead>Owner</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockPolicies.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-sm">{p.id}</TableCell>
-                    <TableCell className="font-medium">{p.title}</TableCell>
-                    <TableCell>v{p.version}</TableCell>
-                    <TableCell><Badge className={statusColor(p.status)}>{p.status}</Badge></TableCell>
-                    <TableCell className="text-muted-foreground">{p.lastReview}</TableCell>
-                    <TableCell className="text-muted-foreground">{p.nextReview}</TableCell>
-                    <TableCell>{p.owner}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          {isLoading ? <p className="text-center py-4 text-muted-foreground">Loading...</p> : policies.length === 0 ? <p className="text-center py-4 text-muted-foreground">No policies found</p> : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>Policy</TableHead><TableHead>Version</TableHead><TableHead>Status</TableHead><TableHead>Last Review</TableHead><TableHead>Next Review</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {policies.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.title}</TableCell>
+                      <TableCell>v{p.current_version}</TableCell>
+                      <TableCell><Badge className={`${statusColor(p.status)} capitalize`}>{p.status}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground">{p.last_review_date ?? "N/A"}</TableCell>
+                      <TableCell className="text-muted-foreground">{p.next_review_date ?? "N/A"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
