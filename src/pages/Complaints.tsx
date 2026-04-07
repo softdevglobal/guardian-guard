@@ -18,6 +18,7 @@ import { Plus, MessageSquareWarning, Clock, CheckCircle, AlertTriangle } from "l
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 const STATUS_FLOW: Record<string, string> = {
   submitted: "acknowledged",
@@ -61,6 +62,7 @@ export default function Complaints() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editFields, setEditFields] = useState<Record<string, any>>({});
   const [closureErrors, setClosureErrors] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const { data: complaints = [], isLoading } = useQuery({
     queryKey: ["complaints"],
@@ -109,6 +111,7 @@ export default function Complaints() {
       queryClient.invalidateQueries({ queryKey: ["complaints"] });
       setDialogOpen(false);
       setForm(INITIAL_FORM);
+      setPhotos([]);
       toast({ title: "Complaint logged" });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -289,6 +292,12 @@ export default function Complaints() {
                   <Switch checked={form.escalation_required} onCheckedChange={(v) => set("escalation_required", v)} />
                 </div>
               </div>
+              {user && (
+                <div className="space-y-2">
+                  <Label>Photos & Evidence</Label>
+                  <PhotoUpload folder="complaints" userId={user.id} photos={photos} onPhotosChange={setPhotos} />
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={createMutation.isPending}>{createMutation.isPending ? "Submitting..." : "Submit Complaint"}</Button>
             </form>
           </DialogContent>

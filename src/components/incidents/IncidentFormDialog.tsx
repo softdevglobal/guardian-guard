@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/auditLog";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 const INITIAL_FORM = {
   title: "",
@@ -44,6 +45,7 @@ export function IncidentFormDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const { data: participants = [] } = useQuery({
     queryKey: ["participants-list"],
@@ -122,6 +124,7 @@ export function IncidentFormDialog() {
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       setOpen(false);
       setForm(INITIAL_FORM);
+      setPhotos([]);
       toast({ title: "Incident reported", description: "Saved as draft." });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -287,6 +290,21 @@ export function IncidentFormDialog() {
                   <Label>Current Participant Condition</Label>
                   <Input value={form.current_participant_condition} onChange={(e) => set("current_participant_condition", e.target.value)} />
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 5 — Photos */}
+            <AccordionItem value="photos">
+              <AccordionTrigger>Photos & Evidence</AccordionTrigger>
+              <AccordionContent className="px-1">
+                {user && (
+                  <PhotoUpload
+                    folder="incidents"
+                    userId={user.id}
+                    photos={photos}
+                    onPhotosChange={setPhotos}
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
