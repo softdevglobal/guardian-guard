@@ -2053,6 +2053,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_notification_deduped: {
+        Args: {
+          _dedupe_bucket: string
+          _fingerprint: string
+          _link: string
+          _message: string
+          _notification_type: string
+          _organisation_id: string
+          _severity: string
+          _source_record_id: string
+          _source_table: string
+          _title: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
