@@ -13,6 +13,7 @@ import {
   HeartHandshake,
   Lock,
 } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,9 +62,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">DG</span>
-            </div>
+            <img src={logoImg} alt="DGTG Logo" className="h-8 w-8 rounded-lg object-cover" />
             <div>
               <p className="text-sm font-semibold">DGTG NDIS</p>
               <p className="text-xs text-muted-foreground">Compliance OS</p>
@@ -71,9 +70,7 @@ export function AppSidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary mx-auto">
-            <span className="text-sm font-bold text-primary-foreground">DG</span>
-          </div>
+          <img src={logoImg} alt="DGTG Logo" className="h-8 w-8 rounded-lg object-cover mx-auto" />
         )}
       </SidebarHeader>
 
