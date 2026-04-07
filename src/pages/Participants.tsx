@@ -21,9 +21,13 @@ import { format, differenceInDays } from "date-fns";
 import {
   Plus, Eye, EyeOff, Shield, Search, AlertTriangle, TrendingDown,
   TrendingUp, FileText, Upload, CheckCircle, XCircle, Clock, User,
-  Lock, Unlock, BarChart3, Activity
+  Lock, Unlock, BarChart3, Activity, Download
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { ParticipantTimeline } from "@/components/compliance/ParticipantTimeline";
+import { ComplianceChainView } from "@/components/compliance/ComplianceChainView";
+import { LinkedRecords } from "@/components/compliance/LinkedRecords";
+import { fetchParticipantEvidenceChain, exportEvidenceChainCSV, downloadCSV } from "@/lib/evidenceChainExport";
 
 type Participant = Tables<"participants">;
 type Goal = Tables<"participant_goals">;
@@ -895,6 +899,48 @@ function ParticipantDetailSheet({
                   </Dialog>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Compliance Chain View */}
+          <ComplianceChainView
+            participantId={participant.id}
+            participantName={`${participant.first_name} ${participant.last_name}`}
+          />
+
+          {/* Linked Records */}
+          <LinkedRecords
+            module="participant"
+            participantId={participant.id}
+            recordId={participant.id}
+            organisationId={participant.organisation_id}
+          />
+
+          {/* Compliance Timeline */}
+          <ParticipantTimeline
+            participantId={participant.id}
+            participantName={`${participant.first_name} ${participant.last_name}`}
+          />
+
+          {/* Evidence Chain Export */}
+          <Card>
+            <CardContent className="pt-6">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    const data = await fetchParticipantEvidenceChain(participant.id);
+                    const csv = exportEvidenceChainCSV(data);
+                    downloadCSV(csv, `evidence-chain-${participant.first_name}-${participant.last_name}.csv`);
+                    toast({ title: "Evidence chain exported" });
+                  } catch {
+                    toast({ title: "Export failed", variant: "destructive" });
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" /> Export Evidence Chain (CSV)
+              </Button>
             </CardContent>
           </Card>
         </div>

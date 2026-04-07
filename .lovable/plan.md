@@ -1,42 +1,63 @@
 
+# Full Relational Integrity Refactor
 
-# Seed Notifications for All Modules
+## Current State (Already Built)
+✅ FK constraints on incidents→participants, risks→participants/incidents/complaints, safeguarding→participants/incidents/risks/complaints
+✅ Audit trail triggers on all major tables (audit_trail_trigger)
+✅ Workflow enforcement (incident + complaint status machines)
+✅ Soft delete with `record_status` + `prevent_record_deletion` triggers
+✅ Severity downgrade prevention
+✅ Incident versioning + workflow history
+✅ Risk mitigation enforcement before closure
+✅ Training completions with score, verified_by, assessment_passed
+✅ Staff eligibility auto-evaluation
 
-## Problem
-The `notifications` table has 0 records. Despite having 10 incidents, 8 complaints, 10 risks, safeguarding concerns, and privacy incidents in the database, no notification records were ever created. The Notifications page shows empty.
+## What Needs Building
 
-## Root Cause
-The `compliance-automation` edge function generates notifications when invoked, but it hasn't been triggered. The `incident_escalation_notify` trigger only fires on status changes, not for records inserted via seed migrations (which bypass triggers since they use `SECURITY DEFINER` context or direct SQL).
+### Phase 1: Schema Gaps (Migration)
+1. Add `linked_incident_id` to `training_completions` — links training to skill-gap incidents
+2. Add `linked_staff_id` FK to `complaints` — tracks staff involved in complaint
+3. Ensure all existing demo data has proper cross-links (no orphan records)
 
-## Plan
+### Phase 2: Participant Compliance Timeline (New Component)
+- New page/component: `/participants/:id/timeline`
+- Unified chronological view merging:
+  - Risks (date_identified)
+  - Incidents (date_of_incident)
+  - Complaints (created_at)
+  - Safeguarding concerns (date_raised)
+  - Training completions (for assigned staff)
+  - Audit log entries
+- Filterable by module type
+- Shows linked entities inline
 
-### Step 1: Seed realistic notifications (Data insert, not migration)
-Insert ~15-20 notifications into the `notifications` table for the primary user (`fffb42d5-1558-4d85-8fcc-bde2eca867e4`, super_admin) covering:
+### Phase 3: Linked Records UI
+- Add "Linked Records" card to:
+  - Incident detail → shows linked participant, risk, staff, complaints
+  - Risk detail → shows linked participant, incidents, complaints, staff
+  - Complaint detail → shows linked participant, staff, incidents
+- Clickable links to navigate between records
 
-- **Incidents** (5): Escalation alerts for high/critical incidents, NDIS deadline warnings, stale incident flags
-- **Complaints** (3): Acknowledgement overdue, complaint escalated, complaint resolved
-- **Risks** (3): Critical risk created, risk score escalated, overdue review
-- **Safeguarding** (2): Immediate safety risk raised, safeguarding escalation
-- **Privacy** (1): Data breach detected
-- **Staff Compliance** (2): Clearance expiring, clearance expired
+### Phase 4: Evidence Chain Export
+- Participant-centric export: for a given participant, gather ALL linked records
+- Incident-centric export: already partially built, extend with training + staff compliance
+- Export as CSV (structured) with all linked entity IDs and details
+- PDF generation (formatted audit-ready report)
 
-Each notification will have:
-- Correct `user_id`, `organisation_id`
-- Appropriate `severity` (critical/urgent/warning/info)
-- `source_table` and `source_record_id` linking to real records
-- `link` for navigation (e.g., `/incidents`, `/risks`)
-- Mix of read/unread states
-- Realistic timestamps spread over the last 7 days
+### Phase 5: Seed Interconnected Demo Data (Data Insert)
+- Ensure 10 participants each have at least 1 risk + 1 incident linked
+- Link complaints to participants and involved staff
+- Link training completions to incidents (skill-gap scenarios)
+- Link risks to incidents that triggered them
+- Result: zero orphan records, full traceability chains
 
-### Step 2: Also seed notifications for compliance officer
-Insert ~5 notifications for `feac6eb9-...` (compliance@dgtg.demo) so multi-user notification routing is demonstrated.
+### Phase 6: Compliance Chain Visualization
+- Simple visual on participant detail showing:
+  `Participant → Risks → Incidents → Actions → Training`
+- Uses existing data relationships, rendered as a flow diagram
 
-### No UI changes needed
-The Notifications page and NotificationBell component are already fully built with filtering, search, severity badges, tabs, and mark-as-read functionality. They just need data.
-
-## Technical Details
-- Use the Supabase insert tool (not migration) since this is data seeding
-- All `source_record_id` values will reference real existing record IDs
-- Timestamps will be staggered: some from 7 days ago, some from today
-- ~5 notifications marked as `is_read = true` to show read/unread contrast
-
+## Technical Approach
+- Phase 1: Single migration for schema changes
+- Phases 2-4: New React components + lib functions
+- Phase 5: Supabase insert tool for data
+- Phase 6: Simple React component with lines/connections
