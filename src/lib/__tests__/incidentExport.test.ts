@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { exportIncidentCSV, exportBulkIncidentsCSV } from "../incidentExport";
 
+// Use `as any` to avoid needing to specify all 48 incident fields in tests
+
 describe("exportIncidentCSV", () => {
   const makeData = (overrides?: Partial<any>) => ({
     incident: {
