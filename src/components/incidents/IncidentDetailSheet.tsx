@@ -23,6 +23,7 @@ import {
 import type { Tables } from "@/integrations/supabase/types";
 import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 import { IncidentExportButton } from "@/components/incidents/IncidentExportButtons";
+import { LinkedRecords } from "@/components/compliance/LinkedRecords";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Incident = Tables<"incidents">;
@@ -607,6 +608,14 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
           )}
 
           <Separator />
+
+          {/* Linked Records */}
+          <LinkedRecords
+            module="incident"
+            participantId={incident.participant_id}
+            recordId={incident.id}
+            organisationId={incident.organisation_id}
+          />
 
           {/* Export Button */}
           <div className="flex justify-end">
