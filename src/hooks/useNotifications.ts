@@ -23,6 +23,31 @@ export interface AppNotification {
   metadata: Record<string, unknown> | null;
 }
 
+/**
+ * Realtime security model:
+ * 
+ * ENFORCED BY RLS (server-side):
+ * - SELECT policy: users can only read rows where user_id = auth.uid()
+ * - UPDATE policy: users can only update rows where user_id = auth.uid()
+ * - No DELETE policy exists — notifications cannot be deleted
+ * - No anon access — all policies require 'authenticated' role
+ * 
+ * CLIENT-SIDE FILTERING (not a security boundary):
+ * - Realtime filter `user_id=eq.${user.id}` reduces unnecessary client events
+ *   but does NOT prevent a malicious client from subscribing without the filter.
+ *   However, RLS on the underlying table means the change event payload is
+ *   governed by the subscriber's auth token — Supabase only sends rows the
+ *   subscriber is authorized to SELECT.
+ * 
+ * REMAINING RISK:
+ * - Channel event metadata (table name, event type) is visible to any
+ *   authenticated subscriber on the same channel name, even without row access.
+ *   This is a Supabase platform limitation — no row data leaks, but the
+ *   existence of an INSERT event is observable.
+ * - Mitigation: use a unique channel name per user to prevent cross-user
+ *   channel sharing.
+ */
+
 export function useNotifications(options?: { limit?: number }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -44,11 +69,14 @@ export function useNotifications(options?: { limit?: number }) {
     refetchInterval: 30000,
   });
 
-  // Realtime subscription
+  // Realtime subscription — scoped channel per user to prevent cross-user event leakage
   useEffect(() => {
     if (!user) return;
+    // Unique channel name per user prevents other authenticated users from
+    // observing INSERT event metadata on the same channel
+    const channelName = `notifications-${user.id}`;
     const channel = supabase
-      .channel("notifications-realtime")
+      .channel(channelName)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",

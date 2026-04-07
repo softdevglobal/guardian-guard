@@ -18,7 +18,34 @@ interface NotificationPayload {
   organisation_id?: string;
 }
 
-async function createNotification(supabase: ReturnType<typeof createClient>, payload: NotificationPayload) {
+/**
+ * Deterministic fingerprint for deduplication.
+ * Format: {notification_type}:{source_table}:{source_record_id}:{user_id}:{date_bucket}
+ * Same event on the same day for the same user = same fingerprint = skip.
+ */
+function makeFingerprint(payload: NotificationPayload, dateBucket: string): string {
+  return `${payload.notification_type}:${payload.source_table}:${payload.source_record_id ?? "none"}:${payload.user_id}:${dateBucket}`;
+}
+
+async function createNotificationDeduped(
+  supabase: ReturnType<typeof createClient>,
+  payload: NotificationPayload,
+  dateBucket: string
+): Promise<{ created: boolean; fingerprint: string }> {
+  const fingerprint = makeFingerprint(payload, dateBucket);
+
+  // Check if notification with this fingerprint already exists
+  const { data: existing } = await supabase
+    .from("notifications")
+    .select("id")
+    .eq("fingerprint", fingerprint)
+    .maybeSingle();
+
+  if (existing) {
+    // Already sent today — skip
+    return { created: false, fingerprint };
+  }
+
   await supabase.from("notifications").insert({
     user_id: payload.user_id,
     title: payload.title,
@@ -29,7 +56,36 @@ async function createNotification(supabase: ReturnType<typeof createClient>, pay
     source_record_id: payload.source_record_id,
     link: payload.link,
     organisation_id: payload.organisation_id,
+    fingerprint,
+    dedupe_bucket: dateBucket,
   });
+
+  return { created: true, fingerprint };
+}
+
+async function getOrgComplianceUsers(
+  supabase: ReturnType<typeof createClient>,
+  organisationId: string,
+  excludeUserId?: string
+): Promise<string[]> {
+  const { data: roleUsers } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .in("role", ["compliance_officer", "super_admin"]);
+
+  const userIds: string[] = [];
+  for (const ru of roleUsers ?? []) {
+    if (excludeUserId && ru.user_id === excludeUserId) continue;
+    const { data: p } = await supabase
+      .from("user_profiles")
+      .select("organisation_id")
+      .eq("id", ru.user_id)
+      .maybeSingle();
+    if (p?.organisation_id === organisationId) {
+      userIds.push(ru.user_id);
+    }
+  }
+  return userIds;
 }
 
 serve(async (req) => {
@@ -43,6 +99,7 @@ serve(async (req) => {
     const now = new Date();
     const results: string[] = [];
     const todayStr = now.toISOString().split("T")[0];
+    const dateBucket = todayStr; // One notification per event per day
 
     // ── 1. Staff clearance expiry warnings (60 days) ──
     const sixtyDaysFromNow = new Date(now);
@@ -68,17 +125,20 @@ serve(async (req) => {
           return false;
         });
 
+        const severity = isExpired ? "critical" : "warning";
+        const notifType = isExpired ? "staff_clearance_expired" : "staff_clearance_expiring";
+
         // Notify the staff member
-        await createNotification(supabase, {
+        const r = await createNotificationDeduped(supabase, {
           user_id: staff.user_id,
           title: isExpired ? "Clearance EXPIRED" : "Clearance Expiry Warning",
           message: `${isExpired ? "EXPIRED" : "Expiring soon"}: ${items.join(", ")}. ${isExpired ? "You have been blocked from participant assignment." : "Please renew before expiry."}`,
-          severity: isExpired ? "critical" : "warning",
-          notification_type: isExpired ? "critical" : "warning",
+          severity,
+          notification_type: notifType,
           source_table: "staff_compliance",
           source_record_id: staff.id,
           link: "/staff",
-        });
+        }, dateBucket);
 
         // Notify HR and supervisors for expired
         if (isExpired) {
@@ -91,22 +151,22 @@ serve(async (req) => {
             for (const hr of hrUsers ?? []) {
               const { data: hrProfile } = await supabase.from("user_profiles").select("organisation_id").eq("id", hr.user_id).maybeSingle();
               if (hrProfile?.organisation_id === profile.organisation_id) {
-                await createNotification(supabase, {
+                await createNotificationDeduped(supabase, {
                   user_id: hr.user_id,
                   title: "Staff clearance expired — assignment blocked",
                   message: `A staff member's clearance has expired: ${items.join(", ")}. They have been automatically blocked from assignment.`,
                   severity: "critical",
-                  notification_type: "critical",
+                  notification_type: "staff_clearance_expired_hr",
                   source_table: "staff_compliance",
                   source_record_id: staff.id,
                   link: "/staff",
                   organisation_id: profile.organisation_id,
-                });
+                }, dateBucket);
               }
             }
           }
         }
-        results.push(`${isExpired ? "Expired" : "Expiry warning"} notification for user ${staff.user_id}`);
+        results.push(`${r.created ? "Created" : "Deduped"}: ${isExpired ? "Expired" : "Expiry warning"} for user ${staff.user_id}`);
       }
     }
 
@@ -150,28 +210,21 @@ serve(async (req) => {
       if (inc.assigned_to) notifyUsers.add(inc.assigned_to);
       if (inc.reported_by) notifyUsers.add(inc.reported_by);
 
-      // Also notify compliance officers in the org
-      const { data: complianceUsers } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["compliance_officer", "super_admin"]);
-      for (const cu of complianceUsers ?? []) {
-        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
-        if (p?.organisation_id === inc.organisation_id) notifyUsers.add(cu.user_id);
-      }
+      const compUsers = await getOrgComplianceUsers(supabase, inc.organisation_id);
+      compUsers.forEach(uid => notifyUsers.add(uid));
 
       for (const uid of notifyUsers) {
-        await createNotification(supabase, {
+        await createNotificationDeduped(supabase, {
           user_id: uid,
           title: `Stale incident: ${inc.incident_number}`,
           message: "This incident has been open for more than 5 days without resolution. Immediate action required.",
           severity: "urgent",
-          notification_type: "warning",
+          notification_type: "stale_incident",
           source_table: "incidents",
           source_record_id: inc.id,
           link: "/incidents",
           organisation_id: inc.organisation_id,
-        });
+        }, dateBucket);
       }
       results.push(`Stale alert for incident ${inc.incident_number}`);
     }
@@ -193,17 +246,17 @@ serve(async (req) => {
       if (comp.submitted_by) notifyUsers.add(comp.submitted_by);
 
       for (const uid of notifyUsers) {
-        await createNotification(supabase, {
+        await createNotificationDeduped(supabase, {
           user_id: uid,
           title: `Complaint ${comp.complaint_number} needs acknowledgement`,
           message: "This complaint has not been acknowledged within 2 business days. NDIS requires timely acknowledgement.",
           severity: "urgent",
-          notification_type: "warning",
+          notification_type: "complaint_ack_overdue",
           source_table: "complaints",
           source_record_id: comp.id,
           link: "/complaints",
           organisation_id: comp.organisation_id,
-        });
+        }, dateBucket);
       }
       results.push(`Ack reminder for complaint ${comp.complaint_number}`);
     }
@@ -218,36 +271,32 @@ serve(async (req) => {
 
     for (const pol of overduePolicies ?? []) {
       if (pol.owner_id) {
-        await createNotification(supabase, {
+        await createNotificationDeduped(supabase, {
           user_id: pol.owner_id,
           title: `Policy review overdue: ${pol.title}`,
           message: "This policy has passed its scheduled review date and must be reviewed immediately.",
           severity: "warning",
-          notification_type: "warning",
+          notification_type: "policy_review_overdue",
           source_table: "policies",
           source_record_id: pol.id,
           link: "/policies",
           organisation_id: pol.organisation_id,
-        });
+        }, dateBucket);
       }
 
-      // Notify compliance
-      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
-      for (const cu of compUsers ?? []) {
-        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
-        if (p?.organisation_id === pol.organisation_id && cu.user_id !== pol.owner_id) {
-          await createNotification(supabase, {
-            user_id: cu.user_id,
-            title: `Policy review overdue: ${pol.title}`,
-            message: "A policy in your organisation has passed its review date.",
-            severity: "warning",
-            notification_type: "warning",
-            source_table: "policies",
-            source_record_id: pol.id,
-            link: "/policies",
-            organisation_id: pol.organisation_id,
-          });
-        }
+      const compUsers = await getOrgComplianceUsers(supabase, pol.organisation_id, pol.owner_id ?? undefined);
+      for (const uid of compUsers) {
+        await createNotificationDeduped(supabase, {
+          user_id: uid,
+          title: `Policy review overdue: ${pol.title}`,
+          message: "A policy in your organisation has passed its review date.",
+          severity: "warning",
+          notification_type: "policy_review_overdue",
+          source_table: "policies",
+          source_record_id: pol.id,
+          link: "/policies",
+          organisation_id: pol.organisation_id,
+        }, dateBucket);
       }
       results.push(`Overdue alert for policy ${pol.title}`);
     }
@@ -267,17 +316,17 @@ serve(async (req) => {
 
     for (const pol of upcomingPolicies ?? []) {
       if (pol.owner_id) {
-        await createNotification(supabase, {
+        await createNotificationDeduped(supabase, {
           user_id: pol.owner_id,
           title: `Policy review due soon: ${pol.title}`,
           message: "This policy is due for review within the next 30 days.",
           severity: "info",
-          notification_type: "info",
+          notification_type: "policy_review_upcoming",
           source_table: "policies",
           source_record_id: pol.id,
           link: "/policies",
           organisation_id: pol.organisation_id,
-        });
+        }, dateBucket);
       }
       results.push(`Upcoming review for policy ${pol.title}`);
     }
@@ -294,36 +343,31 @@ serve(async (req) => {
       .lt("created_at", oneDayAgo.toISOString());
 
     for (const sg of urgentSafeguarding ?? []) {
-      // Notify raiser
-      await createNotification(supabase, {
+      await createNotificationDeduped(supabase, {
         user_id: sg.raised_by,
         title: "URGENT: Safeguarding concern unactioned 24+ hours",
         message: "An immediate safety risk concern has not been actioned within 24 hours. This requires immediate escalation.",
         severity: "critical",
-        notification_type: "critical",
+        notification_type: "safeguarding_unactioned_critical",
         source_table: "safeguarding_concerns",
         source_record_id: sg.id,
         link: "/safeguarding",
         organisation_id: sg.organisation_id,
-      });
+      }, dateBucket);
 
-      // Notify compliance
-      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
-      for (const cu of compUsers ?? []) {
-        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
-        if (p?.organisation_id === sg.organisation_id) {
-          await createNotification(supabase, {
-            user_id: cu.user_id,
-            title: "CRITICAL: Safeguarding concern unactioned 24+ hours",
-            message: "An immediate safety risk concern has been open for more than 24 hours without action.",
-            severity: "critical",
-            notification_type: "critical",
-            source_table: "safeguarding_concerns",
-            source_record_id: sg.id,
-            link: "/safeguarding",
-            organisation_id: sg.organisation_id,
-          });
-        }
+      const compUsers = await getOrgComplianceUsers(supabase, sg.organisation_id);
+      for (const uid of compUsers) {
+        await createNotificationDeduped(supabase, {
+          user_id: uid,
+          title: "CRITICAL: Safeguarding concern unactioned 24+ hours",
+          message: "An immediate safety risk concern has been open for more than 24 hours without action.",
+          severity: "critical",
+          notification_type: "safeguarding_unactioned_critical",
+          source_table: "safeguarding_concerns",
+          source_record_id: sg.id,
+          link: "/safeguarding",
+          organisation_id: sg.organisation_id,
+        }, dateBucket);
       }
       results.push(`Urgent safeguarding alert for concern ${sg.id}`);
     }
@@ -338,17 +382,17 @@ serve(async (req) => {
 
     for (const risk of overdueRisks ?? []) {
       const notifyUser = risk.assigned_to || risk.created_by;
-      await createNotification(supabase, {
+      await createNotificationDeduped(supabase, {
         user_id: notifyUser,
         title: `Risk review overdue: ${risk.title}`,
         message: "This risk has passed its scheduled review date and requires immediate attention.",
         severity: "warning",
-        notification_type: "warning",
+        notification_type: "risk_review_overdue",
         source_table: "risks",
         source_record_id: risk.id,
         link: "/risks",
         organisation_id: risk.organisation_id,
-      });
+      }, dateBucket);
       results.push(`Review overdue alert for risk ${risk.title}`);
     }
 
@@ -362,22 +406,19 @@ serve(async (req) => {
       .eq("record_status", "active");
 
     for (const risk of highRisks ?? []) {
-      const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
-      for (const cu of compUsers ?? []) {
-        const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
-        if (p?.organisation_id === risk.organisation_id) {
-          await createNotification(supabase, {
-            user_id: cu.user_id,
-            title: `${risk.risk_level} risk created: ${risk.title}`,
-            message: `A ${risk.risk_level?.toLowerCase()} risk has been identified and requires compliance review.`,
-            severity: risk.risk_level === "Critical" ? "critical" : "urgent",
-            notification_type: risk.risk_level === "Critical" ? "critical" : "warning",
-            source_table: "risks",
-            source_record_id: risk.id,
-            link: "/risks",
-            organisation_id: risk.organisation_id,
-          });
-        }
+      const compUsers = await getOrgComplianceUsers(supabase, risk.organisation_id);
+      for (const uid of compUsers) {
+        await createNotificationDeduped(supabase, {
+          user_id: uid,
+          title: `${risk.risk_level} risk created: ${risk.title}`,
+          message: `A ${risk.risk_level?.toLowerCase()} risk has been identified and requires compliance review.`,
+          severity: risk.risk_level === "Critical" ? "critical" : "urgent",
+          notification_type: risk.risk_level === "Critical" ? "risk_critical_created" : "risk_high_created",
+          source_table: "risks",
+          source_record_id: risk.id,
+          link: "/risks",
+          organisation_id: risk.organisation_id,
+        }, dateBucket);
       }
       results.push(`High risk notification for ${risk.title}`);
     }
@@ -399,22 +440,19 @@ serve(async (req) => {
       }
       for (const [pid, info] of Object.entries(countMap)) {
         if (info.count >= 3) {
-          const { data: compUsers } = await supabase.from("user_roles").select("user_id").in("role", ["compliance_officer", "super_admin"]);
-          for (const cu of compUsers ?? []) {
-            const { data: p } = await supabase.from("user_profiles").select("organisation_id").eq("id", cu.user_id).maybeSingle();
-            if (p?.organisation_id === info.org) {
-              await createNotification(supabase, {
-                user_id: cu.user_id,
-                title: "Repeat complaint trend detected",
-                message: `A participant has ${info.count} complaints on record — pattern review recommended.`,
-                severity: "warning",
-                notification_type: "warning",
-                source_table: "complaints",
-                source_record_id: pid,
-                link: "/complaints",
-                organisation_id: info.org,
-              });
-            }
+          const compUsers = await getOrgComplianceUsers(supabase, info.org);
+          for (const uid of compUsers) {
+            await createNotificationDeduped(supabase, {
+              user_id: uid,
+              title: "Repeat complaint trend detected",
+              message: `A participant has ${info.count} complaints on record — pattern review recommended.`,
+              severity: "warning",
+              notification_type: "repeat_complaint_trend",
+              source_table: "complaints",
+              source_record_id: pid,
+              link: "/complaints",
+              organisation_id: info.org,
+            }, dateBucket);
           }
           results.push(`Repeat complaint alert for participant ${pid}`);
         }
