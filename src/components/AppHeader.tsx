@@ -9,6 +9,12 @@ import { useNavigate } from "react-router-dom";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth");
+  };
 
   return (
     <header className="flex h-14 items-center gap-2 border-b bg-background px-4" role="banner">
