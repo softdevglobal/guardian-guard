@@ -21,9 +21,13 @@ import { format, differenceInDays } from "date-fns";
 import {
   Plus, Eye, EyeOff, Shield, Search, AlertTriangle, TrendingDown,
   TrendingUp, FileText, Upload, CheckCircle, XCircle, Clock, User,
-  Lock, Unlock, BarChart3, Activity
+  Lock, Unlock, BarChart3, Activity, Download
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { ParticipantTimeline } from "@/components/compliance/ParticipantTimeline";
+import { ComplianceChainView } from "@/components/compliance/ComplianceChainView";
+import { LinkedRecords } from "@/components/compliance/LinkedRecords";
+import { fetchParticipantEvidenceChain, exportEvidenceChainCSV, downloadCSV } from "@/lib/evidenceChainExport";
 
 type Participant = Tables<"participants">;
 type Goal = Tables<"participant_goals">;
