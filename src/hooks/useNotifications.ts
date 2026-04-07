@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,14 +44,23 @@ export interface AppNotification {
  *   authenticated subscriber on the same channel name, even without row access.
  *   This is a Supabase platform limitation — no row data leaks, but the
  *   existence of an INSERT event is observable.
- * - Mitigation: use a unique channel name per user to prevent cross-user
- *   channel sharing.
+ * - Mitigation: use a unique channel name per subscriber instance, scoped by
+ *   user id, to prevent cross-user channel sharing and cross-component channel
+ *   reuse collisions.
  */
 
 export function useNotifications(options?: { limit?: number }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const limit = options?.limit ?? 50;
+  const subscriptionIdRef = useRef<string | null>(null);
+
+  if (!subscriptionIdRef.current) {
+    subscriptionIdRef.current =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+  }
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications", user?.id, limit],
@@ -69,24 +78,31 @@ export function useNotifications(options?: { limit?: number }) {
     refetchInterval: 30000,
   });
 
-  // Realtime subscription — scoped channel per user to prevent cross-user event leakage
+  // Realtime subscription — scoped channel per hook instance to avoid channel reuse collisions
   useEffect(() => {
-    if (!user) return;
-    // Unique channel name per user prevents other authenticated users from
-    // observing INSERT event metadata on the same channel
-    const channelName = `notifications-${user.id}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on("postgres_changes", {
+    if (!user || !subscriptionIdRef.current) return;
+
+    const channelName = `notifications-${user.id}-${subscriptionIdRef.current}`;
+    const channel = supabase.channel(channelName);
+
+    channel.on(
+      "postgres_changes",
+      {
         event: "INSERT",
         schema: "public",
         table: "notifications",
         filter: `user_id=eq.${user.id}`,
-      }, () => {
+      },
+      () => {
         queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      }
+    );
+
+    channel.subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [user, queryClient]);
 
   const markRead = useMutation({
