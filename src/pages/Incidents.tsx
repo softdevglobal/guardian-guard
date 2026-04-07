@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Search, Filter, AlertTriangle, Clock, CheckCircle, ShieldAlert,
-  Timer, FileWarning, BarChart3, Siren
+  Timer, FileWarning, BarChart3, Siren, Shield, XCircle
 } from "lucide-react";
 import { format, differenceInHours, differenceInDays } from "date-fns";
 import { IncidentFormDialog } from "@/components/incidents/IncidentFormDialog";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
+import { AuditSimulation } from "@/components/incidents/AuditSimulation";
+import { FailureCasesDashboard } from "@/components/incidents/FailureCasesDashboard";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Incident = Tables<"incidents">;
