@@ -1,55 +1,63 @@
 
+# Full Relational Integrity Refactor
 
-# Fix: Data Linkage and Relevancy Across Full Site
+## Current State (Already Built)
+✅ FK constraints on incidents→participants, risks→participants/incidents/complaints, safeguarding→participants/incidents/risks/complaints
+✅ Audit trail triggers on all major tables (audit_trail_trigger)
+✅ Workflow enforcement (incident + complaint status machines)
+✅ Soft delete with `record_status` + `prevent_record_deletion` triggers
+✅ Severity downgrade prevention
+✅ Incident versioning + workflow history
+✅ Risk mitigation enforcement before closure
+✅ Training completions with score, verified_by, assessment_passed
+✅ Staff eligibility auto-evaluation
 
-## Problems Found
+## What Needs Building
 
-1. **Complaints table is empty** (0 records) — complaints demo data was never seeded despite the Complaints Management system being built. The seeding edge function only ran for participants, incidents, and risks.
+### Phase 1: Schema Gaps (Migration)
+1. Add `linked_incident_id` to `training_completions` — links training to skill-gap incidents
+2. Add `linked_staff_id` FK to `complaints` — tracks staff involved in complaint
+3. Ensure all existing demo data has proper cross-links (no orphan records)
 
-2. **Safeguarding concerns empty** (0 records), **Privacy incidents empty** (0 records), **Alerts empty** (0 records) — no demo data seeded for these modules.
+### Phase 2: Participant Compliance Timeline (New Component)
+- New page/component: `/participants/:id/timeline`
+- Unified chronological view merging:
+  - Risks (date_identified)
+  - Incidents (date_of_incident)
+  - Complaints (created_at)
+  - Safeguarding concerns (date_raised)
+  - Training completions (for assigned staff)
+  - Audit log entries
+- Filterable by module type
+- Shows linked entities inline
 
-3. **Dashboard shows all zeros** — The Dashboard queries for incidents, complaints, safeguarding, and privacy all return 0 or default 100% because either:
-   - Tables are empty (complaints, safeguarding, privacy, alerts)
-   - RLS blocks the current user from seeing data (user may not have `organisation_id` set or correct role)
+### Phase 3: Linked Records UI
+- Add "Linked Records" card to:
+  - Incident detail → shows linked participant, risk, staff, complaints
+  - Risk detail → shows linked participant, incidents, complaints, staff
+  - Complaint detail → shows linked participant, staff, incidents
+- Clickable links to navigate between records
 
-4. **User profile `organisation_id` may be null** — The primary user (`fffb42d5-...`, Sathindra Gurusinghe) has `organisation_id = null`, so all RLS policies using `get_user_organisation_id(auth.uid())` return null, blocking every query. This is the **root cause** of data not reflecting.
+### Phase 4: Evidence Chain Export
+- Participant-centric export: for a given participant, gather ALL linked records
+- Incident-centric export: already partially built, extend with training + staff compliance
+- Export as CSV (structured) with all linked entity IDs and details
+- PDF generation (formatted audit-ready report)
 
-5. **Risk linkage to complaints broken** — All 10 risks have `linked_complaint_id = null` because complaints table is empty.
+### Phase 5: Seed Interconnected Demo Data (Data Insert)
+- Ensure 10 participants each have at least 1 risk + 1 incident linked
+- Link complaints to participants and involved staff
+- Link training completions to incidents (skill-gap scenarios)
+- Link risks to incidents that triggered them
+- Result: zero orphan records, full traceability chains
 
-6. **Staff compliance only has 2 records**, both at 0% — no meaningful demo data.
+### Phase 6: Compliance Chain Visualization
+- Simple visual on participant detail showing:
+  `Participant → Risks → Incidents → Actions → Training`
+- Uses existing data relationships, rendered as a flow diagram
 
-## Plan
-
-### Step 1: Fix user profile organisation linkage (Migration)
-- Update the primary user profile (`fffb42d5-...`) to set `organisation_id = '607ad2d2-6cb9-48c6-a0d0-8082a904adf1'` so RLS policies pass.
-- Ensure all demo user profiles have the correct `organisation_id`.
-
-### Step 2: Seed complaints demo data (Migration)
-- Insert 8-10 complaint records across various statuses (submitted, acknowledged, under_review, investigating, resolved, closed).
-- Include realistic NDIS-relevant scenarios: service quality, staff conduct, communication failures.
-- Set correct `organisation_id`, `complaint_number`, timestamps, and acknowledgement dates.
-- Link some risks to these complaints via `linked_complaint_id` updates.
-
-### Step 3: Seed safeguarding, privacy incidents, and alerts (Migration)
-- Insert 3-5 safeguarding concerns with varying severity and escalation levels.
-- Insert 2-3 privacy incidents.
-- Insert 5-8 alerts covering overdue reviews, critical risks, and stale complaints.
-
-### Step 4: Update staff compliance demo data (Migration)
-- Update existing 2 records with realistic compliance percentages and check statuses.
-- Add 3-4 more staff compliance records tied to existing user profiles.
-
-### Step 5: Fix Dashboard queries resilience
-- Update `Dashboard.tsx` queries to handle cases where `record_status` column doesn't exist on some tables (safeguarding_concerns, complaints already have it, but ensure consistency).
-- Ensure the pulse score queries don't silently fail.
-
-### Step 6: Fix risks linkage to new complaints
-- Update risk records RSK-004 and RSK-005 to link to newly seeded complaint IDs.
-
-## Technical Details
-
-- All data seeding via SQL migration (single migration file)
-- Organisation ID `607ad2d2-6cb9-48c6-a0d0-8082a904adf1` used consistently
-- Complaint numbers follow `CMP-2026-XXXX` pattern
-- RLS fix is the critical path — without org_id on user profile, nothing displays
-
+## Technical Approach
+- Phase 1: Single migration for schema changes
+- Phases 2-4: New React components + lib functions
+- Phase 5: Supabase insert tool for data
+- Phase 6: Simple React component with lines/connections
