@@ -1,132 +1,55 @@
 
 
-# Audit-Grade Policy Enforcement Implementation
+# Fix: Data Linkage and Relevancy Across Full Site
 
-This plan bridges the gap between the expanded policy documents and the current system. The core issue: forms capture data but modules lack **edit capabilities**, **closure validation**, **workflow enforcement**, **cross-module linking**, and **mandatory field enforcement**.
+## Problems Found
 
----
+1. **Complaints table is empty** (0 records) — complaints demo data was never seeded despite the Complaints Management system being built. The seeding edge function only ran for participants, incidents, and risks.
 
-## What Needs to Change
+2. **Safeguarding concerns empty** (0 records), **Privacy incidents empty** (0 records), **Alerts empty** (0 records) — no demo data seeded for these modules.
 
-### 1. Incident Detail Sheet — Full Edit + Closure Enforcement
-**Current**: Read-only detail view with a single "advance status" button.
-**Required**: Editable sections that unlock based on workflow stage.
+3. **Dashboard shows all zeros** — The Dashboard queries for incidents, complaints, safeguarding, and privacy all return 0 or default 100% because either:
+   - Tables are empty (complaints, safeguarding, privacy, alerts)
+   - RLS blocks the current user from seeing data (user may not have `organisation_id` set or correct role)
 
-- Add "People Involved" section with participant/staff pickers (linked records)
-- Add editable Investigation section (root cause, contributing factors, corrective/preventive actions) — only visible and editable when status = `investigating` or later
-- Add editable Closure section (outcome summary, follow-up completed, closure recommendation)
-- **Closure validation**: Block advancement to `closed` unless:
-  - All corrective actions recorded
-  - Participant follow-up marked complete
-  - Investigation fields filled (root cause, contributing factors)
-  - Description is non-empty
-- Show validation errors when closure criteria are not met
-- Add `logAudit()` calls on every status change and field edit
+4. **User profile `organisation_id` may be null** — The primary user (`fffb42d5-...`, Sathindra Gurusinghe) has `organisation_id = null`, so all RLS policies using `get_user_organisation_id(auth.uid())` return null, blocking every query. This is the **root cause** of data not reflecting.
 
-### 2. Incident Form — People Involved Section
-- Add Section 2 accordion: "People Involved"
-  - Participant picker (existing query)
-  - Staff picker (from user_profiles)
-  - Witnesses text/jsonb field
-  - Other persons involved text/jsonb field
-- Save `participant_id`, `linked_staff_id`, `witnesses`, `other_persons_involved` on create
+5. **Risk linkage to complaints broken** — All 10 risks have `linked_complaint_id = null` because complaints table is empty.
 
-### 3. Risk Detail Sheet — Editable + Workflow Buttons
-**Current**: Read-only detail sheet.
-**Required**: Status workflow buttons + editable mitigation fields.
+6. **Staff compliance only has 2 records**, both at 0% — no meaningful demo data.
 
-- Add status advancement: Open → Assessed → Mitigating → Monitoring → Closed
-- Role gates: only compliance_officer/super_admin can close
-- Add linked record display (participant, staff, incident, complaint)
-- Add linked record pickers in the create form
-- Add editable mitigation actions section
-- **Escalation enforcement**: If score >= 7 (spec threshold), require review_date within 7 days and mitigation owner
+## Plan
 
-### 4. Complaint Detail Sheet — Workflow + Acknowledgement
-**Current**: Read-only detail sheet, no workflow.
-**Required**: Full workflow with acknowledgement tracking.
+### Step 1: Fix user profile organisation linkage (Migration)
+- Update the primary user profile (`fffb42d5-...`) to set `organisation_id = '607ad2d2-6cb9-48c6-a0d0-8082a904adf1'` so RLS policies pass.
+- Ensure all demo user profiles have the correct `organisation_id`.
 
-- Add workflow buttons: Received → Acknowledged → Under Review → Investigating → Resolved → Closed
-- Auto-set `acknowledgement_date` when advanced to "acknowledged"
-- Role gates on transitions
-- Add editable fields: investigation_summary, resolution_actions, final_outcome, outcome_communicated_date
-- **Safeguarding crossover**: When complaint category is "safeguarding", show a warning and a "Create Safeguarding Concern" button that pre-fills a linked concern
-- **Closure enforcement**: Require resolution_actions and outcome_communicated_date before closing
+### Step 2: Seed complaints demo data (Migration)
+- Insert 8-10 complaint records across various statuses (submitted, acknowledged, under_review, investigating, resolved, closed).
+- Include realistic NDIS-relevant scenarios: service quality, staff conduct, communication failures.
+- Set correct `organisation_id`, `complaint_number`, timestamps, and acknowledgement dates.
+- Link some risks to these complaints via `linked_complaint_id` updates.
 
-### 5. Safeguarding Detail Sheet — Workflow + Linked Records
-**Current**: Read-only detail sheet.
-**Required**: Full workflow with linked record display.
+### Step 3: Seed safeguarding, privacy incidents, and alerts (Migration)
+- Insert 3-5 safeguarding concerns with varying severity and escalation levels.
+- Insert 2-3 privacy incidents.
+- Insert 5-8 alerts covering overdue reviews, critical risks, and stale complaints.
 
-- Add workflow buttons: Raised → Screened → Action Required → Monitoring → Resolved → Closed
-- Display linked incident, complaint, risk records
-- Add editable: review_notes, support_actions, outcome
-- **Linkage enforcement**: If linked to complaint or incident, prevent closure until linked record is reviewed
-- Show repeat concern banner if same participant has 2+ concerns
+### Step 4: Update staff compliance demo data (Migration)
+- Update existing 2 records with realistic compliance percentages and check statuses.
+- Add 3-4 more staff compliance records tied to existing user profiles.
 
-### 6. Privacy Detail Sheet — Workflow + Data Types
-**Current**: Read-only detail sheet.
-**Required**: Workflow + data type selection.
+### Step 5: Fix Dashboard queries resilience
+- Update `Dashboard.tsx` queries to handle cases where `record_status` column doesn't exist on some tables (safeguarding_concerns, complaints already have it, but ensure consistency).
+- Ensure the pulse score queries don't silently fail.
 
-- Add workflow buttons: Detected → Contained → Assessed → Actioned → Closed
-- Add data_type_involved multi-select checkboxes (personal_info, sensitive_info, participant_notes, staff_records, ai_logs, uploaded_files)
-- Add access_source selector (office_device, remote_device, unknown_device)
-- Add editable corrective_action field
-- Add notification_completed_date field
+### Step 6: Fix risks linkage to new complaints
+- Update risk records RSK-004 and RSK-005 to link to newly seeded complaint IDs.
 
-### 7. Staff Compliance — Clearance Date Editing + Conduct Breach
-**Current**: Can toggle training switches and change status dropdowns.
-**Required**: Date fields for clearance issue/expiry.
+## Technical Details
 
-- Add editable date fields: police_check_date, police_check_expiry, wwcc_expiry, worker_screening_expiry
-- Add WWCC number field
-- Show conduct breach linkage: if complaints or incidents reference this staff member, display them in the detail sheet
-
-### 8. Cross-Module Triggers (Client-Side)
-Since database triggers are limited, implement these as client-side logic in mutation handlers:
-
-- **Complaint → Safeguarding**: When a complaint with category "safeguarding" is created, prompt to create a linked safeguarding concern
-- **Incident closure → Risk prompt**: When closing an incident with root cause indicating system weakness, show "Create linked risk?" dialog
-- **Staff conduct complaint**: When complaint category is "staff_conduct", show link to staff compliance record
-
-### 9. Audit Trail Integration
-- Add `logAudit()` to every status change across all modules (currently only in Policies and StaffCompliance)
-- Log field-level changes for severity, classification, and outcome fields in incidents
-- Log every workflow advancement in complaints, safeguarding, privacy
-
-### 10. Compliance Automation Edge Function — Add Missing Triggers
-Current function handles: staff expiry, stale incidents, complaint ack overdue, policy review overdue.
-**Add**:
-- Safeguarding urgent response check: if immediate_safety_risk = true and no action within 24 hours, create alert
-- Risk review overdue: if review_date passed and status not closed, create alert
-- Repeat complaint detection: if same participant has 3+ complaints, create trend alert
-
----
-
-## Files to Create/Edit
-
-| File | Action |
-|---|---|
-| `src/components/incidents/IncidentDetailSheet.tsx` | Major rewrite: add editable sections, closure validation, audit logging |
-| `src/components/incidents/IncidentFormDialog.tsx` | Add People Involved section |
-| `src/pages/Risks.tsx` | Add workflow buttons, linked record pickers, mitigation editing |
-| `src/pages/Complaints.tsx` | Add workflow buttons, acknowledgement tracking, safeguarding crossover, editable resolution fields |
-| `src/pages/Safeguarding.tsx` | Add workflow buttons, linked records display, repeat concern banner |
-| `src/pages/Privacy.tsx` | Add workflow buttons, data type checkboxes, editable fields |
-| `src/pages/StaffCompliance.tsx` | Add clearance date fields, conduct breach display |
-| `supabase/functions/compliance-automation/index.ts` | Add safeguarding response check, risk review overdue, repeat complaint detection |
-
-No database migrations needed — all required columns already exist from Phase 1.
-
----
-
-## Implementation Priority
-
-1. Incident detail sheet (highest audit impact — this is the core compliance object)
-2. Complaint workflow + safeguarding crossover
-3. Safeguarding workflow + linked records
-4. Risk workflow + linked records
-5. Privacy workflow
-6. Staff compliance date editing
-7. Automation edge function updates
-8. Audit trail wiring across all modules
+- All data seeding via SQL migration (single migration file)
+- Organisation ID `607ad2d2-6cb9-48c6-a0d0-8082a904adf1` used consistently
+- Complaint numbers follow `CMP-2026-XXXX` pattern
+- RLS fix is the critical path — without org_id on user profile, nothing displays
 
