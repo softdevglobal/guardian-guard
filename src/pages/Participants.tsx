@@ -38,7 +38,9 @@ const getMaskLevel = (role: string): "full" | "partial" | "masked" => {
 
 const maskField = (value: string | null, level: "full" | "partial" | "masked", isRevealed: boolean): string => {
   if (!value) return "—";
-  if (isRevealed || level === "full") return value;
+  // All roles see masked data by default — reveal requires explicit toggle
+  if (isRevealed) return value;
+  if (level === "full") return value.slice(0, 2) + "••••••";
   if (level === "partial") return value.slice(0, 3) + "••••";
   return "••••••••";
 };
