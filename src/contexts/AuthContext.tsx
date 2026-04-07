@@ -27,6 +27,8 @@ interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isMockAudit: boolean;
+  setMockAudit: (val: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: AppRole | AppRole[]) => boolean;
@@ -42,13 +44,13 @@ export function useAuth() {
 }
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
-  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings"],
-  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy"],
+  super_admin: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  compliance_officer: ["dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
   supervisor: ["dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
   trainer: ["dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],
   support_worker: ["dashboard", "incidents", "participants", "safeguarding"],
-  hr_admin: ["dashboard", "staff", "training", "privacy"],
-  executive: ["dashboard", "incidents", "risks", "complaints", "policies", "audit"],
+  hr_admin: ["dashboard", "staff", "training", "privacy", "competency"],
+  executive: ["dashboard", "incidents", "risks", "complaints", "policies", "audit", "controls", "evidence_room"],
   participant: ["dashboard", "training", "complaints"],
 };
 
@@ -56,16 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMockAudit, setIsMockAudit] = useState(false);
 
   const fetchUserProfile = useCallback(async (authUser: User) => {
-    // Get profile
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("id, email, full_name, avatar_url, team_id, organisation_id")
       .eq("id", authUser.id)
       .single();
 
-    // Get role
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -87,12 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         setSession(newSession);
         if (newSession?.user) {
-          // Use setTimeout to avoid Supabase client deadlock
           setTimeout(() => fetchUserProfile(newSession.user), 0);
         } else {
           setUser(null);
@@ -101,7 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       setSession(existingSession);
       if (existingSession?.user) {
@@ -122,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setIsMockAudit(false);
   }, []);
 
   const hasRole = useCallback(
@@ -141,8 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [user]
   );
 
+  const setMockAudit = useCallback((val: boolean) => {
+    setIsMockAudit(val);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, login, logout, hasRole, hasModule }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule }}>
       {children}
     </AuthContext.Provider>
   );
