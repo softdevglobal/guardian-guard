@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/auditLog";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 const INITIAL_FORM = {
   title: "",
