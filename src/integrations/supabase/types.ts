@@ -296,57 +296,99 @@ export type Database = {
       }
       complaints: {
         Row: {
+          acknowledgement_date: string | null
+          anonymous: boolean | null
+          assigned_handler: string | null
           assigned_to: string | null
+          complainant_name: string | null
+          complaint_category: string | null
           complaint_number: string
+          complaint_source: string | null
           created_at: string
           description: string | null
+          escalation_required: boolean | null
+          final_outcome: string | null
           id: string
+          immediate_risk_identified: boolean | null
+          investigation_summary: string | null
           organisation_id: string
+          outcome_communicated_date: string | null
           participant_id: string | null
           priority: string
           record_status: Database["public"]["Enums"]["record_status"]
+          requested_outcome: string | null
+          resolution_actions: string | null
           resolved_at: string | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
           status: Database["public"]["Enums"]["complaint_status"]
           subject: string
+          submission_channel: string | null
           submitted_by: string | null
           submitted_by_name: string | null
           team_id: string | null
           updated_at: string
         }
         Insert: {
+          acknowledgement_date?: string | null
+          anonymous?: boolean | null
+          assigned_handler?: string | null
           assigned_to?: string | null
+          complainant_name?: string | null
+          complaint_category?: string | null
           complaint_number: string
+          complaint_source?: string | null
           created_at?: string
           description?: string | null
+          escalation_required?: boolean | null
+          final_outcome?: string | null
           id?: string
+          immediate_risk_identified?: boolean | null
+          investigation_summary?: string | null
           organisation_id: string
+          outcome_communicated_date?: string | null
           participant_id?: string | null
           priority?: string
           record_status?: Database["public"]["Enums"]["record_status"]
+          requested_outcome?: string | null
+          resolution_actions?: string | null
           resolved_at?: string | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: Database["public"]["Enums"]["complaint_status"]
           subject: string
+          submission_channel?: string | null
           submitted_by?: string | null
           submitted_by_name?: string | null
           team_id?: string | null
           updated_at?: string
         }
         Update: {
+          acknowledgement_date?: string | null
+          anonymous?: boolean | null
+          assigned_handler?: string | null
           assigned_to?: string | null
+          complainant_name?: string | null
+          complaint_category?: string | null
           complaint_number?: string
+          complaint_source?: string | null
           created_at?: string
           description?: string | null
+          escalation_required?: boolean | null
+          final_outcome?: string | null
           id?: string
+          immediate_risk_identified?: boolean | null
+          investigation_summary?: string | null
           organisation_id?: string
+          outcome_communicated_date?: string | null
           participant_id?: string | null
           priority?: string
           record_status?: Database["public"]["Enums"]["record_status"]
+          requested_outcome?: string | null
+          resolution_actions?: string | null
           resolved_at?: string | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: Database["public"]["Enums"]["complaint_status"]
           subject?: string
+          submission_channel?: string | null
           submitted_by?: string | null
           submitted_by_name?: string | null
           team_id?: string | null
@@ -372,6 +414,59 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_actions: {
+        Row: {
+          action_type: string
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string
+          due_date: string | null
+          id: string
+          incident_id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_type?: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          due_date?: string | null
+          id?: string
+          incident_id: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          incident_id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_actions_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
             referencedColumns: ["id"]
           },
         ]
@@ -451,73 +546,163 @@ export type Database = {
       }
       incidents: {
         Row: {
+          ai_suggested_classification: string | null
+          assigned_investigator: string | null
           assigned_to: string | null
           closed_at: string | null
           closed_by: string | null
+          closure_recommendation: string | null
+          contributing_factors: string | null
+          corrective_actions: string | null
           created_at: string
+          current_participant_condition: string | null
+          date_of_incident: string | null
+          date_reported: string | null
           description: string | null
+          emergency_service_contacted: boolean | null
+          environment: string | null
           id: string
+          immediate_action_taken: string | null
+          incident_category: string | null
+          incident_location: string | null
           incident_number: string
+          incident_summary: string | null
           incident_type: string
           injury_involved: boolean
+          investigation_required: boolean | null
           is_reportable: boolean
+          linked_staff_id: string | null
+          medical_attention_required: boolean | null
           ndis_notification_deadline: string | null
           organisation_id: string
+          other_persons_involved: Json | null
+          outcome_summary: string | null
+          participant_followup_completed: boolean | null
+          participant_harmed: boolean | null
           participant_id: string | null
+          preventive_actions: string | null
           record_status: Database["public"]["Enums"]["record_status"]
+          reportable_reason: string | null
           reported_by: string
+          reporter_role: string | null
+          root_cause: string | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
           severity: Database["public"]["Enums"]["incident_severity"]
+          staff_harmed: boolean | null
           status: Database["public"]["Enums"]["incident_status"]
+          sub_category: string | null
+          supervisor_classification: string | null
           team_id: string | null
+          time_of_incident: string | null
           title: string
           updated_at: string
+          witnesses: Json | null
         }
         Insert: {
+          ai_suggested_classification?: string | null
+          assigned_investigator?: string | null
           assigned_to?: string | null
           closed_at?: string | null
           closed_by?: string | null
+          closure_recommendation?: string | null
+          contributing_factors?: string | null
+          corrective_actions?: string | null
           created_at?: string
+          current_participant_condition?: string | null
+          date_of_incident?: string | null
+          date_reported?: string | null
           description?: string | null
+          emergency_service_contacted?: boolean | null
+          environment?: string | null
           id?: string
+          immediate_action_taken?: string | null
+          incident_category?: string | null
+          incident_location?: string | null
           incident_number: string
+          incident_summary?: string | null
           incident_type: string
           injury_involved?: boolean
+          investigation_required?: boolean | null
           is_reportable?: boolean
+          linked_staff_id?: string | null
+          medical_attention_required?: boolean | null
           ndis_notification_deadline?: string | null
           organisation_id: string
+          other_persons_involved?: Json | null
+          outcome_summary?: string | null
+          participant_followup_completed?: boolean | null
+          participant_harmed?: boolean | null
           participant_id?: string | null
+          preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          reportable_reason?: string | null
           reported_by: string
+          reporter_role?: string | null
+          root_cause?: string | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           severity?: Database["public"]["Enums"]["incident_severity"]
+          staff_harmed?: boolean | null
           status?: Database["public"]["Enums"]["incident_status"]
+          sub_category?: string | null
+          supervisor_classification?: string | null
           team_id?: string | null
+          time_of_incident?: string | null
           title: string
           updated_at?: string
+          witnesses?: Json | null
         }
         Update: {
+          ai_suggested_classification?: string | null
+          assigned_investigator?: string | null
           assigned_to?: string | null
           closed_at?: string | null
           closed_by?: string | null
+          closure_recommendation?: string | null
+          contributing_factors?: string | null
+          corrective_actions?: string | null
           created_at?: string
+          current_participant_condition?: string | null
+          date_of_incident?: string | null
+          date_reported?: string | null
           description?: string | null
+          emergency_service_contacted?: boolean | null
+          environment?: string | null
           id?: string
+          immediate_action_taken?: string | null
+          incident_category?: string | null
+          incident_location?: string | null
           incident_number?: string
+          incident_summary?: string | null
           incident_type?: string
           injury_involved?: boolean
+          investigation_required?: boolean | null
           is_reportable?: boolean
+          linked_staff_id?: string | null
+          medical_attention_required?: boolean | null
           ndis_notification_deadline?: string | null
           organisation_id?: string
+          other_persons_involved?: Json | null
+          outcome_summary?: string | null
+          participant_followup_completed?: boolean | null
+          participant_harmed?: boolean | null
           participant_id?: string | null
+          preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          reportable_reason?: string | null
           reported_by?: string
+          reporter_role?: string | null
+          root_cause?: string | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           severity?: Database["public"]["Enums"]["incident_severity"]
+          staff_harmed?: boolean | null
           status?: Database["public"]["Enums"]["incident_status"]
+          sub_category?: string | null
+          supervisor_classification?: string | null
           team_id?: string | null
+          time_of_incident?: string | null
           title?: string
           updated_at?: string
+          witnesses?: Json | null
         }
         Relationships: [
           {
@@ -822,59 +1007,119 @@ export type Database = {
       }
       policies: {
         Row: {
+          acknowledgement_due_date: string | null
           approved_at: string | null
           approved_by: string | null
+          category: string | null
           created_at: string
           current_version: number
+          effective_date: string | null
           id: string
           last_review_date: string | null
+          linked_training_module_id: string | null
           next_review_date: string | null
           organisation_id: string
           owner_id: string | null
+          policy_text: string | null
           published_at: string | null
           record_status: Database["public"]["Enums"]["record_status"]
+          staff_acknowledgement_required: boolean | null
           status: Database["public"]["Enums"]["policy_status"]
           title: string
           updated_at: string
         }
         Insert: {
+          acknowledgement_due_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          category?: string | null
           created_at?: string
           current_version?: number
+          effective_date?: string | null
           id?: string
           last_review_date?: string | null
+          linked_training_module_id?: string | null
           next_review_date?: string | null
           organisation_id: string
           owner_id?: string | null
+          policy_text?: string | null
           published_at?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          staff_acknowledgement_required?: boolean | null
           status?: Database["public"]["Enums"]["policy_status"]
           title: string
           updated_at?: string
         }
         Update: {
+          acknowledgement_due_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          category?: string | null
           created_at?: string
           current_version?: number
+          effective_date?: string | null
           id?: string
           last_review_date?: string | null
+          linked_training_module_id?: string | null
           next_review_date?: string | null
           organisation_id?: string
           owner_id?: string | null
+          policy_text?: string | null
           published_at?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          staff_acknowledgement_required?: boolean | null
           status?: Database["public"]["Enums"]["policy_status"]
           title?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "policies_linked_training_module_id_fkey"
+            columns: ["linked_training_module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "policies_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_acknowledgements: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          policy_id: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          policy_id: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          policy_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_acknowledgements_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
             referencedColumns: ["id"]
           },
         ]
@@ -913,6 +1158,99 @@ export type Database = {
             columns: ["policy_id"]
             isOneToOne: false
             referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacy_incidents: {
+        Row: {
+          access_source: string | null
+          affected_participants: Json | null
+          affected_records_count: number | null
+          affected_staff: Json | null
+          breach_description: string | null
+          containment_action: string | null
+          corrective_action: string | null
+          created_at: string
+          data_type_involved: string[] | null
+          date_detected: string
+          detected_by: string
+          geolocation_flag: string | null
+          id: string
+          incident_type: Database["public"]["Enums"]["privacy_incident_type"]
+          notification_completed_date: string | null
+          notification_required: boolean | null
+          organisation_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          risk_rating: string | null
+          sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
+          status: Database["public"]["Enums"]["privacy_incident_status"]
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_source?: string | null
+          affected_participants?: Json | null
+          affected_records_count?: number | null
+          affected_staff?: Json | null
+          breach_description?: string | null
+          containment_action?: string | null
+          corrective_action?: string | null
+          created_at?: string
+          data_type_involved?: string[] | null
+          date_detected?: string
+          detected_by: string
+          geolocation_flag?: string | null
+          id?: string
+          incident_type?: Database["public"]["Enums"]["privacy_incident_type"]
+          notification_completed_date?: string | null
+          notification_required?: boolean | null
+          organisation_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          risk_rating?: string | null
+          sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
+          status?: Database["public"]["Enums"]["privacy_incident_status"]
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_source?: string | null
+          affected_participants?: Json | null
+          affected_records_count?: number | null
+          affected_staff?: Json | null
+          breach_description?: string | null
+          containment_action?: string | null
+          corrective_action?: string | null
+          created_at?: string
+          data_type_involved?: string[] | null
+          date_detected?: string
+          detected_by?: string
+          geolocation_flag?: string | null
+          id?: string
+          incident_type?: Database["public"]["Enums"]["privacy_incident_type"]
+          notification_completed_date?: string | null
+          notification_required?: boolean | null
+          organisation_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          risk_rating?: string | null
+          sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
+          status?: Database["public"]["Enums"]["privacy_incident_status"]
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacy_incidents_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacy_incidents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -967,12 +1305,25 @@ export type Database = {
           category: string
           created_at: string
           created_by: string
+          date_identified: string | null
           description: string | null
+          escalation_required: boolean | null
+          existing_controls: string | null
           id: string
           impact: string
+          impact_score: number | null
           likelihood: string
+          likelihood_score: number | null
+          linked_complaint_id: string | null
+          linked_incident_id: string | null
+          linked_participant_id: string | null
+          linked_staff_id: string | null
           organisation_id: string
           record_status: Database["public"]["Enums"]["record_status"]
+          residual_risk_score: number | null
+          review_date: string | null
+          risk_level: string | null
+          risk_score: number | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
           status: string
           team_id: string | null
@@ -984,12 +1335,25 @@ export type Database = {
           category: string
           created_at?: string
           created_by: string
+          date_identified?: string | null
           description?: string | null
+          escalation_required?: boolean | null
+          existing_controls?: string | null
           id?: string
           impact: string
+          impact_score?: number | null
           likelihood: string
+          likelihood_score?: number | null
+          linked_complaint_id?: string | null
+          linked_incident_id?: string | null
+          linked_participant_id?: string | null
+          linked_staff_id?: string | null
           organisation_id: string
           record_status?: Database["public"]["Enums"]["record_status"]
+          residual_risk_score?: number | null
+          review_date?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
           team_id?: string | null
@@ -1001,12 +1365,25 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string
+          date_identified?: string | null
           description?: string | null
+          escalation_required?: boolean | null
+          existing_controls?: string | null
           id?: string
           impact?: string
+          impact_score?: number | null
           likelihood?: string
+          likelihood_score?: number | null
+          linked_complaint_id?: string | null
+          linked_incident_id?: string | null
+          linked_participant_id?: string | null
+          linked_staff_id?: string | null
           organisation_id?: string
           record_status?: Database["public"]["Enums"]["record_status"]
+          residual_risk_score?: number | null
+          review_date?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
           team_id?: string | null
@@ -1014,6 +1391,27 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "risks_linked_complaint_id_fkey"
+            columns: ["linked_complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_linked_participant_id_fkey"
+            columns: ["linked_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "risks_organisation_id_fkey"
             columns: ["organisation_id"]
@@ -1030,16 +1428,161 @@ export type Database = {
           },
         ]
       }
+      safeguarding_concerns: {
+        Row: {
+          ai_confidence_score: number | null
+          concern_type: Database["public"]["Enums"]["safeguarding_concern_type"]
+          created_at: string
+          date_raised: string
+          detailed_description: string | null
+          escalation_level:
+            | Database["public"]["Enums"]["escalation_level"]
+            | null
+          id: string
+          immediate_action_taken: string | null
+          immediate_safety_risk: boolean | null
+          linked_complaint_id: string | null
+          linked_incident_id: string | null
+          linked_risk_id: string | null
+          organisation_id: string
+          outcome: string | null
+          participant_id: string
+          raised_by: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          review_notes: string | null
+          sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
+          source: Database["public"]["Enums"]["safeguarding_source"]
+          status: Database["public"]["Enums"]["safeguarding_status"]
+          supervisor_notified: boolean | null
+          support_actions: string | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_confidence_score?: number | null
+          concern_type?: Database["public"]["Enums"]["safeguarding_concern_type"]
+          created_at?: string
+          date_raised?: string
+          detailed_description?: string | null
+          escalation_level?:
+            | Database["public"]["Enums"]["escalation_level"]
+            | null
+          id?: string
+          immediate_action_taken?: string | null
+          immediate_safety_risk?: boolean | null
+          linked_complaint_id?: string | null
+          linked_incident_id?: string | null
+          linked_risk_id?: string | null
+          organisation_id: string
+          outcome?: string | null
+          participant_id: string
+          raised_by: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_notes?: string | null
+          sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
+          source?: Database["public"]["Enums"]["safeguarding_source"]
+          status?: Database["public"]["Enums"]["safeguarding_status"]
+          supervisor_notified?: boolean | null
+          support_actions?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_confidence_score?: number | null
+          concern_type?: Database["public"]["Enums"]["safeguarding_concern_type"]
+          created_at?: string
+          date_raised?: string
+          detailed_description?: string | null
+          escalation_level?:
+            | Database["public"]["Enums"]["escalation_level"]
+            | null
+          id?: string
+          immediate_action_taken?: string | null
+          immediate_safety_risk?: boolean | null
+          linked_complaint_id?: string | null
+          linked_incident_id?: string | null
+          linked_risk_id?: string | null
+          organisation_id?: string
+          outcome?: string | null
+          participant_id?: string
+          raised_by?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_notes?: string | null
+          sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
+          source?: Database["public"]["Enums"]["safeguarding_source"]
+          status?: Database["public"]["Enums"]["safeguarding_status"]
+          supervisor_notified?: boolean | null
+          support_actions?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safeguarding_concerns_linked_complaint_id_fkey"
+            columns: ["linked_complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguarding_concerns_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguarding_concerns_linked_risk_id_fkey"
+            columns: ["linked_risk_id"]
+            isOneToOne: false
+            referencedRelation: "risks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguarding_concerns_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguarding_concerns_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguarding_concerns_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_compliance: {
         Row: {
+          code_of_conduct_acknowledged: boolean | null
+          code_of_conduct_date: string | null
           created_at: string
+          cyber_safety_completed: boolean | null
+          eligible_for_assignment: boolean | null
           id: string
+          identity_verification: boolean | null
+          incident_mgmt_training: boolean | null
+          mandatory_induction: boolean | null
+          ndis_screening_required: boolean | null
           overall_compliance_pct: number | null
           police_check_date: string | null
           police_check_expiry: string | null
           police_check_status: string
+          restrictions_notes: string | null
+          safeguarding_training: boolean | null
+          start_date: string | null
           updated_at: string
           user_id: string
+          worker_orientation: boolean | null
           worker_screening_expiry: string | null
           worker_screening_status: string
           wwcc_expiry: string | null
@@ -1047,14 +1590,26 @@ export type Database = {
           wwcc_status: string
         }
         Insert: {
+          code_of_conduct_acknowledged?: boolean | null
+          code_of_conduct_date?: string | null
           created_at?: string
+          cyber_safety_completed?: boolean | null
+          eligible_for_assignment?: boolean | null
           id?: string
+          identity_verification?: boolean | null
+          incident_mgmt_training?: boolean | null
+          mandatory_induction?: boolean | null
+          ndis_screening_required?: boolean | null
           overall_compliance_pct?: number | null
           police_check_date?: string | null
           police_check_expiry?: string | null
           police_check_status?: string
+          restrictions_notes?: string | null
+          safeguarding_training?: boolean | null
+          start_date?: string | null
           updated_at?: string
           user_id: string
+          worker_orientation?: boolean | null
           worker_screening_expiry?: string | null
           worker_screening_status?: string
           wwcc_expiry?: string | null
@@ -1062,14 +1617,26 @@ export type Database = {
           wwcc_status?: string
         }
         Update: {
+          code_of_conduct_acknowledged?: boolean | null
+          code_of_conduct_date?: string | null
           created_at?: string
+          cyber_safety_completed?: boolean | null
+          eligible_for_assignment?: boolean | null
           id?: string
+          identity_verification?: boolean | null
+          incident_mgmt_training?: boolean | null
+          mandatory_induction?: boolean | null
+          ndis_screening_required?: boolean | null
           overall_compliance_pct?: number | null
           police_check_date?: string | null
           police_check_expiry?: string | null
           police_check_status?: string
+          restrictions_notes?: string | null
+          safeguarding_training?: boolean | null
+          start_date?: string | null
           updated_at?: string
           user_id?: string
+          worker_orientation?: boolean | null
           worker_screening_expiry?: string | null
           worker_screening_status?: string
           wwcc_expiry?: string | null
@@ -1077,6 +1644,71 @@ export type Database = {
           wwcc_status?: string
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          priority: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          source_module: string | null
+          source_record_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          task_type: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          priority?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          source_module?: string | null
+          source_record_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          priority?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          source_module?: string | null
+          source_record_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams: {
         Row: {
@@ -1323,12 +1955,43 @@ export type Database = {
         | "hr_admin"
         | "executive"
         | "participant"
+      complaint_category:
+        | "service_quality"
+        | "staff_conduct"
+        | "delay"
+        | "communication"
+        | "privacy"
+        | "safeguarding"
+        | "billing"
+        | "other"
+      complaint_source_type:
+        | "participant"
+        | "family"
+        | "advocate"
+        | "staff"
+        | "external"
       complaint_status:
         | "submitted"
         | "under_review"
         | "investigating"
         | "resolved"
         | "closed"
+      environment_type:
+        | "office"
+        | "remote"
+        | "digital_platform"
+        | "phone_call"
+        | "other"
+      escalation_level: "monitor" | "urgent_review" | "immediate_intervention"
+      incident_category:
+        | "injury"
+        | "emotional_distress"
+        | "abuse_allegation"
+        | "neglect_concern"
+        | "privacy_breach"
+        | "behavioural_event"
+        | "service_disruption"
+        | "other"
       incident_severity: "low" | "medium" | "high" | "critical"
       incident_status:
         | "reported"
@@ -1336,14 +1999,58 @@ export type Database = {
         | "investigating"
         | "actioned"
         | "closed"
+        | "draft"
+        | "submitted"
+        | "supervisor_review"
+        | "compliance_review"
       policy_status: "draft" | "review" | "approved" | "published" | "archived"
+      privacy_incident_status:
+        | "detected"
+        | "contained"
+        | "assessed"
+        | "actioned"
+        | "closed"
+      privacy_incident_type:
+        | "unauthorised_access"
+        | "misdirected_email"
+        | "lost_device"
+        | "suspicious_login"
+        | "oversharing"
+        | "export_misuse"
+        | "other"
       record_status: "active" | "archived" | "deleted"
+      risk_status: "open" | "assessed" | "mitigating" | "monitoring" | "closed"
+      safeguarding_concern_type:
+        | "distress"
+        | "abuse_concern"
+        | "neglect_concern"
+        | "exploitation"
+        | "digital_safety"
+        | "self_harm"
+        | "behavioural_change"
+        | "isolation"
+        | "other"
+      safeguarding_source:
+        | "staff_observation"
+        | "ai_alert"
+        | "complaint"
+        | "participant_disclosure"
+        | "external_report"
+      safeguarding_status:
+        | "raised"
+        | "screened"
+        | "action_required"
+        | "monitoring"
+        | "resolved"
+        | "closed"
       sensitivity_level:
         | "public"
         | "internal"
         | "controlled"
         | "sensitive"
         | "highly_sensitive"
+      submission_channel: "phone" | "email" | "web_form" | "in_person" | "other"
+      task_status: "pending" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1481,12 +2188,47 @@ export const Constants = {
         "executive",
         "participant",
       ],
+      complaint_category: [
+        "service_quality",
+        "staff_conduct",
+        "delay",
+        "communication",
+        "privacy",
+        "safeguarding",
+        "billing",
+        "other",
+      ],
+      complaint_source_type: [
+        "participant",
+        "family",
+        "advocate",
+        "staff",
+        "external",
+      ],
       complaint_status: [
         "submitted",
         "under_review",
         "investigating",
         "resolved",
         "closed",
+      ],
+      environment_type: [
+        "office",
+        "remote",
+        "digital_platform",
+        "phone_call",
+        "other",
+      ],
+      escalation_level: ["monitor", "urgent_review", "immediate_intervention"],
+      incident_category: [
+        "injury",
+        "emotional_distress",
+        "abuse_allegation",
+        "neglect_concern",
+        "privacy_breach",
+        "behavioural_event",
+        "service_disruption",
+        "other",
       ],
       incident_severity: ["low", "medium", "high", "critical"],
       incident_status: [
@@ -1495,9 +2237,56 @@ export const Constants = {
         "investigating",
         "actioned",
         "closed",
+        "draft",
+        "submitted",
+        "supervisor_review",
+        "compliance_review",
       ],
       policy_status: ["draft", "review", "approved", "published", "archived"],
+      privacy_incident_status: [
+        "detected",
+        "contained",
+        "assessed",
+        "actioned",
+        "closed",
+      ],
+      privacy_incident_type: [
+        "unauthorised_access",
+        "misdirected_email",
+        "lost_device",
+        "suspicious_login",
+        "oversharing",
+        "export_misuse",
+        "other",
+      ],
       record_status: ["active", "archived", "deleted"],
+      risk_status: ["open", "assessed", "mitigating", "monitoring", "closed"],
+      safeguarding_concern_type: [
+        "distress",
+        "abuse_concern",
+        "neglect_concern",
+        "exploitation",
+        "digital_safety",
+        "self_harm",
+        "behavioural_change",
+        "isolation",
+        "other",
+      ],
+      safeguarding_source: [
+        "staff_observation",
+        "ai_alert",
+        "complaint",
+        "participant_disclosure",
+        "external_report",
+      ],
+      safeguarding_status: [
+        "raised",
+        "screened",
+        "action_required",
+        "monitoring",
+        "resolved",
+        "closed",
+      ],
       sensitivity_level: [
         "public",
         "internal",
@@ -1505,6 +2294,8 @@ export const Constants = {
         "sensitive",
         "highly_sensitive",
       ],
+      submission_channel: ["phone", "email", "web_form", "in_person", "other"],
+      task_status: ["pending", "in_progress", "completed", "cancelled"],
     },
   },
 } as const
