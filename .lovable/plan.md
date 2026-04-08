@@ -1,82 +1,103 @@
 
-# Guardian Guard — Compliance Engine V2
 
-## What Already Exists (will NOT rebuild)
-- Evidence chain with deep audit-log aggregation across linked records ✓
+# Compliance Engine V2 — Implementation Plan
+
+## Status of Existing Features (will NOT rebuild)
+- Evidence chain with deep audit-log aggregation ✓
 - Workflow completeness computation ✓
-- Controls Matrix page with Standard → Policy → Evidence chain ✓
-- Evidence Room with one-click CSV packs ✓
+- Controls Matrix page ✓
+- Evidence Room with CSV packs ✓
 - Mock Audit Mode (read-only) ✓
-- Incident actions (basic corrective actions) ✓
-- Incident closure enforcement (root_cause, corrective_actions, contributing_factors, participant_followup) ✓
+- Incident closure enforcement (root_cause, corrective_actions, contributing_factors) ✓
 
-## What's New (6 changes)
+## What's New
 
-### 1. Database Migration (single migration)
+### Database Migration (1 migration)
 
-**New columns on `incident_actions`:**
-- `root_cause TEXT`
-- `corrective_action TEXT`
-- `preventive_action TEXT`
-- `effectiveness_review TEXT`
-- `closed_at TIMESTAMPTZ`
-- `capa_type TEXT DEFAULT 'corrective'` (corrective, preventive, containment)
+**Alter `incident_actions`** — add 6 CAPA columns:
+- `root_cause TEXT`, `corrective_action TEXT`, `preventive_action TEXT`
+- `effectiveness_review TEXT`, `closed_at TIMESTAMPTZ`, `capa_type TEXT DEFAULT 'corrective'`
 
 **New table: `incident_training_links`**
-- id, incident_id, staff_id, training_code, status (assigned/completed), assigned_by, assigned_at, completed_at, organisation_id
-- RLS: org-scoped read for admins/compliance, insert by authenticated within org
+- Maps incidents to staff training assignments
+- Columns: id, incident_id, staff_id, training_code, status, assigned_by, assigned_at, completed_at, organisation_id
+- RLS: org-scoped select, insert by assigner, update by admins/compliance/supervisors
 
 **New table: `approvals`**
-- id, record_type (incident/complaint/policy), record_id, required_role, approved_by, approved_at, status (pending/approved/rejected), notes, organisation_id
-- RLS: org-scoped read, insert/update by users with matching role
+- Generic approval records for incidents, complaints, policies
+- Columns: id, record_type, record_id, required_role, approved_by, approved_at, status, notes, organisation_id
+- RLS: org-scoped select, insert/update by admins/compliance/supervisors
+- Deletion prevention triggers on both new tables
 
-### 2. CAPA System — Extend Incident Detail Sheet
-- Add root_cause, corrective_action, preventive_action, effectiveness_review fields to action form
-- Add "CAPA" tab in incident detail showing full corrective/preventive action lifecycle
-- Show CAPA completion status badge on each action card
+### New Files
 
-### 3. PDF Audit Packs
-- Install `jspdf` + `jspdf-autotable`
-- New file: `src/lib/auditPdfExport.ts`
-  - `generateParticipantAuditPDF(participantId)` — uses existing `fetchParticipantEvidenceChain`, renders structured PDF with sections: Overview, Timeline, Incidents, Risks, Complaints, Audit Logs
-  - `generateIncidentPDF(incidentId)` — single incident with actions, workflow, staff
-- Add PDF export buttons alongside existing CSV buttons in Evidence Room and Incident Detail
+**`src/lib/evidenceScore.ts`**
+- `computeIncidentEvidenceScore(incident, actions, approvals, trainingLinks)` — 10 weighted checks (participant linked, staff assigned, root cause, actions completed, approvals granted, training assigned, etc.) → score 0-100
+- `computeComplaintEvidenceScore(complaint, approvals)` — 8 weighted checks
+- `computeAggregateScore(scores[])` — average across records
+- Status thresholds: ≥80 = complete, ≥50 = warning, <50 = non-compliant
+- Color constants for UI badges
 
-### 4. Training Linkage
-- In incident detail, add "Assign Training" button
-- Select staff member + training module → inserts into `incident_training_links`
-- Show linked training in incident detail with completion status
-- Include training links in evidence chain export (CSV + PDF)
+**`src/lib/auditPdfExport.ts`**
+- Uses `jspdf` + `jspdf-autotable` (install via npm)
+- `generateParticipantAuditPDF(participantId)` — calls existing `fetchParticipantEvidenceChain`, renders structured PDF with sections: Overview, Timeline, Incidents, Risks, Complaints, Safeguarding, Staff, Audit Logs
+- `generateIncidentPDF(incidentId)` — single incident with details, actions, workflow history, staff, audit trail
+- Each section rendered as auto-table with headers
 
-### 5. Approval System
-- Auto-create pending approval records when incidents/complaints reach review stages
-- Show "Awaiting Supervisor Approval" / "Approved by X at Y" in incident detail
-- Add approval action buttons for authorized roles
-- **Enforcement**: Cannot advance past supervisor_review without supervisor approval, cannot close without compliance_officer approval
+**`src/components/incidents/IncidentTrainingLinks.tsx`**
+- Shows training assignments linked to this incident from `incident_training_links`
+- "Assign Training" button opens inline form: select staff + training module
+- Each link shows staff name, training code, status badge (assigned/completed), completion date
+- Queries `training_requirements` for module dropdown
 
-### 6. Evidence Completeness Score
-- New utility: `computeEvidenceScore(record)` — checks: linked participant, linked staff, actions present, approvals present, root cause filled, training assigned
-- Returns 0-100 score + status (complete/warning/non-compliant)
-- Show "Audit Readiness: 82%" badge on incident cards and detail view
-- Add aggregate readiness score to Dashboard
+**`src/components/incidents/ApprovalStatus.tsx`**
+- Queries `approvals` table filtered by record_type + record_id
+- Shows approval cards: "Awaiting Supervisor Approval" or "Approved by X at Y"
+- Action buttons for authorized roles to approve/reject with notes
+- Creates pending approval records automatically when incidents reach review stages
 
-## Files Changed/Created
+**`src/components/incidents/EvidenceScoreBadge.tsx`**
+- Small badge component showing "Audit Readiness: 82%" with color-coded status
+- Used in incident cards and detail view
+
+### Modified Files
+
+**`src/components/incidents/IncidentDetailSheet.tsx`**
+- Add CAPA fields (root_cause, corrective_action, preventive_action, effectiveness_review) to the action creation form
+- Add `<IncidentTrainingLinks>` component after corrective actions section
+- Add `<ApprovalStatus>` component before advance button
+- Add `<EvidenceScoreBadge>` in the header area
+- Advance button blocked if required approvals are pending (client-side gate)
+
+**`src/pages/EvidenceRoom.tsx`**
+- Add PDF export button alongside existing CSV export for each module
+- "Download PDF Pack" button per module card
+
+**`src/components/incidents/IncidentExportButtons.tsx`**
+- Add "Export PDF" option alongside existing CSV export
+
+**`src/pages/Dashboard.tsx`**
+- Add aggregate "Audit Readiness" card showing average evidence score across open incidents
+
+**`src/pages/Incidents.tsx`**
+- Show small evidence score badge on each incident card in the list view
+
+### npm dependency
+- `jspdf` + `jspdf-autotable` for client-side PDF generation
+
+### Files Summary
 
 | File | Action |
 |------|--------|
-| 1 migration SQL | New tables + alter incident_actions |
-| `src/lib/auditPdfExport.ts` | New — PDF generation |
-| `src/lib/evidenceScore.ts` | New — completeness scoring |
-| `src/components/incidents/IncidentDetailSheet.tsx` | Extend — CAPA fields, training links, approvals, score badge |
-| `src/components/incidents/IncidentTrainingLinks.tsx` | New — training assignment UI |
-| `src/components/incidents/ApprovalStatus.tsx` | New — approval display + action buttons |
-| `src/pages/EvidenceRoom.tsx` | Add PDF export buttons |
-| `src/components/incidents/IncidentExportButtons.tsx` | Add PDF option |
-| `src/pages/Dashboard.tsx` | Add aggregate readiness score |
+| Migration SQL | Alter incident_actions, create 2 tables |
+| `src/lib/evidenceScore.ts` | New |
+| `src/lib/auditPdfExport.ts` | New |
+| `src/components/incidents/IncidentTrainingLinks.tsx` | New |
+| `src/components/incidents/ApprovalStatus.tsx` | New |
+| `src/components/incidents/EvidenceScoreBadge.tsx` | New |
+| `src/components/incidents/IncidentDetailSheet.tsx` | Extend |
+| `src/components/incidents/IncidentExportButtons.tsx` | Extend |
+| `src/pages/EvidenceRoom.tsx` | Extend |
+| `src/pages/Dashboard.tsx` | Extend |
+| `src/pages/Incidents.tsx` | Extend |
 
-## Technical Notes
-- PDF uses jspdf (no server-side dependency)
-- Approvals table uses generic record_type/record_id pattern for reuse across modules
-- Evidence score is computed client-side from fetched data, no new DB function needed
-- All new tables get RLS policies scoped to organisation_id
-- Existing closure enforcement trigger (`enforce_incident_closure`) already blocks closure without root_cause/corrective_actions — the new approval check will be added as an additional client-side gate before allowing the advance mutation
