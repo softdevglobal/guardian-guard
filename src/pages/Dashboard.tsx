@@ -156,7 +156,7 @@ export default function Dashboard() {
       </div>
 
       <section aria-label="Compliance scores">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <ComplianceGauge label="Governance & Operations" score={pulseScores?.governance ?? 100} icon={ShieldAlert} />
           <ComplianceGauge label="Provision of Supports" score={pulseScores?.supports ?? 100} icon={Users} />
           <ComplianceGauge label="Support Environment" score={pulseScores?.environment ?? 100} icon={CheckCircle} />
