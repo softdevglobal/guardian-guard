@@ -25,6 +25,10 @@ import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 import { IncidentExportButton } from "@/components/incidents/IncidentExportButtons";
 import { LinkedRecords } from "@/components/compliance/LinkedRecords";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IncidentTrainingLinks } from "@/components/incidents/IncidentTrainingLinks";
+import { ApprovalStatus } from "@/components/incidents/ApprovalStatus";
+import { EvidenceScoreBadge } from "@/components/incidents/EvidenceScoreBadge";
+import { computeIncidentEvidenceScore } from "@/lib/evidenceScore";
 
 type Incident = Tables<"incidents">;
 
@@ -107,6 +111,33 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
         .eq("incident_id", incident!.id)
         .order("created_at", { ascending: true });
       return data ?? [];
+    },
+  });
+
+  // Approvals for this incident
+  const { data: approvals = [] } = useQuery({
+    queryKey: ["approvals", "incident", incident?.id],
+    enabled: !!incident,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("approvals" as any)
+        .select("*")
+        .eq("record_type", "incident")
+        .eq("record_id", incident!.id);
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Training links for this incident
+  const { data: trainingLinks = [] } = useQuery({
+    queryKey: ["incident-training-links", incident?.id],
+    enabled: !!incident,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("incident_training_links" as any)
+        .select("*")
+        .eq("incident_id", incident!.id);
+      return (data ?? []) as any[];
     },
   });
 
@@ -347,6 +378,7 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
               </Badge>
               {incident.is_reportable && <Badge variant="destructive">NDIS Reportable</Badge>}
             </SheetTitle>
+            <EvidenceScoreBadge score={computeIncidentEvidenceScore(incident, actions, approvals, trainingLinks)} />
           </SheetHeader>
 
           <h3 className="font-semibold text-lg">{incident.title}</h3>
@@ -606,6 +638,18 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
               </ul>
             </div>
           )}
+
+          <Separator />
+
+          {/* Training Links */}
+          {isInvestigating && (
+            <IncidentTrainingLinks incidentId={incident.id} organisationId={incident.organisation_id} />
+          )}
+
+          <Separator />
+
+          {/* Approvals */}
+          <ApprovalStatus recordType="incident" recordId={incident.id} organisationId={incident.organisation_id} />
 
           <Separator />
 

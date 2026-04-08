@@ -9,6 +9,7 @@ import { AlertTriangle, FileText, Users, ShieldAlert, MessageSquareWarning, Grad
 import { toast } from "@/hooks/use-toast";
 import { csvSafe, downloadCSV } from "@/lib/evidenceChainExport";
 import { exportBulkIncidentsCSV } from "@/lib/incidentExport";
+import { generateParticipantAuditPDF } from "@/lib/auditPdfExport";
 
 interface ModuleCard {
   key: string;

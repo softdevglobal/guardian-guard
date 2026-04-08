@@ -164,6 +164,56 @@ export type Database = {
           },
         ]
       }
+      approvals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          organisation_id: string
+          record_id: string
+          record_type: string
+          required_role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          record_id: string
+          record_type: string
+          required_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          record_id?: string
+          record_type?: string
+          required_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -521,42 +571,60 @@ export type Database = {
         Row: {
           action_type: string
           assigned_to: string | null
+          capa_type: string
+          closed_at: string | null
           completed_at: string | null
+          corrective_action: string | null
           created_at: string
           created_by: string
           description: string
           due_date: string | null
+          effectiveness_review: string | null
           id: string
           incident_id: string
           notes: string | null
+          preventive_action: string | null
+          root_cause: string | null
           status: string
           updated_at: string
         }
         Insert: {
           action_type?: string
           assigned_to?: string | null
+          capa_type?: string
+          closed_at?: string | null
           completed_at?: string | null
+          corrective_action?: string | null
           created_at?: string
           created_by: string
           description: string
           due_date?: string | null
+          effectiveness_review?: string | null
           id?: string
           incident_id: string
           notes?: string | null
+          preventive_action?: string | null
+          root_cause?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           action_type?: string
           assigned_to?: string | null
+          capa_type?: string
+          closed_at?: string | null
           completed_at?: string | null
+          corrective_action?: string | null
           created_at?: string
           created_by?: string
           description?: string
           due_date?: string | null
+          effectiveness_review?: string | null
           id?: string
           incident_id?: string
           notes?: string | null
+          preventive_action?: string | null
+          root_cause?: string | null
           status?: string
           updated_at?: string
         }
@@ -566,6 +634,60 @@ export type Database = {
             columns: ["incident_id"]
             isOneToOne: false
             referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_training_links: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          incident_id: string
+          organisation_id: string
+          staff_id: string
+          status: string
+          training_code: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          incident_id: string
+          organisation_id: string
+          staff_id: string
+          status?: string
+          training_code: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          incident_id?: string
+          organisation_id?: string
+          staff_id?: string
+          status?: string
+          training_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_training_links_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_training_links_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]

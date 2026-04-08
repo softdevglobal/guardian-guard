@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Clock, ShieldAlert, TrendingUp, Users, FileText, Activity } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, ShieldAlert, TrendingUp, Users, FileText, Activity, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
+import { computeIncidentEvidenceScore, computeAggregateScore } from "@/lib/evidenceScore";
 
 function ComplianceGauge({ label, score, icon: Icon }: { label: string; score: number; icon: React.ElementType }) {
   const getColor = (s: number) => s >= 80 ? "text-success" : s >= 60 ? "text-warning" : "text-destructive";
@@ -67,6 +68,28 @@ export default function Dashboard() {
       const { data } = await supabase.from("staff_compliance").select("overall_compliance_pct");
       if (!data || data.length === 0) return 0;
       return Math.round(data.reduce((sum, s) => sum + (s.overall_compliance_pct ?? 0), 0) / data.length);
+    },
+  });
+
+  // Aggregate audit readiness score
+  const { data: auditReadiness = 100 } = useQuery({
+    queryKey: ["dashboard-audit-readiness"],
+    queryFn: async () => {
+      const { data: incidents } = await supabase.from("incidents").select("*").eq("record_status", "active").neq("status", "closed").limit(50);
+      if (!incidents || incidents.length === 0) return 100;
+      const incidentIds = incidents.map(i => i.id);
+      const [actionsRes, approvalsRes] = await Promise.all([
+        supabase.from("incident_actions").select("*").in("incident_id", incidentIds),
+        supabase.from("approvals" as any).select("*").eq("record_type", "incident").in("record_id", incidentIds),
+      ]);
+      const actions = actionsRes.data ?? [];
+      const approvals = (approvalsRes.data ?? []) as any[];
+      const scores = incidents.map(inc => {
+        const incActions = actions.filter(a => a.incident_id === inc.id);
+        const incApprovals = approvals.filter((a: any) => a.record_id === inc.id);
+        return computeIncidentEvidenceScore(inc, incActions, incApprovals, []);
+      });
+      return computeAggregateScore(scores).score;
     },
   });
 
@@ -133,7 +156,7 @@ export default function Dashboard() {
       </div>
 
       <section aria-label="Compliance scores">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <ComplianceGauge label="Governance & Operations" score={pulseScores?.governance ?? 100} icon={ShieldAlert} />
           <ComplianceGauge label="Provision of Supports" score={pulseScores?.supports ?? 100} icon={Users} />
           <ComplianceGauge label="Support Environment" score={pulseScores?.environment ?? 100} icon={CheckCircle} />
@@ -158,6 +181,13 @@ export default function Dashboard() {
           <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/staff")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Staff Compliance</CardTitle><TrendingUp className="h-4 w-4 text-success" /></CardHeader>
             <CardContent><div className="text-2xl font-bold">{staffCompliance}%</div></CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/evidence-room")}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Audit Readiness</CardTitle><ShieldCheck className={`h-4 w-4 ${auditReadiness >= 80 ? "text-success" : auditReadiness >= 50 ? "text-warning" : "text-destructive"}`} /></CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${auditReadiness >= 80 ? "text-success" : auditReadiness >= 50 ? "text-warning" : "text-destructive"}`}>{auditReadiness}%</div>
+              <p className="text-xs text-muted-foreground">Evidence completeness</p>
+            </CardContent>
           </Card>
         </div>
       </section>
