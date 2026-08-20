@@ -25,6 +25,8 @@ import ControlsMatrix from "./pages/ControlsMatrix";
 import EvidenceMatrix from "./pages/EvidenceMatrix";
 import CompetencyVault from "./pages/CompetencyVault";
 import EvidenceRoom from "./pages/EvidenceRoom";
+import ParticipantCare from "./pages/ParticipantCare";
+import Medication from "./pages/Medication";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -67,6 +69,8 @@ const App = () => (
               <Route path="/evidence-matrix" element={<ProtectedPage><EvidenceMatrix /></ProtectedPage>} />
 
               <Route path="/competency-vault" element={<ProtectedPage><CompetencyVault /></ProtectedPage>} />
+              <Route path="/participant-care" element={<ProtectedPage><ParticipantCare /></ProtectedPage>} />
+              <Route path="/medication" element={<ProtectedPage><Medication /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
