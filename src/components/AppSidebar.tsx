@@ -19,6 +19,10 @@ import {
   ClipboardCheck,
   HeartPulse,
   Pill,
+  SprayCan,
+  Home,
+  Hand,
+  Landmark,
 } from "lucide-react";
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
@@ -55,10 +59,14 @@ const navItems = [
   { title: "Heartbeat", url: "/heartbeat", icon: Activity, module: "dashboard" },
   { title: "Safeguarding", url: "/safeguarding", icon: HeartHandshake, module: "safeguarding" },
   { title: "Privacy", url: "/privacy", icon: Lock, module: "privacy" },
+  { title: "Safe Environment", url: "/safe-environment", icon: SprayCan, module: "safe_environment" },
+  { title: "SIL", url: "/sil", icon: Home, module: "sil" },
+  { title: "Restrictive Practices", url: "/restrictive-practices", icon: Hand, module: "restrictive_practices" },
   { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
 
 const governanceItems = [
+  { title: "Governance", url: "/governance", icon: Landmark, module: "governance" },
   { title: "Evidence Matrix", url: "/evidence-matrix", icon: ClipboardCheck, module: "controls" },
   { title: "Controls Matrix", url: "/controls", icon: Grid3X3, module: "controls" },
   { title: "Competency Vault", url: "/competency-vault", icon: Award, module: "competency" },
