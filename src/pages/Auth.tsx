@@ -64,6 +64,22 @@ export default function Auth() {
     }
   };
 
+  const demoLogin = async (demoEmail: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: DEMO_PASSWORD,
+      });
+      if (error) throw error;
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Demo login failed", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
