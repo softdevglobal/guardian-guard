@@ -16,6 +16,7 @@ import {
   Grid3X3,
   Award,
   Archive,
+  ClipboardCheck,
 } from "lucide-react";
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
@@ -54,6 +55,7 @@ const navItems = [
 ];
 
 const governanceItems = [
+  { title: "Evidence Matrix", url: "/evidence-matrix", icon: ClipboardCheck, module: "controls" },
   { title: "Controls Matrix", url: "/controls", icon: Grid3X3, module: "controls" },
   { title: "Competency Vault", url: "/competency-vault", icon: Award, module: "competency" },
   { title: "Evidence Room", url: "/evidence-room", icon: Archive, module: "evidence_room" },

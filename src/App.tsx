@@ -22,6 +22,7 @@ import Safeguarding from "./pages/Safeguarding";
 import Privacy from "./pages/Privacy";
 import Notifications from "./pages/Notifications";
 import ControlsMatrix from "./pages/ControlsMatrix";
+import EvidenceMatrix from "./pages/EvidenceMatrix";
 import CompetencyVault from "./pages/CompetencyVault";
 import EvidenceRoom from "./pages/EvidenceRoom";
 import Auth from "./pages/Auth";
@@ -63,6 +64,8 @@ const App = () => (
               <Route path="/notifications" element={<ProtectedPage><Notifications /></ProtectedPage>} />
               <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
               <Route path="/controls" element={<ProtectedPage><ControlsMatrix /></ProtectedPage>} />
+              <Route path="/evidence-matrix" element={<ProtectedPage><EvidenceMatrix /></ProtectedPage>} />
+
               <Route path="/competency-vault" element={<ProtectedPage><CompetencyVault /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
