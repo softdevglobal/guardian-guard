@@ -17,7 +17,8 @@ import {
   Award,
   Archive,
 } from "lucide-react";
-import logoImg from "@/assets/logo.png";
+import logoAsset from "@/assets/dgtg-logo.png.asset.json";
+const logoImg = logoAsset.url;
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
