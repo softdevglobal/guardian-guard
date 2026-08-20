@@ -87,7 +87,6 @@ export function ReportableAssessmentPanel() {
       options: [
         { value: "reportable", label: "Reportable to the NDIS Commission" },
         { value: "not_reportable", label: "Not reportable" },
-        { value: "further_information_required", label: "Further information required" },
       ],
     },
     { name: "decision_rationale", label: "Rationale for the decision", type: "textarea", required: true },
