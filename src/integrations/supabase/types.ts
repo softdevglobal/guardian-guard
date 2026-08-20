@@ -567,6 +567,145 @@ export type Database = {
           },
         ]
       }
+      evidence_requirement_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          record_id: string | null
+          record_label: string | null
+          record_type: string
+          requirement_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          record_id?: string | null
+          record_label?: string | null
+          record_type: string
+          requirement_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          record_id?: string | null
+          record_label?: string | null
+          record_type?: string
+          requirement_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_requirement_links_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_requirement_links_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_requirements: {
+        Row: {
+          auditor_notes: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          include_in_export: boolean
+          linked_policy_id: string | null
+          linked_policy_version: number | null
+          organisation_id: string
+          outcome_code: string
+          owner_id: string | null
+          quality_indicator: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          required_evidence_type: string
+          requirement_title: string
+          requires_human_review: boolean
+          review_date: string | null
+          status: Database["public"]["Enums"]["evidence_status"]
+          updated_at: string
+        }
+        Insert: {
+          auditor_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          include_in_export?: boolean
+          linked_policy_id?: string | null
+          linked_policy_version?: number | null
+          organisation_id: string
+          outcome_code: string
+          owner_id?: string | null
+          quality_indicator?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          required_evidence_type: string
+          requirement_title: string
+          requires_human_review?: boolean
+          review_date?: string | null
+          status?: Database["public"]["Enums"]["evidence_status"]
+          updated_at?: string
+        }
+        Update: {
+          auditor_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          include_in_export?: boolean
+          linked_policy_id?: string | null
+          linked_policy_version?: number | null
+          organisation_id?: string
+          outcome_code?: string
+          owner_id?: string | null
+          quality_indicator?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          required_evidence_type?: string
+          requirement_title?: string
+          requires_human_review?: boolean
+          review_date?: string | null
+          status?: Database["public"]["Enums"]["evidence_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_requirements_linked_policy_id_fkey"
+            columns: ["linked_policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_requirements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_requirements_outcome_code_fkey"
+            columns: ["outcome_code"]
+            isOneToOne: false
+            referencedRelation: "practice_outcomes"
+            referencedColumns: ["outcome_code"]
+          },
+        ]
+      }
       incident_actions: {
         Row: {
           action_type: string
@@ -1542,6 +1681,53 @@ export type Database = {
           },
         ]
       }
+      practice_outcomes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          module_code: string
+          outcome_code: string
+          outcome_name: string
+          part_name: string | null
+          registration_groups: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_code: string
+          outcome_code: string
+          outcome_name: string
+          part_name?: string | null
+          registration_groups?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_code?: string
+          outcome_code?: string
+          outcome_name?: string
+          part_name?: string | null
+          registration_groups?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_outcomes_module_code_fkey"
+            columns: ["module_code"]
+            isOneToOne: false
+            referencedRelation: "standard_modules"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       practice_standards: {
         Row: {
           category: string
@@ -1549,7 +1735,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          module_code: string | null
           name: string
+          outcome_reference: string | null
         }
         Insert: {
           category: string
@@ -1557,7 +1745,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          module_code?: string | null
           name: string
+          outcome_reference?: string | null
         }
         Update: {
           category?: string
@@ -1565,7 +1755,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          module_code?: string | null
           name?: string
+          outcome_reference?: string | null
         }
         Relationships: []
       }
@@ -1658,6 +1850,56 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_groups: {
+        Row: {
+          code: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          is_confirmed: boolean
+          name: string
+          notes: string | null
+          organisation_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          is_confirmed?: boolean
+          name: string
+          notes?: string | null
+          organisation_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          is_confirmed?: boolean
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_groups_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -2264,6 +2506,39 @@ export type Database = {
           },
         ]
       }
+      standard_modules: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_conditional: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_conditional?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_conditional?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -2768,6 +3043,7 @@ export type Database = {
         | "phone_call"
         | "other"
       escalation_level: "monitor" | "urgent_review" | "immediate_intervention"
+      evidence_status: "missing" | "in_progress" | "ready" | "overdue"
       incident_category:
         | "injury"
         | "emotional_distress"
@@ -3026,6 +3302,7 @@ export const Constants = {
         "other",
       ],
       escalation_level: ["monitor", "urgent_review", "immediate_intervention"],
+      evidence_status: ["missing", "in_progress", "ready", "overdue"],
       incident_category: [
         "injury",
         "emotional_distress",
