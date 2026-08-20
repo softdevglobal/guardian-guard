@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_participant_id_for_user(uuid) FROM authenticated;

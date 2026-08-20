@@ -17,6 +17,8 @@ import {
   Award,
   Archive,
   ClipboardCheck,
+  HeartPulse,
+  Pill,
 } from "lucide-react";
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
@@ -45,6 +47,8 @@ const navItems = [
   { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badge: 1 },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
+  { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
+  { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
   { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },
   { title: "Training", url: "/training", icon: GraduationCap, module: "training" },
   { title: "Audit Logs", url: "/audit", icon: ClipboardList, module: "audit" },
