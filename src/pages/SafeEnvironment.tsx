@@ -109,7 +109,7 @@ export default function SafeEnvironment() {
   const wasteFields: FieldDef[] = [
     {
       name: "waste_type", label: "Waste type", type: "select", required: true,
-      options: ["general", "clinical", "sharps", "chemical", "confidential_paper", "electronic"].map((v) => ({ value: v, label: v.replace(/_/g, " ") })),
+      options: ["general", "clinical", "sharps", "infectious", "hazardous", "other"].map((v) => ({ value: v, label: v.replace(/_/g, " ") })),
     },
     { name: "description", label: "Description", type: "textarea", required: true },
     { name: "quantity", label: "Quantity", type: "text" },
