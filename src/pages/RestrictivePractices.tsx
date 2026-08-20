@@ -12,6 +12,7 @@ import {
 } from "@/components/compliance/GateUI";
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
 import { toOptions, useParticipants, withOrg } from "@/hooks/useComplianceLookups";
+import { restrictivePracticeBlockers } from "@/lib/complianceGates";
 
 export default function RestrictivePractices() {
   const { user, hasRole, isMockAudit } = useAuth();
@@ -95,15 +96,15 @@ export default function RestrictivePractices() {
   ];
 
   const blockers = (v: Record<string, any>) => {
-    const out: string[] = [];
-    if (["authorised", "in_use"].includes(v.status)) {
-      if (!v.is_authorised) out.push("An authorised or in-use practice requires a recorded authorisation confirmed by a person with authority.");
-      if (!String(v.authorisation_reference ?? "").trim()) out.push("An authorisation reference is required.");
-      if (!v.authorisation_expiry) out.push("An authorisation expiry date is required.");
-      if (!String(v.behaviour_support_plan_url ?? "").trim()) out.push("A behaviour support plan must be linked before a practice is used.");
-      if (!canAuthorise) out.push("Only a compliance officer or administrator can move a practice into an authorised or in-use state.");
-    }
-    return out;
+    if (!["authorised", "in_use"].includes(v.status)) return [];
+    return restrictivePracticeBlockers({
+      is_authorised: !!v.is_authorised,
+      authorisation_reference: v.authorisation_reference,
+      behaviour_support_plan_url: v.behaviour_support_plan_url,
+      least_restrictive_review: v.least_restrictive_review,
+      review_date: v.review_date,
+      authoriserRole: canAuthorise ? (user?.role as any) : null,
+    });
   };
 
   return (

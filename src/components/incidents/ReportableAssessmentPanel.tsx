@@ -11,6 +11,7 @@ import {
   EmptyState, ErrorState, HumanReviewNotice, LoadingState, StatusPill,
 } from "@/components/compliance/GateUI";
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
+import { reportableAssessmentBlockers } from "@/lib/complianceGates";
 
 /**
  * Reportable incident assessment is a human decision. The panel records the assessor's
@@ -97,9 +98,16 @@ export function ReportableAssessmentPanel() {
   ];
 
   const blockers = (v: Record<string, any>) => {
-    const out: string[] = [];
+    const out = reportableAssessmentBlockers({
+      decision: v.decision,
+      rationale: v.decision_rationale,
+      evidence: v.evidence,
+      assessorRole: canAssess ? (user?.role as any) : null,
+    });
     if (v.decision === "reportable" && !v.due_at) out.push("A reportable decision requires a notification due date and time.");
-    if (v.notified_at && !String(v.notification_reference ?? "").trim()) out.push("Record the notification reference once a notification has been submitted.");
+    if (v.notified_at && !String(v.notification_reference ?? "").trim()) {
+      out.push("Record the notification reference once a notification has been submitted.");
+    }
     return out;
   };
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/compliance/GateUI";
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
 import { toOptions, useParticipants, withOrg } from "@/hooks/useComplianceLookups";
+import { silAvailability } from "@/lib/complianceGates";
 
 type Tbl = "sil_houses" | "sil_tenancy_agreements" | "sil_house_drills";
 
@@ -43,7 +44,11 @@ export default function SIL() {
     },
   });
 
-  const enabled = !!data?.config?.is_enabled && !!data?.config?.registration_confirmed;
+  const availability = silAvailability({
+    is_enabled: !!data?.config?.is_enabled,
+    registration_group_0138_confirmed: !!data?.config?.registration_confirmed,
+  });
+  const enabled = availability.available;
 
   const save = useMutation({
     mutationFn: async ({ table, values }: { table: Tbl; values: Record<string, any> }) => {
@@ -178,7 +183,7 @@ export default function SIL() {
         </CardContent>
       </Card>
 
-      {!enabled && <BlockerAlert title="SIL records are locked" blockers={["Enable the SIL module above before house, tenancy or drill records can be created."]} />}
+      {!enabled && <BlockerAlert title="SIL records are locked" blockers={[availability.message]} />}
 
       {error ? <ErrorState error={error} /> : isLoading ? <LoadingState /> : (
         <Tabs defaultValue="houses">
