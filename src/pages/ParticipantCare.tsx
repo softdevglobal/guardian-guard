@@ -93,7 +93,7 @@ export default function ParticipantCare() {
 
   const save = useMutation({
     mutationFn: async ({ entity, values }: { entity: Entity; values: Record<string, any> }) => {
-      const payload = withOrg({ ...values, participant_id: participantId }, user?.organisationId ?? selected?.organisation_id, user?.id);
+      const payload = withOrg({ ...values, participant_id: participantId }, (user as any)?.organisation_id ?? selected?.organisation_id, user?.id);
       if (values.id) {
         const { id, ...rest } = payload;
         const { error } = await supabase.from(entity as any).update(rest).eq("id", id);
@@ -105,7 +105,7 @@ export default function ParticipantCare() {
       await logAudit({
         action: values.id ? "updated" : "created",
         module: entity,
-        recordId: values.id ?? null,
+        record_id: values.id ?? undefined,
         details: { participant_id: participantId },
       });
     },
