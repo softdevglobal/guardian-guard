@@ -18,6 +18,7 @@ import { IncidentFormDialog } from "@/components/incidents/IncidentFormDialog";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
 import { AuditSimulation } from "@/components/incidents/AuditSimulation";
 import { FailureCasesDashboard } from "@/components/incidents/FailureCasesDashboard";
+import { ReportableAssessmentPanel } from "@/components/incidents/ReportableAssessmentPanel";
 import { BulkIncidentExportButton } from "@/components/incidents/IncidentExportButtons";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -133,6 +134,7 @@ export default function Incidents() {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="register">Incident Register</TabsTrigger>
           <TabsTrigger value="reporting">Reporting</TabsTrigger>
+          <TabsTrigger value="reportable">Reportable Assessment</TabsTrigger>
           <TabsTrigger value="audit-sim" className="flex items-center gap-1">
             <Shield className="h-3.5 w-3.5" />Audit Simulation
           </TabsTrigger>
@@ -407,6 +409,10 @@ export default function Incidents() {
           </Card>
         </TabsContent>
         {/* AUDIT SIMULATION */}
+        <TabsContent value="reportable" className="mt-4">
+          <ReportableAssessmentPanel />
+        </TabsContent>
+
         <TabsContent value="audit-sim" className="mt-4">
           <AuditSimulation />
         </TabsContent>
