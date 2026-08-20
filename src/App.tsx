@@ -27,6 +27,10 @@ import CompetencyVault from "./pages/CompetencyVault";
 import EvidenceRoom from "./pages/EvidenceRoom";
 import ParticipantCare from "./pages/ParticipantCare";
 import Medication from "./pages/Medication";
+import SafeEnvironment from "./pages/SafeEnvironment";
+import SIL from "./pages/SIL";
+import RestrictivePractices from "./pages/RestrictivePractices";
+import Governance from "./pages/Governance";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -71,6 +75,10 @@ const App = () => (
               <Route path="/competency-vault" element={<ProtectedPage><CompetencyVault /></ProtectedPage>} />
               <Route path="/participant-care" element={<ProtectedPage><ParticipantCare /></ProtectedPage>} />
               <Route path="/medication" element={<ProtectedPage><Medication /></ProtectedPage>} />
+              <Route path="/safe-environment" element={<ProtectedPage><SafeEnvironment /></ProtectedPage>} />
+              <Route path="/sil" element={<ProtectedPage><SIL /></ProtectedPage>} />
+              <Route path="/restrictive-practices" element={<ProtectedPage><RestrictivePractices /></ProtectedPage>} />
+              <Route path="/governance" element={<ProtectedPage><Governance /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

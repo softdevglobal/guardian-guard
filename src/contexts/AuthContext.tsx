@@ -44,13 +44,13 @@ export function useAuth() {
 }
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
-  super_admin: ["participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
-  compliance_officer: ["participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
-  supervisor: ["participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
+  super_admin: ["safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  compliance_officer: ["safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
+  supervisor: ["safe_environment", "sil", "restrictive_practices", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
   trainer: ["participant_care", "dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],
-  support_worker: ["participant_care", "medication", "dashboard", "incidents", "participants", "safeguarding"],
+  support_worker: ["safe_environment", "participant_care", "medication", "dashboard", "incidents", "participants", "safeguarding"],
   hr_admin: ["dashboard", "staff", "training", "privacy", "competency"],
-  executive: ["dashboard", "incidents", "risks", "complaints", "policies", "audit", "controls", "evidence_room"],
+  executive: ["governance", "dashboard", "incidents", "risks", "complaints", "policies", "audit", "controls", "evidence_room"],
   participant: ["dashboard", "training", "complaints"],
 };
 
