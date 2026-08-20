@@ -335,6 +335,50 @@ export type Database = {
           },
         ]
       }
+      check_templates: {
+        Row: {
+          category: string
+          created_at: string
+          frequency: string
+          id: string
+          instructions: string | null
+          is_active: boolean
+          name: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          name: string
+          organisation_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          name?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaint_workflow_history: {
         Row: {
           changed_by: string
@@ -500,6 +544,65 @@ export type Database = {
           },
         ]
       }
+      conflict_of_interest_declarations: {
+        Row: {
+          created_at: string
+          declaration_type: string
+          declared_at: string
+          description: string | null
+          has_conflict: boolean
+          id: string
+          mitigation: string | null
+          organisation_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          secondary_employment: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          declaration_type?: string
+          declared_at?: string
+          description?: string | null
+          has_conflict?: boolean
+          id?: string
+          mitigation?: string | null
+          organisation_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          secondary_employment?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          declaration_type?: string
+          declared_at?: string
+          description?: string | null
+          has_conflict?: boolean
+          id?: string
+          mitigation?: string | null
+          organisation_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          secondary_employment?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conflict_of_interest_declarations_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controls_matrix: {
         Row: {
           created_at: string
@@ -563,6 +666,78 @@ export type Database = {
             columns: ["practice_standard_id"]
             isOneToOne: false
             referencedRelation: "practice_standards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      environment_checks: {
+        Row: {
+          cleaning_completed: boolean
+          created_at: string
+          escalated: boolean
+          follow_up_action: string | null
+          hazards_identified: string | null
+          id: string
+          infection_control_ok: boolean
+          location: string
+          next_due_date: string | null
+          organisation_id: string
+          passed: boolean
+          performed_at: string
+          performed_by: string | null
+          ppe_available: boolean
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cleaning_completed?: boolean
+          created_at?: string
+          escalated?: boolean
+          follow_up_action?: string | null
+          hazards_identified?: string | null
+          id?: string
+          infection_control_ok?: boolean
+          location: string
+          next_due_date?: string | null
+          organisation_id: string
+          passed?: boolean
+          performed_at?: string
+          performed_by?: string | null
+          ppe_available?: boolean
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cleaning_completed?: boolean
+          created_at?: string
+          escalated?: boolean
+          follow_up_action?: string | null
+          hazards_identified?: string | null
+          id?: string
+          infection_control_ok?: boolean
+          location?: string
+          next_due_date?: string | null
+          organisation_id?: string
+          passed?: boolean
+          performed_at?: string
+          performed_by?: string | null
+          ppe_available?: boolean
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_checks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environment_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "check_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -703,6 +878,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "practice_outcomes"
             referencedColumns: ["outcome_code"]
+          },
+        ]
+      }
+      governance_actions: {
+        Row: {
+          action: string
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          meeting_id: string | null
+          notes: string | null
+          organisation_id: string
+          owner_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          organisation_id: string
+          owner_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          organisation_id?: string
+          owner_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_actions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "governance_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_actions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_meetings: {
+        Row: {
+          agenda: string | null
+          attendees: Json
+          created_at: string
+          decisions: string | null
+          id: string
+          meeting_date: string
+          meeting_type: string
+          minutes: string | null
+          next_meeting_date: string | null
+          organisation_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          recorded_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          attendees?: Json
+          created_at?: string
+          decisions?: string | null
+          id?: string
+          meeting_date: string
+          meeting_type?: string
+          minutes?: string | null
+          next_meeting_date?: string | null
+          organisation_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          attendees?: Json
+          created_at?: string
+          decisions?: string | null
+          id?: string
+          meeting_date?: string
+          meeting_type?: string
+          minutes?: string | null
+          next_meeting_date?: string | null
+          organisation_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_meetings_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -906,6 +1194,7 @@ export type Database = {
       }
       incidents: {
         Row: {
+          affected_person_support: string | null
           ai_suggested_classification: string | null
           assigned_investigator: string | null
           assigned_to: string | null
@@ -923,6 +1212,7 @@ export type Database = {
           environment: string | null
           id: string
           immediate_action_taken: string | null
+          immediate_safety_action: string | null
           incident_category: string | null
           incident_location: string | null
           incident_number: string
@@ -937,13 +1227,16 @@ export type Database = {
           organisation_id: string
           other_persons_involved: Json | null
           outcome_summary: string | null
+          participant_communication: string | null
           participant_followup_completed: boolean | null
           participant_harmed: boolean | null
           participant_id: string | null
           practice_standard_id: string | null
           preventive_actions: string | null
           record_status: Database["public"]["Enums"]["record_status"]
+          reportable_due_at: string | null
           reportable_reason: string | null
+          reportable_status: string
           reported_by: string
           reporter_role: string | null
           root_cause: string | null
@@ -960,6 +1253,7 @@ export type Database = {
           witnesses: Json | null
         }
         Insert: {
+          affected_person_support?: string | null
           ai_suggested_classification?: string | null
           assigned_investigator?: string | null
           assigned_to?: string | null
@@ -977,6 +1271,7 @@ export type Database = {
           environment?: string | null
           id?: string
           immediate_action_taken?: string | null
+          immediate_safety_action?: string | null
           incident_category?: string | null
           incident_location?: string | null
           incident_number: string
@@ -991,13 +1286,16 @@ export type Database = {
           organisation_id: string
           other_persons_involved?: Json | null
           outcome_summary?: string | null
+          participant_communication?: string | null
           participant_followup_completed?: boolean | null
           participant_harmed?: boolean | null
           participant_id?: string | null
           practice_standard_id?: string | null
           preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          reportable_due_at?: string | null
           reportable_reason?: string | null
+          reportable_status?: string
           reported_by: string
           reporter_role?: string | null
           root_cause?: string | null
@@ -1014,6 +1312,7 @@ export type Database = {
           witnesses?: Json | null
         }
         Update: {
+          affected_person_support?: string | null
           ai_suggested_classification?: string | null
           assigned_investigator?: string | null
           assigned_to?: string | null
@@ -1031,6 +1330,7 @@ export type Database = {
           environment?: string | null
           id?: string
           immediate_action_taken?: string | null
+          immediate_safety_action?: string | null
           incident_category?: string | null
           incident_location?: string | null
           incident_number?: string
@@ -1045,13 +1345,16 @@ export type Database = {
           organisation_id?: string
           other_persons_involved?: Json | null
           outcome_summary?: string | null
+          participant_communication?: string | null
           participant_followup_completed?: boolean | null
           participant_harmed?: boolean | null
           participant_id?: string | null
           practice_standard_id?: string | null
           preventive_actions?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
+          reportable_due_at?: string | null
           reportable_reason?: string | null
+          reportable_status?: string
           reported_by?: string
           reporter_role?: string | null
           root_cause?: string | null
@@ -1094,6 +1397,504 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internal_audits: {
+        Row: {
+          completed_date: string | null
+          created_at: string
+          findings: string | null
+          id: string
+          lead_auditor: string | null
+          linked_outcome_code: string | null
+          module: string | null
+          organisation_id: string
+          planned_date: string | null
+          rating: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          scope: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_date?: string | null
+          created_at?: string
+          findings?: string | null
+          id?: string
+          lead_auditor?: string | null
+          linked_outcome_code?: string | null
+          module?: string | null
+          organisation_id: string
+          planned_date?: string | null
+          rating?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          scope?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_date?: string | null
+          created_at?: string
+          findings?: string | null
+          id?: string
+          lead_auditor?: string | null
+          linked_outcome_code?: string | null
+          module?: string | null
+          organisation_id?: string
+          planned_date?: string | null
+          rating?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          scope?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_audits_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      management_reviews: {
+        Row: {
+          actions: string | null
+          chaired_by: string | null
+          created_at: string
+          decisions: string | null
+          discussion: string | null
+          id: string
+          inputs: Json
+          organisation_id: string
+          period_covered: string | null
+          review_date: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: string | null
+          chaired_by?: string | null
+          created_at?: string
+          decisions?: string | null
+          discussion?: string | null
+          id?: string
+          inputs?: Json
+          organisation_id: string
+          period_covered?: string | null
+          review_date: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: string | null
+          chaired_by?: string | null
+          created_at?: string
+          decisions?: string | null
+          discussion?: string | null
+          id?: string
+          inputs?: Json
+          organisation_id?: string
+          period_covered?: string | null
+          review_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "management_reviews_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mealtime_profiles: {
+        Row: {
+          allergies: string | null
+          choking_emergency_response: string | null
+          created_at: string
+          created_by: string | null
+          fluid_consistency: string | null
+          id: string
+          identified_risks: string | null
+          mealtime_support_required: boolean
+          organisation_id: string
+          participant_id: string
+          plan_practitioner: string | null
+          plan_review_date: string | null
+          practitioner_plan_url: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          required_competency_code: string
+          seating_positioning: string | null
+          status: string
+          texture_modification: string | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string | null
+          choking_emergency_response?: string | null
+          created_at?: string
+          created_by?: string | null
+          fluid_consistency?: string | null
+          id?: string
+          identified_risks?: string | null
+          mealtime_support_required?: boolean
+          organisation_id: string
+          participant_id: string
+          plan_practitioner?: string | null
+          plan_review_date?: string | null
+          practitioner_plan_url?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          required_competency_code?: string
+          seating_positioning?: string | null
+          status?: string
+          texture_modification?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string | null
+          choking_emergency_response?: string | null
+          created_at?: string
+          created_by?: string | null
+          fluid_consistency?: string | null
+          id?: string
+          identified_risks?: string | null
+          mealtime_support_required?: boolean
+          organisation_id?: string
+          participant_id?: string
+          plan_practitioner?: string | null
+          plan_review_date?: string | null
+          practitioner_plan_url?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          required_competency_code?: string
+          seating_positioning?: string | null
+          status?: string
+          texture_modification?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mealtime_profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mealtime_profiles_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mealtime_task_assignments: {
+        Row: {
+          blocked_reason: string | null
+          competency_verified_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          mealtime_profile_id: string
+          organisation_id: string
+          participant_id: string
+          status: string
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          blocked_reason?: string | null
+          competency_verified_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mealtime_profile_id: string
+          organisation_id: string
+          participant_id: string
+          status?: string
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          blocked_reason?: string | null
+          competency_verified_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mealtime_profile_id?: string
+          organisation_id?: string
+          participant_id?: string
+          status?: string
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mealtime_task_assignments_mealtime_profile_id_fkey"
+            columns: ["mealtime_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mealtime_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mealtime_task_assignments_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mealtime_task_assignments_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_administration_records: {
+        Row: {
+          created_at: string
+          due_at: string
+          escalated: boolean
+          escalation_notes: string | null
+          id: string
+          linked_incident_id: string | null
+          medication_profile_id: string
+          organisation_id: string
+          participant_id: string
+          reason: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          recorded_at: string | null
+          result: Database["public"]["Enums"]["medication_admin_result"] | null
+          updated_at: string
+          witness_id: string | null
+          worker_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          due_at: string
+          escalated?: boolean
+          escalation_notes?: string | null
+          id?: string
+          linked_incident_id?: string | null
+          medication_profile_id: string
+          organisation_id: string
+          participant_id: string
+          reason?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          recorded_at?: string | null
+          result?: Database["public"]["Enums"]["medication_admin_result"] | null
+          updated_at?: string
+          witness_id?: string | null
+          worker_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          due_at?: string
+          escalated?: boolean
+          escalation_notes?: string | null
+          id?: string
+          linked_incident_id?: string | null
+          medication_profile_id?: string
+          organisation_id?: string
+          participant_id?: string
+          reason?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          recorded_at?: string | null
+          result?: Database["public"]["Enums"]["medication_admin_result"] | null
+          updated_at?: string
+          witness_id?: string | null
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_administration_records_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administration_records_medication_profile_id_fkey"
+            columns: ["medication_profile_id"]
+            isOneToOne: false
+            referencedRelation: "medication_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administration_records_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administration_records_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_profiles: {
+        Row: {
+          authorised_record_url: string | null
+          consent_date: string | null
+          consent_obtained: boolean
+          controlled_drug: boolean
+          created_at: string
+          created_by: string | null
+          dose: string | null
+          double_check_required: boolean
+          end_date: string | null
+          form: string | null
+          id: string
+          medication_name: string
+          notes: string | null
+          organisation_id: string
+          participant_id: string
+          pharmacy: string | null
+          prescriber_contact: string | null
+          prescriber_name: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          review_date: string | null
+          route: string | null
+          start_date: string | null
+          status: string
+          storage_location: string | null
+          timing: string | null
+          updated_at: string
+        }
+        Insert: {
+          authorised_record_url?: string | null
+          consent_date?: string | null
+          consent_obtained?: boolean
+          controlled_drug?: boolean
+          created_at?: string
+          created_by?: string | null
+          dose?: string | null
+          double_check_required?: boolean
+          end_date?: string | null
+          form?: string | null
+          id?: string
+          medication_name: string
+          notes?: string | null
+          organisation_id: string
+          participant_id: string
+          pharmacy?: string | null
+          prescriber_contact?: string | null
+          prescriber_name?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          route?: string | null
+          start_date?: string | null
+          status?: string
+          storage_location?: string | null
+          timing?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authorised_record_url?: string | null
+          consent_date?: string | null
+          consent_obtained?: boolean
+          controlled_drug?: boolean
+          created_at?: string
+          created_by?: string | null
+          dose?: string | null
+          double_check_required?: boolean
+          end_date?: string | null
+          form?: string | null
+          id?: string
+          medication_name?: string
+          notes?: string | null
+          organisation_id?: string
+          participant_id?: string
+          pharmacy?: string | null
+          prescriber_contact?: string | null
+          prescriber_name?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          route?: string | null
+          start_date?: string | null
+          status?: string
+          storage_location?: string | null
+          timing?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_profiles_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_storage_checks: {
+        Row: {
+          checked_at: string
+          checked_by: string | null
+          created_at: string
+          follow_up_action: string | null
+          id: string
+          issues: string | null
+          location: string
+          organisation_id: string
+          secure_storage_ok: boolean
+          stock_reconciled: boolean
+          temperature_ok: boolean
+          updated_at: string
+        }
+        Insert: {
+          checked_at?: string
+          checked_by?: string | null
+          created_at?: string
+          follow_up_action?: string | null
+          id?: string
+          issues?: string | null
+          location: string
+          organisation_id: string
+          secure_storage_ok?: boolean
+          stock_reconciled?: boolean
+          temperature_ok?: boolean
+          updated_at?: string
+        }
+        Update: {
+          checked_at?: string
+          checked_by?: string | null
+          created_at?: string
+          follow_up_action?: string | null
+          id?: string
+          issues?: string | null
+          location?: string
+          organisation_id?: string
+          secure_storage_ok?: boolean
+          stock_reconciled?: boolean
+          temperature_ok?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_storage_checks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -1270,6 +2071,250 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_concerns: {
+        Row: {
+          advocacy_referral: boolean
+          anonymous: boolean
+          concern: string
+          created_at: string
+          id: string
+          no_retaliation_acknowledged: boolean
+          organisation_id: string
+          outcome: string | null
+          participant_id: string | null
+          raised_by: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          routed_to_complaint_id: string | null
+          status: string
+          support_requested: string | null
+          updated_at: string
+        }
+        Insert: {
+          advocacy_referral?: boolean
+          anonymous?: boolean
+          concern: string
+          created_at?: string
+          id?: string
+          no_retaliation_acknowledged?: boolean
+          organisation_id: string
+          outcome?: string | null
+          participant_id?: string | null
+          raised_by?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          routed_to_complaint_id?: string | null
+          status?: string
+          support_requested?: string | null
+          updated_at?: string
+        }
+        Update: {
+          advocacy_referral?: boolean
+          anonymous?: boolean
+          concern?: string
+          created_at?: string
+          id?: string
+          no_retaliation_acknowledged?: boolean
+          organisation_id?: string
+          outcome?: string | null
+          participant_id?: string | null
+          raised_by?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          routed_to_complaint_id?: string | null
+          status?: string
+          support_requested?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_concerns_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_concerns_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_concerns_routed_to_complaint_id_fkey"
+            columns: ["routed_to_complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participant_consents: {
+        Row: {
+          accessible_format: string | null
+          advocate_contact: string | null
+          advocate_name: string | null
+          captured_by: string | null
+          communication_preference: string | null
+          consent_date: string | null
+          consent_status: Database["public"]["Enums"]["consent_status"]
+          consent_version: number
+          created_at: string
+          id: string
+          information_sharing_parties: Json
+          interpreter_required: boolean
+          nominee_contact: string | null
+          nominee_name: string | null
+          nominee_relationship: string | null
+          notes: string | null
+          organisation_id: string
+          participant_id: string
+          purpose_collection: string | null
+          purpose_disclosure: string | null
+          purpose_use: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          updated_at: string
+          withdrawn_date: string | null
+        }
+        Insert: {
+          accessible_format?: string | null
+          advocate_contact?: string | null
+          advocate_name?: string | null
+          captured_by?: string | null
+          communication_preference?: string | null
+          consent_date?: string | null
+          consent_status?: Database["public"]["Enums"]["consent_status"]
+          consent_version?: number
+          created_at?: string
+          id?: string
+          information_sharing_parties?: Json
+          interpreter_required?: boolean
+          nominee_contact?: string | null
+          nominee_name?: string | null
+          nominee_relationship?: string | null
+          notes?: string | null
+          organisation_id: string
+          participant_id: string
+          purpose_collection?: string | null
+          purpose_disclosure?: string | null
+          purpose_use?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+          withdrawn_date?: string | null
+        }
+        Update: {
+          accessible_format?: string | null
+          advocate_contact?: string | null
+          advocate_name?: string | null
+          captured_by?: string | null
+          communication_preference?: string | null
+          consent_date?: string | null
+          consent_status?: Database["public"]["Enums"]["consent_status"]
+          consent_version?: number
+          created_at?: string
+          id?: string
+          information_sharing_parties?: Json
+          interpreter_required?: boolean
+          nominee_contact?: string | null
+          nominee_name?: string | null
+          nominee_relationship?: string | null
+          notes?: string | null
+          organisation_id?: string
+          participant_id?: string
+          purpose_collection?: string | null
+          purpose_disclosure?: string | null
+          purpose_use?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+          withdrawn_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_consents_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_consents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participant_continuity_plans: {
+        Row: {
+          alternative_provider: string | null
+          alternative_worker_id: string | null
+          communication_requirements: string | null
+          created_at: string
+          created_by: string | null
+          critical_supports: string
+          emergency_contacts: Json
+          evacuation_requirements: string | null
+          id: string
+          last_tested_date: string | null
+          organisation_id: string
+          participant_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          review_date: string | null
+          test_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          alternative_provider?: string | null
+          alternative_worker_id?: string | null
+          communication_requirements?: string | null
+          created_at?: string
+          created_by?: string | null
+          critical_supports: string
+          emergency_contacts?: Json
+          evacuation_requirements?: string | null
+          id?: string
+          last_tested_date?: string | null
+          organisation_id: string
+          participant_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          test_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alternative_provider?: string | null
+          alternative_worker_id?: string | null
+          communication_requirements?: string | null
+          created_at?: string
+          created_by?: string | null
+          critical_supports?: string
+          emergency_contacts?: Json
+          evacuation_requirements?: string | null
+          id?: string
+          last_tested_date?: string | null
+          organisation_id?: string
+          participant_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          test_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_continuity_plans_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_continuity_plans_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_goals: {
         Row: {
           baseline_score: number | null
@@ -1383,6 +2428,91 @@ export type Database = {
           },
         ]
       }
+      participant_risk_assessments: {
+        Row: {
+          consequence_score: number
+          created_at: string
+          created_by: string | null
+          escalation_pathway: string | null
+          existing_controls: string | null
+          id: string
+          likelihood_score: number
+          organisation_id: string
+          participant_id: string
+          person_consulted: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          review_date: string | null
+          risk_description: string
+          risk_level: string | null
+          risk_score: number | null
+          status: string
+          support_plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          consequence_score?: number
+          created_at?: string
+          created_by?: string | null
+          escalation_pathway?: string | null
+          existing_controls?: string | null
+          id?: string
+          likelihood_score?: number
+          organisation_id: string
+          participant_id: string
+          person_consulted?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          risk_description: string
+          risk_level?: string | null
+          risk_score?: number | null
+          status?: string
+          support_plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consequence_score?: number
+          created_at?: string
+          created_by?: string | null
+          escalation_pathway?: string | null
+          existing_controls?: string | null
+          id?: string
+          likelihood_score?: number
+          organisation_id?: string
+          participant_id?: string
+          person_consulted?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_date?: string | null
+          risk_description?: string
+          risk_level?: string | null
+          risk_score?: number | null
+          status?: string
+          support_plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_risk_assessments_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_risk_assessments_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_risk_assessments_support_plan_id_fkey"
+            columns: ["support_plan_id"]
+            isOneToOne: false
+            referencedRelation: "support_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_risk_scores: {
         Row: {
           calculated_at: string
@@ -1448,6 +2578,7 @@ export type Database = {
           support_type: string | null
           team_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -1472,6 +2603,7 @@ export type Database = {
           support_type?: string | null
           team_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -1496,6 +2628,7 @@ export type Database = {
           support_type?: string | null
           team_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1904,6 +3037,169 @@ export type Database = {
           },
         ]
       }
+      reportable_incident_assessments: {
+        Row: {
+          assessed_at: string
+          assessed_by: string
+          checklist: Json
+          created_at: string
+          decision: string
+          decision_rationale: string
+          due_at: string | null
+          evidence: string | null
+          id: string
+          incident_id: string
+          notification_reference: string | null
+          notified_at: string | null
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          assessed_at?: string
+          assessed_by: string
+          checklist?: Json
+          created_at?: string
+          decision: string
+          decision_rationale: string
+          due_at?: string | null
+          evidence?: string | null
+          id?: string
+          incident_id: string
+          notification_reference?: string | null
+          notified_at?: string | null
+          organisation_id: string
+          updated_at?: string
+        }
+        Update: {
+          assessed_at?: string
+          assessed_by?: string
+          checklist?: Json
+          created_at?: string
+          decision?: string
+          decision_rationale?: string
+          due_at?: string | null
+          evidence?: string | null
+          id?: string
+          incident_id?: string
+          notification_reference?: string | null
+          notified_at?: string | null
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportable_incident_assessments_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportable_incident_assessments_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restrictive_practices: {
+        Row: {
+          authorisation_expiry: string | null
+          authorisation_reference: string | null
+          authorised_at: string | null
+          authorised_by: string | null
+          behaviour_support_plan_url: string | null
+          behaviour_support_practitioner: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_authorised: boolean
+          least_restrictive_review: string | null
+          linked_incident_id: string | null
+          organisation_id: string
+          participant_id: string
+          practice_type: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          reduction_plan: string | null
+          reporting_actions: string | null
+          review_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          authorisation_expiry?: string | null
+          authorisation_reference?: string | null
+          authorised_at?: string | null
+          authorised_by?: string | null
+          behaviour_support_plan_url?: string | null
+          behaviour_support_practitioner?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_authorised?: boolean
+          least_restrictive_review?: string | null
+          linked_incident_id?: string | null
+          organisation_id: string
+          participant_id: string
+          practice_type: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          reduction_plan?: string | null
+          reporting_actions?: string | null
+          review_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          authorisation_expiry?: string | null
+          authorisation_reference?: string | null
+          authorised_at?: string | null
+          authorised_by?: string | null
+          behaviour_support_plan_url?: string | null
+          behaviour_support_practitioner?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_authorised?: boolean
+          least_restrictive_review?: string | null
+          linked_incident_id?: string | null
+          organisation_id?: string
+          participant_id?: string
+          practice_type?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          reduction_plan?: string | null
+          reporting_actions?: string | null
+          review_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restrictive_practices_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restrictive_practices_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restrictive_practices_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       risk_mitigations: {
         Row: {
           action: string
@@ -2213,6 +3509,441 @@ export type Database = {
           },
         ]
       }
+      service_agreements: {
+        Row: {
+          accessible_format_provided: string | null
+          advocate_rights_acknowledged: boolean
+          agreement_number: string
+          cancellation_terms: string | null
+          complaints_path: string | null
+          created_at: string
+          created_by: string | null
+          emergency_continuity_arrangement: string | null
+          end_date: string | null
+          ended_reason: string | null
+          id: string
+          organisation_id: string
+          participant_id: string
+          price_notes: string | null
+          privacy_notice_acknowledged: boolean
+          record_status: Database["public"]["Enums"]["record_status"]
+          signature_method: string | null
+          signed_at: string | null
+          signed_by_name: string | null
+          signed_copy_url: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["service_agreement_status"]
+          support_items: Json
+          updated_at: string
+        }
+        Insert: {
+          accessible_format_provided?: string | null
+          advocate_rights_acknowledged?: boolean
+          agreement_number: string
+          cancellation_terms?: string | null
+          complaints_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          emergency_continuity_arrangement?: string | null
+          end_date?: string | null
+          ended_reason?: string | null
+          id?: string
+          organisation_id: string
+          participant_id: string
+          price_notes?: string | null
+          privacy_notice_acknowledged?: boolean
+          record_status?: Database["public"]["Enums"]["record_status"]
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          signed_copy_url?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["service_agreement_status"]
+          support_items?: Json
+          updated_at?: string
+        }
+        Update: {
+          accessible_format_provided?: string | null
+          advocate_rights_acknowledged?: boolean
+          agreement_number?: string
+          cancellation_terms?: string | null
+          complaints_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          emergency_continuity_arrangement?: string | null
+          end_date?: string | null
+          ended_reason?: string | null
+          id?: string
+          organisation_id?: string
+          participant_id?: string
+          price_notes?: string | null
+          privacy_notice_acknowledged?: boolean
+          record_status?: Database["public"]["Enums"]["record_status"]
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          signed_copy_url?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["service_agreement_status"]
+          support_items?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agreements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_agreements_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_delivery_records: {
+        Row: {
+          authorised_at: string | null
+          authorised_by: string | null
+          created_at: string
+          created_by: string | null
+          duration_hours: number | null
+          exception_reason: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          participant_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          service_agreement_id: string | null
+          service_date: string
+          status: string
+          support_item: string | null
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          authorised_at?: string | null
+          authorised_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_hours?: number | null
+          exception_reason?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          participant_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          service_agreement_id?: string | null
+          service_date?: string
+          status?: string
+          support_item?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          authorised_at?: string | null
+          authorised_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_hours?: number | null
+          exception_reason?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          participant_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          service_agreement_id?: string | null
+          service_date?: string
+          status?: string
+          support_item?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_delivery_records_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_delivery_records_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_delivery_records_service_agreement_id_fkey"
+            columns: ["service_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "service_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sil_configuration: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notes: string | null
+          organisation_id: string
+          registration_confirmed: boolean
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notes?: string | null
+          organisation_id: string
+          registration_confirmed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notes?: string | null
+          organisation_id?: string
+          registration_confirmed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sil_configuration_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: true
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sil_house_drills: {
+        Row: {
+          created_at: string
+          drill_date: string
+          drill_type: string
+          house_id: string
+          id: string
+          issues_identified: string | null
+          next_due_date: string | null
+          organisation_id: string
+          outcome: string | null
+          participants_involved: Json
+          recorded_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          drill_date: string
+          drill_type: string
+          house_id: string
+          id?: string
+          issues_identified?: string | null
+          next_due_date?: string | null
+          organisation_id: string
+          outcome?: string | null
+          participants_involved?: Json
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          drill_date?: string
+          drill_type?: string
+          house_id?: string
+          id?: string
+          issues_identified?: string | null
+          next_due_date?: string | null
+          organisation_id?: string
+          outcome?: string | null
+          participants_involved?: Json
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sil_house_drills_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "sil_houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sil_house_drills_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sil_houses: {
+        Row: {
+          address: string | null
+          created_at: string
+          house_emergency_plan: string | null
+          id: string
+          name: string
+          organisation_id: string
+          plan_review_date: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          house_emergency_plan?: string | null
+          id?: string
+          name: string
+          organisation_id: string
+          plan_review_date?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          house_emergency_plan?: string | null
+          id?: string
+          name?: string
+          organisation_id?: string
+          plan_review_date?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sil_houses_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sil_tenancy_agreements: {
+        Row: {
+          accessible_copy_provided: boolean
+          agreement_number: string
+          co_tenant_consultation: string | null
+          conflict_safeguarding_plan: string | null
+          created_at: string
+          created_by: string | null
+          ended_reason: string | null
+          house_id: string | null
+          id: string
+          independent_of_service_agreement: boolean
+          keys_private_space_preferences: string | null
+          organisation_id: string
+          participant_id: string
+          record_status: Database["public"]["Enums"]["record_status"]
+          rights_acknowledged: boolean
+          shared_space_decisions: string | null
+          signature_method: string | null
+          signed_at: string | null
+          signed_by_name: string | null
+          signed_copy_url: string | null
+          status: Database["public"]["Enums"]["service_agreement_status"]
+          tenancy_end: string | null
+          tenancy_start: string | null
+          updated_at: string
+          vacancy_consultation: string | null
+          visitor_preferences: string | null
+        }
+        Insert: {
+          accessible_copy_provided?: boolean
+          agreement_number: string
+          co_tenant_consultation?: string | null
+          conflict_safeguarding_plan?: string | null
+          created_at?: string
+          created_by?: string | null
+          ended_reason?: string | null
+          house_id?: string | null
+          id?: string
+          independent_of_service_agreement?: boolean
+          keys_private_space_preferences?: string | null
+          organisation_id: string
+          participant_id: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          rights_acknowledged?: boolean
+          shared_space_decisions?: string | null
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          signed_copy_url?: string | null
+          status?: Database["public"]["Enums"]["service_agreement_status"]
+          tenancy_end?: string | null
+          tenancy_start?: string | null
+          updated_at?: string
+          vacancy_consultation?: string | null
+          visitor_preferences?: string | null
+        }
+        Update: {
+          accessible_copy_provided?: boolean
+          agreement_number?: string
+          co_tenant_consultation?: string | null
+          conflict_safeguarding_plan?: string | null
+          created_at?: string
+          created_by?: string | null
+          ended_reason?: string | null
+          house_id?: string | null
+          id?: string
+          independent_of_service_agreement?: boolean
+          keys_private_space_preferences?: string | null
+          organisation_id?: string
+          participant_id?: string
+          record_status?: Database["public"]["Enums"]["record_status"]
+          rights_acknowledged?: boolean
+          shared_space_decisions?: string | null
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          signed_copy_url?: string | null
+          status?: Database["public"]["Enums"]["service_agreement_status"]
+          tenancy_end?: string | null
+          tenancy_start?: string | null
+          updated_at?: string
+          vacancy_consultation?: string | null
+          visitor_preferences?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sil_tenancy_agreements_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "sil_houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sil_tenancy_agreements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sil_tenancy_agreements_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_compliance: {
         Row: {
           code_of_conduct_acknowledged: boolean | null
@@ -2506,6 +4237,62 @@ export type Database = {
           },
         ]
       }
+      staff_position_requirements: {
+        Row: {
+          backup_arrangement: string | null
+          created_at: string
+          description: string | null
+          emergency_capability: string | null
+          id: string
+          ndis_orientation_required: boolean
+          organisation_id: string
+          position_title: string
+          required_qualifications: Json
+          required_training: Json
+          supervision_frequency: string | null
+          updated_at: string
+          worker_screening_required: boolean
+        }
+        Insert: {
+          backup_arrangement?: string | null
+          created_at?: string
+          description?: string | null
+          emergency_capability?: string | null
+          id?: string
+          ndis_orientation_required?: boolean
+          organisation_id: string
+          position_title: string
+          required_qualifications?: Json
+          required_training?: Json
+          supervision_frequency?: string | null
+          updated_at?: string
+          worker_screening_required?: boolean
+        }
+        Update: {
+          backup_arrangement?: string | null
+          created_at?: string
+          description?: string | null
+          emergency_capability?: string | null
+          id?: string
+          ndis_orientation_required?: boolean
+          organisation_id?: string
+          position_title?: string
+          required_qualifications?: Json
+          required_training?: Json
+          supervision_frequency?: string | null
+          updated_at?: string
+          worker_screening_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_position_requirements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standard_modules: {
         Row: {
           code: string
@@ -2538,6 +4325,102 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      support_plans: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          communication_method: string | null
+          community_participation: string | null
+          created_at: string
+          created_by: string | null
+          culture_values_beliefs: string | null
+          daily_support_needs: string | null
+          decision_making_supports: string | null
+          emergency_contacts: Json
+          goals: string | null
+          health_contacts: Json
+          id: string
+          organisation_id: string
+          participant_id: string
+          participant_involved: boolean
+          preferences: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          review_due_date: string | null
+          status: Database["public"]["Enums"]["support_plan_status"]
+          strengths: string | null
+          support_network_permissions: Json
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          communication_method?: string | null
+          community_participation?: string | null
+          created_at?: string
+          created_by?: string | null
+          culture_values_beliefs?: string | null
+          daily_support_needs?: string | null
+          decision_making_supports?: string | null
+          emergency_contacts?: Json
+          goals?: string | null
+          health_contacts?: Json
+          id?: string
+          organisation_id: string
+          participant_id: string
+          participant_involved?: boolean
+          preferences?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_due_date?: string | null
+          status?: Database["public"]["Enums"]["support_plan_status"]
+          strengths?: string | null
+          support_network_permissions?: Json
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          communication_method?: string | null
+          community_participation?: string | null
+          created_at?: string
+          created_by?: string | null
+          culture_values_beliefs?: string | null
+          daily_support_needs?: string | null
+          decision_making_supports?: string | null
+          emergency_contacts?: Json
+          goals?: string | null
+          health_contacts?: Json
+          id?: string
+          organisation_id?: string
+          participant_id?: string
+          participant_involved?: boolean
+          preferences?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          review_due_date?: string | null
+          status?: Database["public"]["Enums"]["support_plan_status"]
+          strengths?: string | null
+          support_network_permissions?: Json
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_plans_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_plans_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -2939,11 +4822,169 @@ export type Database = {
         }
         Relationships: []
       }
+      waste_register: {
+        Row: {
+          created_at: string
+          description: string | null
+          disposal_contractor: string | null
+          disposal_date: string | null
+          disposal_method: string | null
+          handled_by: string | null
+          id: string
+          linked_incident_id: string | null
+          notes: string | null
+          organisation_id: string
+          ppe_used: string | null
+          quantity: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          spill_or_accident: boolean
+          storage_location: string | null
+          updated_at: string
+          waste_type: Database["public"]["Enums"]["waste_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          disposal_contractor?: string | null
+          disposal_date?: string | null
+          disposal_method?: string | null
+          handled_by?: string | null
+          id?: string
+          linked_incident_id?: string | null
+          notes?: string | null
+          organisation_id: string
+          ppe_used?: string | null
+          quantity?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          spill_or_accident?: boolean
+          storage_location?: string | null
+          updated_at?: string
+          waste_type: Database["public"]["Enums"]["waste_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          disposal_contractor?: string | null
+          disposal_date?: string | null
+          disposal_method?: string | null
+          handled_by?: string | null
+          id?: string
+          linked_incident_id?: string | null
+          notes?: string | null
+          organisation_id?: string
+          ppe_used?: string | null
+          quantity?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          spill_or_accident?: boolean
+          storage_location?: string | null
+          updated_at?: string
+          waste_type?: Database["public"]["Enums"]["waste_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_register_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_register_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_assignments: {
+        Row: {
+          blocked_reason: string | null
+          briefing_support_plan_id: string | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          organisation_id: string
+          participant_id: string
+          plan_briefing_completed: boolean
+          plan_briefing_date: string | null
+          record_status: Database["public"]["Enums"]["record_status"]
+          role_on_team: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          blocked_reason?: string | null
+          briefing_support_plan_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          organisation_id: string
+          participant_id: string
+          plan_briefing_completed?: boolean
+          plan_briefing_date?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          role_on_team?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          blocked_reason?: string | null
+          briefing_support_plan_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          organisation_id?: string
+          participant_id?: string
+          plan_briefing_completed?: boolean
+          plan_briefing_date?: string | null
+          record_status?: Database["public"]["Enums"]["record_status"]
+          role_on_team?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_assignments_briefing_support_plan_id_fkey"
+            columns: ["briefing_support_plan_id"]
+            isOneToOne: false
+            referencedRelation: "support_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_assignments_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_assignments_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_access_participant: {
+        Args: { _participant_id: string }
+        Returns: boolean
+      }
       check_declining_outcomes: {
         Args: { _goal_id: string; _participant_id: string }
         Returns: boolean
@@ -2958,6 +4999,10 @@ export type Database = {
         Returns: boolean
       }
       evaluate_staff_eligibility: { Args: { _staff_id: string }; Returns: Json }
+      get_participant_id_for_user: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_user_organisation_id: { Args: { _user_id: string }; Returns: string }
       get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_any_role: {
@@ -2965,6 +5010,10 @@ export type Database = {
           _roles: Database["public"]["Enums"]["app_role"][]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_current_training: {
+        Args: { _code: string; _user_id: string }
         Returns: boolean
       }
       has_role: {
@@ -3064,6 +5113,12 @@ export type Database = {
         | "submitted"
         | "supervisor_review"
         | "compliance_review"
+      medication_admin_result:
+        | "administered"
+        | "refused"
+        | "withheld"
+        | "missed"
+        | "self_administered"
       policy_status: "draft" | "review" | "approved" | "published" | "archived"
       privacy_incident_status:
         | "detected"
@@ -3115,8 +5170,23 @@ export type Database = {
         | "controlled"
         | "sensitive"
         | "highly_sensitive"
+      service_agreement_status:
+        | "draft"
+        | "participant_review"
+        | "signed"
+        | "active"
+        | "ended"
+        | "archived"
       submission_channel: "phone" | "email" | "web_form" | "in_person" | "other"
+      support_plan_status: "draft" | "active" | "superseded" | "archived"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
+      waste_type:
+        | "general"
+        | "clinical"
+        | "sharps"
+        | "infectious"
+        | "hazardous"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3325,6 +5395,13 @@ export const Constants = {
         "supervisor_review",
         "compliance_review",
       ],
+      medication_admin_result: [
+        "administered",
+        "refused",
+        "withheld",
+        "missed",
+        "self_administered",
+      ],
       policy_status: ["draft", "review", "approved", "published", "archived"],
       privacy_incident_status: [
         "detected",
@@ -3383,8 +5460,25 @@ export const Constants = {
         "sensitive",
         "highly_sensitive",
       ],
+      service_agreement_status: [
+        "draft",
+        "participant_review",
+        "signed",
+        "active",
+        "ended",
+        "archived",
+      ],
       submission_channel: ["phone", "email", "web_form", "in_person", "other"],
+      support_plan_status: ["draft", "active", "superseded", "archived"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
+      waste_type: [
+        "general",
+        "clinical",
+        "sharps",
+        "infectious",
+        "hazardous",
+        "other",
+      ],
     },
   },
 } as const
