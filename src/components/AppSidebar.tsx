@@ -26,6 +26,7 @@ import {
   CalendarClock,
   CheckSquare,
   CalendarCog,
+  UserPlus,
 } from "lucide-react";
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
@@ -60,6 +61,7 @@ const navItems = [
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
   { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
   { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },
+  { title: "Staff Enrollment", url: "/staff-enrollment", icon: UserPlus, module: "staff_enrollment" },
   { title: "Training", url: "/training", icon: GraduationCap, module: "training" },
   { title: "Audit Logs", url: "/audit", icon: ClipboardList, module: "audit" },
   { title: "Heartbeat", url: "/heartbeat", icon: Activity, module: "dashboard" },
