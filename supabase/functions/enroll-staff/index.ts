@@ -168,9 +168,10 @@ Deno.serve(async (req) => {
       user_id: user.id,
       organisation_id: organisationId,
       action: created ? "staff_enrolled" : "staff_role_assigned",
-      table_name: "user_profiles",
+      module: "staff",
       record_id: staffId,
-      new_values: {
+      severity: "info",
+      details: {
         role: body.role,
         team_id: teamId,
         organisation_id: organisationId,
