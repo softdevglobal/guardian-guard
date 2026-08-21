@@ -401,12 +401,17 @@ export default function ServiceOperations() {
                       return;
                     }
                     // One preference record per participant: update the existing row rather than creating a duplicate.
-                    const existing = prefs.find((p) => p.participant_id === prefForm.participant_id);
-                    saveRow.mutate({
-                      table: "participant_evidence_preferences",
-                      values: { ...prefForm, id: prefForm.id ?? existing?.id, reviewed_by: user?.id, review_date: new Date().toISOString().slice(0, 10) },
-                      key: "all-evidence-prefs",
-                    });
+                    const existingId = prefForm.id ?? prefs.find((p) => p.participant_id === prefForm.participant_id)?.id;
+                    const values: Record<string, any> = {
+                      ...prefForm,
+                      reviewed_by: user?.id,
+                      review_date: new Date().toISOString().slice(0, 10),
+                    };
+                    // An undefined id must never be sent: the column is generated on insert.
+                    if (existingId) values.id = existingId;
+                    else delete values.id;
+                    saveRow.mutate({ table: "participant_evidence_preferences", values, key: "all-evidence-prefs" });
+
                   }}
                 >
 
