@@ -31,6 +31,10 @@ import SafeEnvironment from "./pages/SafeEnvironment";
 import SIL from "./pages/SIL";
 import RestrictivePractices from "./pages/RestrictivePractices";
 import Governance from "./pages/Governance";
+import MyShifts from "./pages/MyShifts";
+import MyShiftDetail from "./pages/MyShiftDetail";
+import ServiceApprovals from "./pages/ServiceApprovals";
+import ServiceOperations from "./pages/ServiceOperations";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -80,6 +84,10 @@ const App = () => (
               <Route path="/restrictive-practices" element={<ProtectedPage><RestrictivePractices /></ProtectedPage>} />
               <Route path="/governance" element={<ProtectedPage><Governance /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
+              <Route path="/my-shifts" element={<ProtectedPage><MyShifts /></ProtectedPage>} />
+              <Route path="/my-shifts/:id" element={<ProtectedPage><MyShiftDetail /></ProtectedPage>} />
+              <Route path="/service-approvals" element={<ProtectedPage><ServiceApprovals /></ProtectedPage>} />
+              <Route path="/service-operations" element={<ProtectedPage><ServiceOperations /></ProtectedPage>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
