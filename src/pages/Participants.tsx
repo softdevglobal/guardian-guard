@@ -146,9 +146,11 @@ export default function Participants() {
       await logAudit({ action: "participant_created", module: "participants", details: { name: `${form.first_name} ${form.last_name}` } });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participants"] });
-      // Shared lookup used by Service Operations, Approvals and other modules.
-      queryClient.invalidateQueries({ queryKey: ["lookup-participants"] });
+      // Canonical list keeps the register and every shared participant lookup in sync
+      // (Service Operations scheduling selector, Participant Care, Medication, Approvals).
+      invalidateParticipants(queryClient);
+
+
 
       setDialogOpen(false);
       setForm({ first_name: "", last_name: "", email: "", phone: "", ndis_number: "", address: "", date_of_birth: "", support_type: "", consent_status: "pending" });
