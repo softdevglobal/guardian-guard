@@ -147,6 +147,9 @@ export default function Participants() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["participants"] });
+      // Shared lookup used by Service Operations, Approvals and other modules.
+      queryClient.invalidateQueries({ queryKey: ["lookup-participants"] });
+
       setDialogOpen(false);
       setForm({ first_name: "", last_name: "", email: "", phone: "", ndis_number: "", address: "", date_of_birth: "", support_type: "", consent_status: "pending" });
       toast({ title: "Participant added successfully" });
@@ -222,21 +225,21 @@ export default function Participants() {
               <DialogHeader><DialogTitle>Add Participant</DialogTitle></DialogHeader>
               <form className="space-y-4" onSubmit={e => { e.preventDefault(); createMutation.mutate(); }}>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} required /></div>
-                  <div className="space-y-2"><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} required /></div>
+                  <div className="space-y-2"><Label htmlFor="p-first">First Name *</Label><Input id="p-first" value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} required /></div>
+                  <div className="space-y-2"><Label htmlFor="p-last">Last Name *</Label><Input id="p-last" value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} required /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))} /></div>
-                  <div className="space-y-2"><Label>NDIS Number</Label><Input value={form.ndis_number} onChange={e => setForm(f => ({ ...f, ndis_number: e.target.value }))} placeholder="e.g. 431234567" /></div>
+                  <div className="space-y-2"><Label htmlFor="p-dob">Date of Birth</Label><Input id="p-dob" type="date" value={form.date_of_birth} onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))} /></div>
+                  <div className="space-y-2"><Label htmlFor="p-ndis">NDIS Number</Label><Input id="p-ndis" value={form.ndis_number} onChange={e => setForm(f => ({ ...f, ndis_number: e.target.value }))} placeholder="e.g. 431234567" /></div>
                 </div>
-                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+                <div className="space-y-2"><Label htmlFor="p-email">Email</Label><Input id="p-email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                <div className="space-y-2"><Label htmlFor="p-phone">Phone</Label><Input id="p-phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                <div className="space-y-2"><Label htmlFor="p-address">Address</Label><Input id="p-address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Support Type</Label>
+                    <Label htmlFor="p-support">Support Type</Label>
                     <Select value={form.support_type} onValueChange={v => setForm(f => ({ ...f, support_type: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                      <SelectTrigger id="p-support"><SelectValue placeholder="Select..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="core">Core Supports</SelectItem>
                         <SelectItem value="capacity">Capacity Building</SelectItem>
@@ -247,9 +250,9 @@ export default function Participants() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Consent Status</Label>
+                    <Label htmlFor="p-consent">Consent Status</Label>
                     <Select value={form.consent_status} onValueChange={v => setForm(f => ({ ...f, consent_status: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger id="p-consent"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="granted">Granted</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
@@ -258,6 +261,7 @@ export default function Participants() {
                     </Select>
                   </div>
                 </div>
+
                 <Button type="submit" className="w-full" disabled={createMutation.isPending}>
                   {createMutation.isPending ? "Adding..." : "Add Participant"}
                 </Button>

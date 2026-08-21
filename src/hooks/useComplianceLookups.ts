@@ -10,16 +10,23 @@ export function useParticipants() {
   return useQuery({
     queryKey: ["lookup-participants"],
     queryFn: async () => {
+      // The participants table stores first_name/last_name; a display name is derived here
+      // so every module shows a consistent, non-sensitive label.
       const { data, error } = await supabase
         .from("participants")
-        .select("id, full_name, participant_code, consent_status, organisation_id, user_id, assigned_trainer_id")
+        .select("id, first_name, last_name, ndis_number, consent_status, organisation_id, user_id, assigned_trainer_id")
         .eq("record_status", "active")
-        .order("full_name");
+        .order("first_name");
       if (error) throw error;
-      return data as any[];
+      return (data ?? []).map((p: any) => ({
+        ...p,
+        full_name: [p.first_name, p.last_name].filter(Boolean).join(" ") || "Participant",
+        participant_code: p.ndis_number ?? null,
+      })) as any[];
     },
   });
 }
+
 
 export function useStaff() {
   return useQuery({

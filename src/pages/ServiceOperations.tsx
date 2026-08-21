@@ -29,7 +29,7 @@ export default function ServiceOperations() {
   const [locationForm, setLocationForm] = useState<Record<string, any>>({ geofence_radius_metres: 150 });
   const [assignBlockers, setAssignBlockers] = useState<string[]>([]);
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useQuery({
     queryKey: ["task-templates"],
     queryFn: async () => {
       const { data, error } = await supabase.from("service_task_templates" as any).select("*").eq("record_status", "active").order("name");
@@ -37,6 +37,10 @@ export default function ServiceOperations() {
       return data as any[];
     },
   });
+
+  /** Only templates marked active can be attached to a new shift. */
+  const activeTemplates = templates.filter((t) => t.is_active !== false);
+
 
   const { data: locations = [] } = useQuery({
     queryKey: ["service-locations"],
@@ -124,7 +128,7 @@ export default function ServiceOperations() {
       const { data: created, error } = await supabase.from("service_shifts" as any).insert(rows).select("id");
       if (error) throw error;
 
-      const selectedTemplates = templates.filter((t) => shiftForm[`tpl_${t.id}`]);
+      const selectedTemplates = activeTemplates.filter((t) => shiftForm[`tpl_${t.id}`]);
       if (selectedTemplates.length > 0 && created) {
         const taskRows = (created as any[]).flatMap((s) =>
           selectedTemplates.map((t, idx) => ({
@@ -146,8 +150,11 @@ export default function ServiceOperations() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["scheduled-shifts"] });
+      qc.invalidateQueries({ queryKey: ["my-shifts"] });
+      qc.invalidateQueries({ queryKey: ["approval-shifts"] });
       toast({ title: "Shifts scheduled" });
     },
+
     onError: (e: any) => toast({ variant: "destructive", title: "Blocked", description: e.message }),
   });
 
@@ -232,7 +239,7 @@ export default function ServiceOperations() {
               </div>
               <fieldset className="md:col-span-2 space-y-2">
                 <legend className="text-sm font-medium">Tasks for this shift</legend>
-                {templates.map((t) => (
+                {activeTemplates.map((t) => (
                   <div key={t.id} className="space-y-1 rounded-md border p-2">
                     <div className="flex items-center gap-2">
                       <Checkbox id={`tpl-${t.id}`} checked={!!shiftForm[`tpl_${t.id}`]} onCheckedChange={(v) => setShiftForm({ ...shiftForm, [`tpl_${t.id}`]: !!v })} />
@@ -243,7 +250,10 @@ export default function ServiceOperations() {
                     )}
                   </div>
                 ))}
-                {templates.length === 0 && <p className="text-sm text-muted-foreground">Create a task template first.</p>}
+                {templatesLoading && <p className="text-sm text-muted-foreground">Loading task templates…</p>}
+                {templatesError && <p className="text-sm text-destructive">Task templates could not be loaded. Refresh the page or contact your administrator.</p>}
+                {!templatesLoading && !templatesError && activeTemplates.length === 0 && <p className="text-sm text-muted-foreground">Create an active task template first.</p>}
+
               </fieldset>
               <div className="md:col-span-2 space-y-2">
                 <BlockerAlert blockers={assignBlockers} title="Assignment blocked" />
@@ -295,8 +305,25 @@ export default function ServiceOperations() {
                   <Label htmlFor={key}>{label}</Label>
                 </div>
               ))}
+              <div className="flex items-center gap-2">
+                <Checkbox id="is_active" checked={templateForm.is_active !== false} onCheckedChange={(v) => setTemplateForm({ ...templateForm, is_active: !!v })} />
+                <Label htmlFor="is_active">Active (available when scheduling shifts)</Label>
+              </div>
               <div className="md:col-span-2">
-                <Button className="min-h-[44px]" disabled={!canManage} onClick={() => saveRow.mutate({ table: "service_task_templates", values: templateForm, key: "task-templates" })}>
+                <Button
+                  className="min-h-[44px]"
+                  disabled={!canManage || saveRow.isPending}
+                  onClick={() => {
+                    if (!String(templateForm.name ?? "").trim()) {
+                      toast({ variant: "destructive", title: "Name required", description: "Give the task template a name workers will recognise." });
+                      return;
+                    }
+                    saveRow.mutate(
+                      { table: "service_task_templates", values: { ...templateForm, is_active: templateForm.is_active !== false }, key: "task-templates" },
+                      { onSuccess: () => setTemplateForm({}) }
+                    );
+                  }}
+                >
                   Save template
                 </Button>
               </div>
@@ -307,10 +334,16 @@ export default function ServiceOperations() {
             <CardContent>
               <ul className="space-y-1 text-sm">
                 {templates.map((t) => (
-                  <li key={t.id}>{t.name} — {[t.requires_before_photo && "before photo", t.requires_after_photo && "after photo", t.participant_confirmation_required && "participant confirmation"].filter(Boolean).join(", ") || "no evidence requirement"}</li>
+                  <li key={t.id}>
+                    {t.name} — {[t.requires_before_photo && "before photo", t.requires_after_photo && "after photo", t.participant_confirmation_required && "participant confirmation"].filter(Boolean).join(", ") || "no evidence requirement"}
+                    {" · "}{t.is_active === false ? "inactive" : "active"}
+                  </li>
                 ))}
-                {templates.length === 0 && <li className="text-muted-foreground">No templates yet.</li>}
+                {templatesLoading && <li className="text-muted-foreground">Loading templates…</li>}
+                {templatesError && <li className="text-destructive">Templates could not be loaded.</li>}
+                {!templatesLoading && !templatesError && templates.length === 0 && <li className="text-muted-foreground">No templates yet.</li>}
               </ul>
+
             </CardContent>
           </Card>
         </TabsContent>
@@ -359,7 +392,29 @@ export default function ServiceOperations() {
                 <Label htmlFor="pae">Accessible explanation provided</Label>
               </div>
               <div className="md:col-span-2">
-                <Button className="min-h-[44px]" disabled={!canManage} onClick={() => saveRow.mutate({ table: "participant_evidence_preferences", values: { ...prefForm, reviewed_by: user?.id, review_date: new Date().toISOString().slice(0, 10) }, key: "all-evidence-prefs" })}>
+                <Button
+                  className="min-h-[44px]"
+                  disabled={!canManage || saveRow.isPending}
+                  onClick={() => {
+                    if (!prefForm.participant_id) {
+                      toast({ variant: "destructive", title: "Participant required", description: "Choose the participant these evidence preferences belong to." });
+                      return;
+                    }
+                    // One preference record per participant: update the existing row rather than creating a duplicate.
+                    const existingId = prefForm.id ?? prefs.find((p) => p.participant_id === prefForm.participant_id)?.id;
+                    const values: Record<string, any> = {
+                      ...prefForm,
+                      reviewed_by: user?.id,
+                      review_date: new Date().toISOString().slice(0, 10),
+                    };
+                    // An undefined id must never be sent: the column is generated on insert.
+                    if (existingId) values.id = existingId;
+                    else delete values.id;
+                    saveRow.mutate({ table: "participant_evidence_preferences", values, key: "all-evidence-prefs" });
+
+                  }}
+                >
+
                   Save preferences
                 </Button>
               </div>
@@ -412,7 +467,18 @@ export default function ServiceOperations() {
                 <Textarea id="li" value={locationForm.access_instructions ?? ""} onChange={(e) => setLocationForm({ ...locationForm, access_instructions: e.target.value })} />
               </div>
               <div className="md:col-span-2">
-                <Button className="min-h-[44px]" disabled={!canManage} onClick={() => saveRow.mutate({ table: "participant_service_locations", values: locationForm, key: "service-locations" })}>
+                <Button
+                  className="min-h-[44px]"
+                  disabled={!canManage || saveRow.isPending}
+                  onClick={() => {
+                    if (!locationForm.participant_id || !String(locationForm.label ?? "").trim()) {
+                      toast({ variant: "destructive", title: "Details required", description: "Choose a participant and give the location a label." });
+                      return;
+                    }
+                    saveRow.mutate({ table: "participant_service_locations", values: locationForm, key: "service-locations" });
+                  }}
+                >
+
                   Save location
                 </Button>
               </div>
