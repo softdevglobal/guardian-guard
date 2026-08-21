@@ -14,6 +14,7 @@ import Complaints from "./pages/Complaints";
 import Policies from "./pages/Policies";
 import Participants from "./pages/Participants";
 import StaffCompliance from "./pages/StaffCompliance";
+import StaffEnrollment from "./pages/StaffEnrollment";
 import Training from "./pages/Training";
 import AuditLogs from "./pages/AuditLogs";
 import Heartbeat from "./pages/Heartbeat";
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/policies" element={<ProtectedPage><Policies /></ProtectedPage>} />
               <Route path="/participants" element={<ProtectedPage><Participants /></ProtectedPage>} />
               <Route path="/staff" element={<ProtectedPage><StaffCompliance /></ProtectedPage>} />
+              <Route path="/staff-enrollment" element={<ProtectedPage><StaffEnrollment /></ProtectedPage>} />
               <Route path="/training" element={<ProtectedPage><Training /></ProtectedPage>} />
               <Route path="/audit" element={<ProtectedPage><AuditLogs /></ProtectedPage>} />
               <Route path="/heartbeat" element={<ProtectedPage><Heartbeat /></ProtectedPage>} />
