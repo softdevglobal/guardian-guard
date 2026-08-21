@@ -56,7 +56,8 @@ const consentColors: Record<string, string> = {
 };
 
 export default function Participants() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const canCreateParticipant = hasRole(["super_admin", "compliance_officer"]);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("profiles");
   const [searchTerm, setSearchTerm] = useState("");
@@ -212,6 +213,7 @@ export default function Participants() {
             <Shield className="h-3 w-3" />
             Access: {maskLevel === "full" ? "Full" : maskLevel === "partial" ? "Partial" : "Masked"}
           </Badge>
+          {canCreateParticipant && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" />Add Participant</Button>
@@ -262,6 +264,7 @@ export default function Participants() {
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
@@ -294,7 +297,13 @@ export default function Participants() {
             </CardHeader>
             <CardContent>
               {isLoading ? <p className="text-center py-4 text-muted-foreground">Loading...</p> :
-               filtered.length === 0 ? <p className="text-center py-4 text-muted-foreground">No participants found</p> : (
+               filtered.length === 0 ? (
+                 <p className="text-center py-4 text-muted-foreground">
+                   {canCreateParticipant
+                     ? "No participants found"
+                     : "No participants are visible to your role. Support workers and trainers only see participants assigned to them — ask a compliance officer or admin to assign or create participants."}
+                 </p>
+               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
