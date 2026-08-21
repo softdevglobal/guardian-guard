@@ -23,6 +23,9 @@ import {
   Home,
   Hand,
   Landmark,
+  CalendarClock,
+  CheckSquare,
+  CalendarCog,
 } from "lucide-react";
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
@@ -46,6 +49,9 @@ import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
+  { title: "My Shifts", url: "/my-shifts", icon: CalendarClock, module: "service_delivery" },
+  { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
+  { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badge: 3 },
   { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks" },
   { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badge: 1 },
