@@ -65,6 +65,11 @@ export default function Incidents() {
     },
   });
 
+  /** Audit Simulation and Failure Cases only apply to the seeded mock audit dataset. */
+  const hasMockAuditData = incidents.some((i) => (i.title ?? "").startsWith("[MOCK AUDIT DATA]"));
+
+
+
   // Stats
   const stats = useMemo(() => {
     const open = incidents.filter(i => !["closed", "actioned"].includes(i.status));
@@ -135,12 +140,16 @@ export default function Incidents() {
           <TabsTrigger value="register">Incident Register</TabsTrigger>
           <TabsTrigger value="reporting">Reporting</TabsTrigger>
           <TabsTrigger value="reportable">Reportable Assessment</TabsTrigger>
-          <TabsTrigger value="audit-sim" className="flex items-center gap-1">
-            <Shield className="h-3.5 w-3.5" />Audit Simulation
-          </TabsTrigger>
-          <TabsTrigger value="failures" className="flex items-center gap-1">
-            <XCircle className="h-3.5 w-3.5" />Failure Cases
-          </TabsTrigger>
+          {hasMockAuditData && (
+            <>
+              <TabsTrigger value="audit-sim" className="flex items-center gap-1">
+                <Shield className="h-3.5 w-3.5" />Audit Simulation
+              </TabsTrigger>
+              <TabsTrigger value="failures" className="flex items-center gap-1">
+                <XCircle className="h-3.5 w-3.5" />Failure Cases
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         {/* DASHBOARD */}
@@ -413,14 +422,18 @@ export default function Incidents() {
           <ReportableAssessmentPanel />
         </TabsContent>
 
-        <TabsContent value="audit-sim" className="mt-4">
-          <AuditSimulation />
-        </TabsContent>
+        {hasMockAuditData && (
+          <>
+            <TabsContent value="audit-sim" className="mt-4">
+              <AuditSimulation />
+            </TabsContent>
 
-        {/* FAILURE CASES */}
-        <TabsContent value="failures" className="mt-4">
-          <FailureCasesDashboard />
-        </TabsContent>
+            {/* FAILURE CASES */}
+            <TabsContent value="failures" className="mt-4">
+              <FailureCasesDashboard />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
       <IncidentDetailSheet incident={selectedIncident} open={sheetOpen} onOpenChange={setSheetOpen} />
