@@ -3,6 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Camera, ImagePlus, X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ATTACHMENT_BUCKET, useSignedAttachment } from "@/lib/attachmentUrls";
+
+function PhotoThumb({ value, index, onRemove }: { value: string; index: number; onRemove: () => void }) {
+  const url = useSignedAttachment(value);
+  return (
+    <div className="relative group rounded-md overflow-hidden border border-border">
+      {url ? (
+        <img src={url} alt={`Attachment ${index + 1}`} className="w-full h-24 object-cover" />
+      ) : (
+        <div className="w-full h-24 flex items-center justify-center bg-muted text-xs text-muted-foreground">
+          Loading…
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={`Remove photo ${index + 1}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
 
 interface PhotoUploadProps {
   folder: string; // e.g. "incidents", "complaints", "risks"
