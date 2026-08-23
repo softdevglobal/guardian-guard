@@ -3,25 +3,84 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, CheckCircle, Clock, ShieldAlert, TrendingUp, Users, FileText, Activity, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { format, differenceInDays } from "date-fns";
-import { computeIncidentEvidenceScore, computeAggregateScore } from "@/lib/evidenceScore";
+import { format } from "date-fns";
 import { GettingStarted } from "@/components/GettingStarted";
+import { formatScore, scoreExplanation, useOrgSnapshot, type ScoreBlock } from "@/lib/orgSnapshot";
 
+function ScoreCard({
+  label,
+  block,
+  subject,
+  icon: Icon,
+  calculatedAt,
+  loading,
+  onClick,
+}: {
+  label: string;
+  block: ScoreBlock | undefined;
+  subject: string;
+  icon: React.ElementType;
+  calculatedAt?: string;
+  loading: boolean;
+  onClick?: () => void;
+}) {
+  const pct = block?.percentage ?? null;
+  const tone = pct === null ? "text-muted-foreground" : pct >= 80 ? "text-success" : pct >= 60 ? "text-warning" : "text-destructive";
+  const bar = pct === null ? "" : pct >= 80 ? "[&>div]:bg-success" : pct >= 60 ? "[&>div]:bg-warning" : "[&>div]:bg-destructive";
 
-function ComplianceGauge({ label, score, icon: Icon }: { label: string; score: number; icon: React.ElementType }) {
-  const getColor = (s: number) => s >= 80 ? "text-success" : s >= 60 ? "text-warning" : "text-destructive";
-  const getProgressClass = (s: number) => s >= 80 ? "[&>div]:bg-success" : s >= 60 ? "[&>div]:bg-warning" : "[&>div]:bg-destructive";
   return (
-    <Card>
+    <Card className={onClick ? "cursor-pointer hover:bg-muted/50" : undefined} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{label}</CardTitle>
-        <Icon className={`h-5 w-5 ${getColor(score)}`} />
+        <Icon className={`h-5 w-5 ${tone}`} aria-hidden="true" />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading ? (
+          <Skeleton className="h-8 w-24" />
+        ) : (
+          <>
+            <div className={`text-2xl font-bold ${tone}`}>{formatScore(block)}</div>
+            {pct !== null && <Progress value={pct} className={`h-2 ${bar}`} />}
+            <p className="text-xs text-muted-foreground">{scoreExplanation(block, subject)}</p>
+            {calculatedAt && (
+              <p className="text-[11px] text-muted-foreground">Last calculated {format(new Date(calculatedAt), "PPp")}</p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CountCard({
+  label,
+  value,
+  caption,
+  icon: Icon,
+  loading,
+  onClick,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  caption?: string;
+  icon: React.ElementType;
+  loading: boolean;
+  onClick?: () => void;
+  tone?: string;
+}) {
+  return (
+    <Card className="cursor-pointer hover:bg-muted/50" onClick={onClick}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <Icon className={`h-4 w-4 ${tone ?? "text-muted-foreground"}`} aria-hidden="true" />
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-bold ${getColor(score)}`}>{score}%</div>
-        <Progress value={score} className={`mt-2 h-2 ${getProgressClass(score)}`} />
+        {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-2xl font-bold">{value}</div>}
+        {caption && <p className="text-xs text-muted-foreground">{caption}</p>}
       </CardContent>
     </Card>
   );
@@ -37,110 +96,7 @@ const getSeverityVariant = (severity: string) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const { data: incidentCount = 0 } = useQuery({
-    queryKey: ["dashboard-incidents"],
-    queryFn: async () => {
-      const { count } = await supabase.from("incidents").select("*", { count: "exact", head: true }).neq("status", "closed");
-      return count ?? 0;
-    },
-  });
-
-  const { data: participantCount = 0 } = useQuery({
-    queryKey: ["dashboard-participants"],
-    queryFn: async () => {
-      const { count } = await supabase.from("participants").select("*", { count: "exact", head: true }).eq("status", "active");
-      return count ?? 0;
-    },
-  });
-
-  const { data: policiesDue = 0 } = useQuery({
-    queryKey: ["dashboard-policies-due"],
-    queryFn: async () => {
-      const thirtyDays = new Date();
-      thirtyDays.setDate(thirtyDays.getDate() + 30);
-      const { count } = await supabase.from("policies").select("*", { count: "exact", head: true }).lte("next_review_date", thirtyDays.toISOString().split("T")[0]).neq("status", "archived");
-      return count ?? 0;
-    },
-  });
-
-  const { data: staffCompliance = 0 } = useQuery({
-    queryKey: ["dashboard-staff-compliance"],
-    queryFn: async () => {
-      const { data } = await supabase.from("staff_compliance").select("overall_compliance_pct");
-      if (!data || data.length === 0) return 0;
-      return Math.round(data.reduce((sum, s) => sum + (s.overall_compliance_pct ?? 0), 0) / data.length);
-    },
-  });
-
-  // Aggregate audit readiness score
-  const { data: auditReadiness = 100 } = useQuery({
-    queryKey: ["dashboard-audit-readiness"],
-    queryFn: async () => {
-      const { data: incidents } = await supabase.from("incidents").select("*").eq("record_status", "active").neq("status", "closed").limit(50);
-      if (!incidents || incidents.length === 0) return 100;
-      const incidentIds = incidents.map(i => i.id);
-      const [actionsRes, approvalsRes] = await Promise.all([
-        supabase.from("incident_actions").select("*").in("incident_id", incidentIds),
-        supabase.from("approvals" as any).select("*").eq("record_type", "incident").in("record_id", incidentIds),
-      ]);
-      const actions = actionsRes.data ?? [];
-      const approvals = (approvalsRes.data ?? []) as any[];
-      const scores = incidents.map(inc => {
-        const incActions = actions.filter(a => a.incident_id === inc.id);
-        const incApprovals = approvals.filter((a: any) => a.record_id === inc.id);
-        return computeIncidentEvidenceScore(inc, incActions, incApprovals, []);
-      });
-      return computeAggregateScore(scores).score;
-    },
-  });
-
-  // Compute real pulse scores
-  const { data: pulseScores } = useQuery({
-    queryKey: ["dashboard-pulse"],
-    queryFn: async () => {
-      const [policies, staff, incidents, complaints, safeguarding, privacy, ai] = await Promise.all([
-        supabase.from("policies").select("next_review_date, status").eq("record_status", "active"),
-        supabase.from("staff_compliance").select("police_check_status, wwcc_status"),
-        supabase.from("incidents").select("status, created_at").eq("record_status", "active"),
-        supabase.from("complaints").select("status, acknowledgement_date").eq("record_status", "active"),
-        supabase.from("safeguarding_concerns").select("status, immediate_safety_risk").eq("record_status", "active"),
-        supabase.from("privacy_incidents").select("status").eq("record_status", "active"),
-        supabase.from("ai_activity_logs").select("reviewed_at").limit(100),
-      ]);
-
-      let gov = 100;
-      const overdueP = (policies.data ?? []).filter(p => p.next_review_date && differenceInDays(new Date(p.next_review_date), new Date()) < 0).length;
-      gov -= Math.min(overdueP * 10, 30);
-      const staffData = staff.data ?? [];
-      if (staffData.length > 0) {
-        const nonC = staffData.filter(s => s.police_check_status !== "current" || s.wwcc_status !== "current").length;
-        gov -= Math.min((nonC / staffData.length) * 40, 30);
-      }
-
-      let sup = 100;
-      const staleI = (incidents.data ?? []).filter(i => !["closed", "actioned"].includes(i.status) && differenceInDays(new Date(), new Date(i.created_at)) > 5).length;
-      sup -= Math.min(staleI * 8, 30);
-      const unackedC = (complaints.data ?? []).filter(c => !c.acknowledgement_date && !["resolved", "closed"].includes(c.status)).length;
-      sup -= Math.min(unackedC * 10, 30);
-
-      let env = 100;
-      const urgentS = (safeguarding.data ?? []).filter(s => s.immediate_safety_risk && !["resolved", "closed"].includes(s.status)).length;
-      env -= Math.min(urgentS * 15, 40);
-      const openP = (privacy.data ?? []).filter(p => !["closed", "actioned"].includes(p.status)).length;
-      env -= Math.min(openP * 10, 25);
-
-      const aiData = ai.data ?? [];
-      const aiScore = aiData.length > 0 ? Math.round((aiData.filter(a => a.reviewed_at).length / aiData.length) * 100) : 100;
-
-      return {
-        governance: Math.max(0, Math.round(gov)),
-        supports: Math.max(0, Math.round(sup)),
-        environment: Math.max(0, Math.round(env)),
-        ai: Math.max(0, aiScore),
-      };
-    },
-  });
+  const { data: snapshot, isLoading } = useOrgSnapshot();
 
   const { data: alerts = [] } = useQuery({
     queryKey: ["dashboard-alerts"],
@@ -150,57 +106,58 @@ export default function Dashboard() {
     },
   });
 
+  const counts = snapshot?.counts;
+  const evidence = snapshot?.evidence;
+
   return (
     <div className="space-y-6" role="region" aria-label="Compliance Dashboard">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Compliance Pulse Dashboard</h1>
-        <p className="text-muted-foreground">Real-time audit readiness overview</p>
+        <p className="text-muted-foreground">
+          Audit readiness overview for your organisation. Scores record evidence status — they do not certify compliance.
+        </p>
       </div>
 
       <GettingStarted />
 
-
-
       <section aria-label="Compliance scores">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <ComplianceGauge label="Governance & Operations" score={pulseScores?.governance ?? 100} icon={ShieldAlert} />
-          <ComplianceGauge label="Provision of Supports" score={pulseScores?.supports ?? 100} icon={Users} />
-          <ComplianceGauge label="Support Environment" score={pulseScores?.environment ?? 100} icon={CheckCircle} />
-          <ComplianceGauge label="AI Oversight" score={pulseScores?.ai ?? 100} icon={Activity} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ScoreCard label="Governance & Operations" block={snapshot?.scores.governance} subject="governance records" icon={ShieldAlert} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/governance")} />
+          <ScoreCard label="Provision of Supports" block={snapshot?.scores.supports} subject="support records" icon={Users} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/participants")} />
+          <ScoreCard label="Support Environment" block={snapshot?.scores.environment} subject="environment records" icon={CheckCircle} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/safe-environment")} />
+          <ScoreCard label="AI Oversight" block={snapshot?.scores.ai_oversight} subject="AI activities" icon={Activity} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/audit-logs")} />
         </div>
       </section>
 
       <section aria-label="Key statistics">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/incidents")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Open Incidents</CardTitle><AlertTriangle className="h-4 w-4 text-destructive" /></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{incidentCount}</div><p className="text-xs text-muted-foreground">Click to view</p></CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/participants")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Active Participants</CardTitle><Users className="h-4 w-4 text-info" /></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{participantCount}</div></CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/policies")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Policies Due</CardTitle><FileText className="h-4 w-4 text-warning" /></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{policiesDue}</div><p className="text-xs text-muted-foreground">Review within 30 days</p></CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/staff")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Staff Compliance</CardTitle><TrendingUp className="h-4 w-4 text-success" /></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{staffCompliance}%</div></CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:bg-muted/50" onClick={() => navigate("/evidence-room")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Audit Readiness</CardTitle><ShieldCheck className={`h-4 w-4 ${auditReadiness >= 80 ? "text-success" : auditReadiness >= 50 ? "text-warning" : "text-destructive"}`} /></CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${auditReadiness >= 80 ? "text-success" : auditReadiness >= 50 ? "text-warning" : "text-destructive"}`}>{auditReadiness}%</div>
-              <p className="text-xs text-muted-foreground">Evidence completeness</p>
-            </CardContent>
-          </Card>
+          <CountCard label="Open Incidents" value={counts?.incidents_open ?? 0} caption={`${counts?.incidents_total ?? 0} in the register`} icon={AlertTriangle} tone="text-destructive" loading={isLoading} onClick={() => navigate("/incidents")} />
+          <CountCard label="Active Participants" value={counts?.participants ?? 0} icon={Users} tone="text-info" loading={isLoading} onClick={() => navigate("/participants")} />
+          <CountCard label="Policies Due" value={counts?.policies_due ?? 0} caption="Review within 30 days" icon={FileText} tone="text-warning" loading={isLoading} onClick={() => navigate("/policies")} />
+          <CountCard label="Workers" value={counts?.staff ?? 0} caption="In your organisation" icon={TrendingUp} tone="text-success" loading={isLoading} onClick={() => navigate("/staff")} />
         </div>
+      </section>
+
+      <section aria-label="Audit readiness">
+        <ScoreCard
+          label="Audit readiness"
+          block={snapshot?.scores.audit_readiness}
+          subject="evidence requirements"
+          icon={ShieldCheck}
+          calculatedAt={snapshot?.calculated_at}
+          loading={isLoading}
+          onClick={() => navigate("/evidence-matrix")}
+        />
+        {!isLoading && (evidence?.total_applicable ?? 0) === 0 && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            No evidence requirements are in scope yet. Confirm your registration groups to generate them — until then readiness is not assessable.
+          </p>
+        )}
       </section>
 
       <section aria-label="Recent alerts">
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />Recent Compliance Alerts</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" aria-hidden="true" />Recent Compliance Alerts</CardTitle></CardHeader>
           <CardContent>
             {alerts.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No recent alerts</p>
