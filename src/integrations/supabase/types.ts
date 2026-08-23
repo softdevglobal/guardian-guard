@@ -6574,6 +6574,10 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: Json
       }
+      generate_evidence_requirements: {
+        Args: { _org: string }
+        Returns: number
+      }
       geo_distance_metres: {
         Args: { _lat1: number; _lat2: number; _lon1: number; _lon2: number }
         Returns: number
@@ -6621,6 +6625,11 @@ export type Database = {
       is_platform_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_shift_oversight: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_admin: { Args: { _user_id?: string }; Returns: boolean }
+      is_test_title: { Args: { _title: string }; Returns: boolean }
+      org_compliance_snapshot: {
+        Args: { _include_test?: boolean }
+        Returns: Json
+      }
       platform_dashboard_summary: { Args: never; Returns: Json }
       shift_submission_blockers: {
         Args: { _shift_id: string }
