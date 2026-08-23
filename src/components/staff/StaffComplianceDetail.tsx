@@ -152,10 +152,10 @@ export default function StaffComplianceDetail({ staffId, onBack }: Props) {
       if (file) {
         const ext = file.name.split(".").pop() || "pdf";
         const path = `${user.id}/compliance/${requirementCode}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("form-attachments").upload(path, file);
+        const { error: upErr } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, file);
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("form-attachments").getPublicUrl(path);
-        fileUrl = urlData.publicUrl;
+        // Private bucket: keep the path and sign it when a user opens the document.
+        fileUrl = path;
       }
 
       const { error } = await supabase.from("staff_compliance_records").insert({
