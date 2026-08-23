@@ -102,6 +102,19 @@ Deno.serve(async (req) => {
 
       if (!abnIsValid(b.abn)) return json({ error: { abn: ["ABN checksum is invalid"] } }, 400);
 
+      const normalisedAbn = b.abn.replace(/\s/g, "");
+      const { data: dupAbn } = await admin
+        .from("organisations")
+        .select("id, name")
+        .eq("abn", normalisedAbn)
+        .maybeSingle();
+      if (dupAbn) {
+        return json(
+          { error: { abn: [`This ABN is already registered to an existing client (${dupAbn.name}).`] } },
+          409,
+        );
+      }
+
       const { data: pkg, error: pkgErr } = await admin
         .from("subscription_packages")
         .select("*")
