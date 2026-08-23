@@ -17,6 +17,8 @@ import {
   AlertTriangle, Clock, FileText, RefreshCw, Loader2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ATTACHMENT_BUCKET } from "@/lib/attachmentUrls";
+import { AttachmentLink } from "@/components/AttachmentLink";
 import { format, differenceInDays } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import { evaluateStaffEligibility, ELIGIBILITY_BADGE_MAP, RECORD_STATUS_BADGE } from "@/lib/staffEligibility";
