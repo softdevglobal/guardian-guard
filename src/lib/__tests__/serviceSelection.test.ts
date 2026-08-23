@@ -190,3 +190,27 @@ describe("selection gate and templates", () => {
     expect(out).toBe("Acme ABN 123 {{unknown}}");
   });
 });
+
+describe("confirmed-only requirement engine", () => {
+  const draft = { business_category_id: "cat-1", service_type_id: "type-1", is_archived: false, confirmed_at: null };
+  const live = { ...draft, confirmed_at: "2026-08-24T00:00:00Z" };
+
+  it("ignores unconfirmed selections", () => {
+    expect(confirmedSelections([draft])).toHaveLength(0);
+  });
+
+  it("keeps confirmed, non-archived selections", () => {
+    expect(confirmedSelections([live, { ...live, is_archived: true }])).toHaveLength(1);
+  });
+
+  it("treats a missing selection set as empty rather than defaulting", () => {
+    expect(confirmedSelections(null)).toEqual([]);
+    expect(confirmedSelections(undefined)).toEqual([]);
+  });
+
+  it("never guesses an NDIS funding answer", () => {
+    expect(normaliseFundingStatus(null)).toBeNull();
+    expect(normaliseFundingStatus("registered_ndis")).toBe(normaliseFundingStatus("registered_ndis"));
+    expect(normaliseFundingStatus("something_else")).toBeNull();
+  });
+});
