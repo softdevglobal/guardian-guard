@@ -28,6 +28,7 @@ import { ParticipantTimeline } from "@/components/compliance/ParticipantTimeline
 import { ComplianceChainView } from "@/components/compliance/ComplianceChainView";
 import { LinkedRecords } from "@/components/compliance/LinkedRecords";
 import { fetchParticipantEvidenceChain, exportEvidenceChainCSV, downloadCSV } from "@/lib/evidenceChainExport";
+import { invalidateParticipants } from "@/lib/queryKeys";
 
 type Participant = Tables<"participants">;
 type Goal = Tables<"participant_goals">;
