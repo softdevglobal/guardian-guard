@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { BlockerAlert, HumanReviewNotice, LoadingState } from "@/components/compliance/GateUI";
 import { logAudit } from "@/lib/auditLog";
-import { userFacingError } from "@/lib/userFacingError";
+import { reportError, toSafeError } from "@/lib/userFacingError";
 import {
   useConfirmSelections, useProviderPathway, useSaveSelections,
 } from "@/hooks/useServiceSelection";
@@ -97,7 +97,7 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
       });
       onConfirmed?.();
     } catch (e) {
-      toast({ variant: "destructive", title: "Could not save your services", description: userFacingError(e) });
+      toast({ variant: "destructive", title: "Could not save your services", description: toSafeError(e, "save your services").description });
     }
   };
 
