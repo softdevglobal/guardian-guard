@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import { csvSafe, downloadCSV } from "@/lib/evidenceChainExport";
+import { reportError, toSafeError } from "@/lib/userFacingError";
 
 const statusColor = (s: string) => {
   if (s === "published") return "bg-success text-success-foreground";
@@ -81,10 +82,14 @@ export default function Policies() {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
+      if (!user.organisation_id) throw new Error("Your account is not linked to an organisation.");
+      if (!title.trim()) throw new Error("null value in column title");
+      // organisation_id and created_by come from the authenticated membership, never from input.
       const { error } = await supabase.from("policies").insert({
-        title,
-        organisation_id: user.organisation_id!,
+        title: title.trim(),
+        organisation_id: user.organisation_id,
         owner_id: user.id,
+        created_by: user.id,
         category: category || null,
         policy_text: policyText || null,
         effective_date: effectiveDate || null,
@@ -100,7 +105,11 @@ export default function Policies() {
       setTitle(""); setCategory(""); setPolicyText(""); setEffectiveDate(""); setNextReviewDate(""); setStaffAckRequired(false); setAckDueDate("");
       toast({ title: "Policy created" });
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) => {
+      reportError("policies", err);
+      const safe = toSafeError(err, "create this policy");
+      toast({ title: safe.title, description: safe.description, variant: "destructive" });
+    },
   });
 
   const updateStatusMutation = useMutation({
@@ -117,7 +126,11 @@ export default function Policies() {
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       toast({ title: "Policy status updated" });
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) => {
+      reportError("policies", err);
+      const safe = toSafeError(err, "create this policy");
+      toast({ title: safe.title, description: safe.description, variant: "destructive" });
+    },
   });
 
   const statusFlow: Record<string, string[]> = {
