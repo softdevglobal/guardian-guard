@@ -314,7 +314,20 @@ export default function Onboarding() {
         </Card>
       )}
 
+      {step.key === "services" && (
+        <ServiceSelectionStep
+          ndisStatus={ndisStatus}
+          confirmed={servicesConfirmed}
+          locked={locked}
+          onConfirmed={() => {
+            qc.invalidateQueries({ queryKey: ["tenant-onboarding", orgId] });
+            setStepIndex(2);
+          }}
+        />
+      )}
+
       {step.key === "review" ? (
+
         <Card>
           <CardHeader><CardTitle className="text-base">Review and submit</CardTitle></CardHeader>
           <CardContent className="space-y-3">
