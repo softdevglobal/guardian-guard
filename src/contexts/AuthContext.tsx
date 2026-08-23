@@ -40,7 +40,10 @@ interface AuthContextType {
   logout: () => Promise<void>;
   hasRole: (role: AppRole | AppRole[]) => boolean;
   hasModule: (module: string) => boolean;
+  /** Modules switched on by the organisation's confirmed services; null while unknown. */
+  orgModules: string[] | null;
 }
+
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
