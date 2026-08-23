@@ -222,7 +222,7 @@ export default function Onboarding() {
         Documents are stored in private storage and only opened through short-lived signed links. Dates of birth and screening numbers are masked by default.
       </div>
 
-      {(status === "changes_requested" || status === "returned") && (
+      {(status === "changes_requested" || (status as string) === "returned") && (
         <BlockerAlert
           title="Changes requested"
           blockers={[onb.returned_reason ?? "A reviewer asked for changes. Update the sections below and submit again."]}
