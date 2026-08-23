@@ -275,3 +275,19 @@ export function selectionBlockers(selections: ServiceSelection[], ndisStatus: Nd
   }
   return blockers;
 }
+
+/**
+ * Only services the provider explicitly confirmed drive licences, modules, policies
+ * and evidence. Draft (unconfirmed) rows never generate a requirement.
+ */
+export function confirmedSelections<T extends ServiceSelection & { confirmed_at?: string | null }>(
+  selections: T[] | null | undefined,
+): T[] {
+  if (!Array.isArray(selections)) return [];
+  return selections.filter((s) => !s.is_archived && !!s.confirmed_at);
+}
+
+/** Never guesses a funding answer — an unanswered question stays unanswered. */
+export function normaliseFundingStatus(value: unknown): NdisFundingStatus | null {
+  return NDIS_FUNDING_OPTIONS.some((o) => o.value === value) ? (value as NdisFundingStatus) : null;
+}
