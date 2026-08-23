@@ -28,14 +28,15 @@ export interface AnswerValue {
 
 export const ONBOARDING_STEPS = [
   { key: "welcome", label: "Welcome" },
+  { key: "services", label: "Your services" },
   { key: "business", label: "Business & entity" },
   { key: "licences", label: "Licences & insurance" },
   { key: "workforce", label: "Workforce & screening" },
-  { key: "services", label: "Services & registration groups" },
   { key: "operations", label: "Operations" },
   { key: "documents", label: "Documents" },
   { key: "review", label: "Review & submit" },
 ] as const;
+
 
 export type OnboardingStepKey = (typeof ONBOARDING_STEPS)[number]["key"];
 
