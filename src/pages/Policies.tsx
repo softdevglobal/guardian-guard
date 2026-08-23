@@ -89,7 +89,6 @@ export default function Policies() {
         title: title.trim(),
         organisation_id: user.organisation_id,
         owner_id: user.id,
-        created_by: user.id,
         category: category || null,
         policy_text: policyText || null,
         effective_date: effectiveDate || null,
