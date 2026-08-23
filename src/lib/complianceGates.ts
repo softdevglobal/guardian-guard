@@ -8,8 +8,8 @@ export type Role =
   | "support_worker" | "hr_admin" | "executive" | "participant";
 
 
-const AUTHORISER_ROLES: Role[] = ["super_admin", "compliance_officer", "supervisor"];
-const COMPLIANCE_ROLES: Role[] = ["super_admin", "compliance_officer"];
+const AUTHORISER_ROLES: Role[] = ["tenant_admin", "super_admin", "compliance_officer", "supervisor"];
+const COMPLIANCE_ROLES: Role[] = ["tenant_admin", "super_admin", "compliance_officer"];
 
 function blank(v: string | null | undefined): boolean {
   return v === null || v === undefined || v.trim() === "";
@@ -320,7 +320,7 @@ export function canViewParticipantRecord(args: {
   if (participant.user_id && participant.user_id === viewerId) return true;
   if (viewerRole === "participant") return false;
   if (!viewerOrgId || viewerOrgId !== participant.organisation_id) return false;
-  if (["super_admin", "compliance_officer", "supervisor", "executive", "hr_admin"].includes(viewerRole)) return true;
+  if (["tenant_admin", "super_admin", "compliance_officer", "supervisor", "executive", "hr_admin"].includes(viewerRole)) return true;
   if (participant.assigned_trainer_id === viewerId) return true;
   return (args.activeAssignments ?? []).some(
     (a) => a.participant_id === participant.id && a.worker_id === viewerId && a.status === "active"

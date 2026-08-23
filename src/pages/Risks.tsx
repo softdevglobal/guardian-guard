@@ -64,10 +64,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_ROLE_GATE: Record<string, string[]> = {
-  assessed: ["super_admin", "compliance_officer", "supervisor"],
-  mitigating: ["super_admin", "compliance_officer"],
-  monitoring: ["super_admin", "compliance_officer"],
-  closed: ["super_admin", "compliance_officer"],
+  assessed: ["tenant_admin", "super_admin", "compliance_officer", "supervisor"],
+  mitigating: ["tenant_admin", "super_admin", "compliance_officer"],
+  monitoring: ["tenant_admin", "super_admin", "compliance_officer"],
+  closed: ["tenant_admin", "super_admin", "compliance_officer"],
 };
 
 const STATUSES = ["open", "assessed", "mitigating", "monitoring", "closed"];

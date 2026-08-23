@@ -38,7 +38,7 @@ export default function StaffComplianceDetail({ staffId, onBack }: Props) {
   const [conductDialogOpen, setConductDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isAdmin = user?.role && ["super_admin", "compliance_officer", "hr_admin"].includes(user.role);
+  const isAdmin = user?.role && ["tenant_admin", "super_admin", "compliance_officer", "hr_admin"].includes(user.role);
   const isSelf = user?.id === staffId;
 
   // Staff profile

@@ -36,7 +36,7 @@ type ProgressEntry = Tables<"participant_progress">;
 
 // Role-based masking levels
 const getMaskLevel = (role: string): "full" | "partial" | "masked" => {
-  if (["super_admin", "compliance_officer"].includes(role)) return "full";
+  if (["tenant_admin", "super_admin", "compliance_officer"].includes(role)) return "full";
   if (["supervisor", "hr_admin", "executive"].includes(role)) return "partial";
   return "masked";
 };

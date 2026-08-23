@@ -16,7 +16,7 @@ export type ShiftStatus =
 export type EvidenceType = "before" | "after" | "issue";
 export type GeofenceResult = "inside" | "outside" | "unknown" | "inaccurate";
 
-export const OVERSIGHT_ROLES: Role[] = ["super_admin", "compliance_officer", "supervisor"];
+export const OVERSIGHT_ROLES: Role[] = ["tenant_admin", "super_admin", "compliance_officer", "supervisor"];
 
 function blank(v: string | null | undefined): boolean {
   return v === null || v === undefined || v.trim() === "";

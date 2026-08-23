@@ -45,11 +45,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_ROLE_GATE: Record<string, string[]> = {
-  acknowledged: ["super_admin", "compliance_officer", "supervisor"],
-  under_review: ["super_admin", "compliance_officer"],
-  investigating: ["super_admin", "compliance_officer"],
-  resolved: ["super_admin", "compliance_officer"],
-  closed: ["super_admin", "compliance_officer"],
+  acknowledged: ["tenant_admin", "super_admin", "compliance_officer", "supervisor"],
+  under_review: ["tenant_admin", "super_admin", "compliance_officer"],
+  investigating: ["tenant_admin", "super_admin", "compliance_officer"],
+  resolved: ["tenant_admin", "super_admin", "compliance_officer"],
+  closed: ["tenant_admin", "super_admin", "compliance_officer"],
 };
 
 const statusColors: Record<string, string> = {

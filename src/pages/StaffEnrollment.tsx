@@ -24,7 +24,7 @@ const ROLE_OPTIONS: AppRole[] = [
   "super_admin",
 ];
 
-const ADMIN_ROLES: AppRole[] = ["super_admin", "compliance_officer", "hr_admin"];
+const ADMIN_ROLES: AppRole[] = ["tenant_admin", "super_admin", "compliance_officer", "hr_admin"];
 
 const label = (r: string) => r.replace(/_/g, " ");
 
