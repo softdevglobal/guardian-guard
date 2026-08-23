@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { moduleAllowed } from "@/lib/moduleAccess";
 
 export type AppRole =
   | "platform_super_admin"
@@ -88,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMockAudit, setIsMockAudit] = useState(false);
+  const [orgModules, setOrgModules] = useState<string[] | null>(null);
 
   const fetchUserProfile = useCallback(async (authUser: User) => {
     const { data: profile } = await supabase
@@ -118,6 +120,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
+    // Service-driven module activation. On any failure we leave it null so the
+    // person keeps their role-based access rather than being locked out.
+    if (profile?.organisation_id) {
+      const { data: mods, error } = await supabase.rpc("organisation_active_modules" as any, {
+        _org: profile.organisation_id,
+      });
+      setOrgModules(error ? null : ((mods as string[] | null) ?? []));
+    } else {
+      setOrgModules(null);
+    }
+
   }, []);
 
   useEffect(() => {
@@ -128,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setTimeout(() => fetchUserProfile(newSession.user), 0);
         } else {
           setUser(null);
+          setOrgModules(null);
         }
         setIsLoading(false);
       }
@@ -153,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setOrgModules(null);
     setIsMockAudit(false);
   }, []);
 
@@ -170,9 +185,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (module: string) => {
       if (!user) return false;
       const held = user.roles?.length ? user.roles : [user.role];
-      return held.some((r) => ROLE_MODULES[r]?.includes(module));
+      const roleAllows = held.some((r) => ROLE_MODULES[r]?.includes(module));
+      // Platform owners are not tenants — service activation never applies to them.
+      if (held.includes("platform_super_admin")) return roleAllows;
+      return moduleAllowed(module, roleAllows, orgModules);
     },
-    [user]
+    [user, orgModules]
   );
 
 
@@ -181,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule, orgModules }}>
       {children}
     </AuthContext.Provider>
   );
