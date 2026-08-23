@@ -19,11 +19,15 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
+  /** Highest-priority role, used for single-role displays and gates. */
   role: AppRole;
+  /** Every role granted to the account. */
+  roles: AppRole[];
   team_id: string | null;
   organisation_id: string | null;
   avatar_url?: string;
 }
+
 
 interface AuthContextType {
   user: UserProfile | null;
