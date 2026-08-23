@@ -20,8 +20,8 @@ type Tbl = "sil_houses" | "sil_tenancy_agreements" | "sil_house_drills";
 export default function SIL() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor"]);
-  const canConfigure = !isMockAudit && hasRole(["super_admin", "compliance_officer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor"]);
+  const canConfigure = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const { data: participants = [] } = useParticipants();
   const [sheet, setSheet] = useState<{ table: Tbl; initial?: Record<string, any> } | null>(null);
 

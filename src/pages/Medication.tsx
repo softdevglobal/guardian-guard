@@ -20,7 +20,7 @@ import {
 export default function Medication() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor", "support_worker", "trainer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor", "support_worker", "trainer"]);
   const { data: participants = [] } = useParticipants();
   const { data: staff = [] } = useStaff();
   const [profileSheet, setProfileSheet] = useState<Record<string, any> | null>(null);

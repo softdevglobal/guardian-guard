@@ -24,7 +24,7 @@ type Tbl =
 export default function Governance() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "executive"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "executive"]);
   const { data: staff = [] } = useStaff();
   const [sheet, setSheet] = useState<{ table: Tbl; initial?: Record<string, any> } | null>(null);
 

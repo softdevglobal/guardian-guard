@@ -57,7 +57,7 @@ interface Row extends EvidenceRequirementLike {
 export default function EvidenceMatrix() {
   const { user, hasRole, isMockAudit } = useAuth();
   const queryClient = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const [moduleFilter, setModuleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Row | null>(null);

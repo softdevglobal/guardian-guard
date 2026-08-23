@@ -94,7 +94,7 @@ export default function ServiceApprovals() {
     onError: (e: any) => toast({ variant: "destructive", title: "Blocked", description: e.message }),
   });
 
-  const canDecide = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor"]);
+  const canDecide = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor"]);
   const nameOf = (id: string) => participants.find((p) => p.id === id)?.full_name ?? "Participant";
   const workerOf = (id: string) => staff.find((s) => s.id === id)?.full_name ?? "Worker";
   const totals = billingSummary(filtered);

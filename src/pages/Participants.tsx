@@ -58,7 +58,7 @@ const consentColors: Record<string, string> = {
 
 export default function Participants() {
   const { user, hasRole } = useAuth();
-  const canCreateParticipant = hasRole(["super_admin", "compliance_officer"]);
+  const canCreateParticipant = hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("profiles");
   const [searchTerm, setSearchTerm] = useState("");
