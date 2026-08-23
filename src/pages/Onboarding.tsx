@@ -102,7 +102,7 @@ export default function Onboarding() {
     [data.data],
   );
 
-  const reqs = data.data?.reqs ?? [];
+  const reqs = useMemo(() => pathway.applicableQuestions.map(questionToRequirement), [pathway.applicableQuestions]);
   const progress = onboardingProgress(reqs, answers, documentKeys);
   const step = ONBOARDING_STEPS[stepIndex];
   const stepReqs = reqs.filter((r) => r.step_key === step.key && requirementApplies(r, answers));
@@ -112,16 +112,22 @@ export default function Onboarding() {
   const missingDocs = reqs
     .filter((r) => r.is_mandatory && r.requires_document && requirementApplies(r, answers) && !documentKeys.has(r.requirement_key))
     .map((r) => r.label);
+  const needsRegistrationGroups = pathway.requirements.some((r) => r.requirement_type === "registration_group");
   const submissionInput = {
     status,
     progressPct: progress,
     requirementCount: reqs.length,
-    confirmedRegistrationGroups: data.data?.confirmedGroups ?? 0,
+    // Registration groups are only demanded of providers whose services are NDIS registered/applying.
+    confirmedRegistrationGroups: needsRegistrationGroups ? (data.data?.confirmedGroups ?? 0) : 1,
     missingMandatoryDocuments: missingDocs,
-    outstandingBlockers: outstanding,
+    outstandingBlockers: [
+      ...outstanding,
+      ...(servicesConfirmed ? [] : ["Confirm the services your organisation provides before submitting."]),
+    ],
   };
   const allBlockers = submissionBlockers(submissionInput);
   const locked = isEditingLocked(status);
+
 
   const saveAnswers = useMutation({
     mutationFn: async () => {
