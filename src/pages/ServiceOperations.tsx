@@ -314,13 +314,14 @@ export default function ServiceOperations() {
                   className="min-h-[44px]"
                   disabled={!canManage || saveRow.isPending}
                   onClick={() => {
-                    if (!String(templateForm.name ?? "").trim()) {
-                      toast({ variant: "destructive", title: "Name required", description: "Give the task template a name workers will recognise." });
+                    const blockers = templateBlockers(templateForm);
+                    if (blockers.length > 0) {
+                      toast({ variant: "destructive", title: "Template incomplete", description: blockers.join(" ") });
                       return;
                     }
                     saveRow.mutate(
-                      { table: "service_task_templates", values: { ...templateForm, is_active: templateForm.is_active !== false }, key: "task-templates" },
-                      { onSuccess: () => setTemplateForm({}) }
+                      { table: "service_task_templates", values: templatePayload(templateForm), key: TASK_TEMPLATE_QUERY_KEYS[0] },
+                      { onSuccess: () => setTemplateForm(emptyTemplateForm()) }
                     );
                   }}
                 >
