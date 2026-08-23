@@ -223,11 +223,14 @@ export default function Onboarding() {
     onError: (e: any) => toast({ variant: "destructive", title: "Could not submit", description: e.message }),
   });
 
+  // Never surface "no organisation" while the profile or pack is still loading.
+  if (authLoading || (!!orgId && (data.isLoading || pathway.isLoading))) {
+    return <div className="p-6"><LoadingState rows={5} /></div>;
+  }
   if (!orgId) {
     return <div className="p-6"><EmptyState title="No organisation linked" description="Your account is not linked to a provider organisation yet. Contact your administrator." /></div>;
   }
-  if (data.isLoading) return <div className="p-6"><LoadingState rows={5} /></div>;
-  if (data.error) return <div className="p-6"><ErrorState error={data.error} /></div>;
+  if (data.error) return <div className="p-6"><ErrorState error={data.error} onRetry={() => data.refetch()} /></div>;
   if (!data.data?.onb) {
     return (
       <div className="p-6">
@@ -247,9 +250,10 @@ export default function Onboarding() {
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <PageHeading
         title="Get set up"
-        description={`Tenant admin setup for ${onb.provider_pathways?.name ?? "your pathway"}. Save and resume at any time — nothing is submitted until you choose to.`}
+        description="Tell us what your organisation does, then complete the requirements Guardian Guard configures for you. Save and resume at any time — nothing is submitted until you choose to."
         actions={<StatusPill tone={approved ? "ok" : submitted ? "warn" : status === "changes_requested" ? "bad" : "neutral"}>{statusLabel(status)}</StatusPill>}
       />
+
 
       <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/5 p-3 text-sm">
         <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
