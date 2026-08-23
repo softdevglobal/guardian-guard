@@ -32,7 +32,7 @@ export default function ServiceOperations() {
   const [assignBlockers, setAssignBlockers] = useState<string[]>([]);
 
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useQuery({
-    queryKey: ["task-templates"],
+    queryKey: [TASK_TEMPLATE_QUERY_KEYS[0]],
     queryFn: async () => {
       const { data, error } = await supabase.from("service_task_templates" as any).select("*").eq("record_status", "active").order("name");
       if (error) throw error;
