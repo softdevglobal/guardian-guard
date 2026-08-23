@@ -6522,6 +6522,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assert_same_org_staff: { Args: { _staff_id: string }; Returns: undefined }
       can_access_form_attachment: {
         Args: { _object_name: string }
         Returns: boolean
@@ -6540,12 +6541,24 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Json
       }
+      check_incident_handler_training_impl: {
+        Args: { _user_id: string }
+        Returns: Json
+      }
       check_incident_time_breaches: { Args: never; Returns: Json }
       check_staff_assignment_eligible: {
         Args: { _staff_id: string }
         Returns: boolean
       }
+      check_staff_assignment_eligible_impl: {
+        Args: { _staff_id: string }
+        Returns: boolean
+      }
       evaluate_staff_eligibility: { Args: { _staff_id: string }; Returns: Json }
+      evaluate_staff_eligibility_impl: {
+        Args: { _staff_id: string }
+        Returns: Json
+      }
       geo_distance_metres: {
         Args: { _lat1: number; _lat2: number; _lon1: number; _lon2: number }
         Returns: number
