@@ -188,23 +188,30 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
         </CardContent>
       </Card>
 
-      {chosen.size > 0 && (
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">What this will switch on</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{confirmed ? "What your confirmed services switch on" : "Your selection"}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {chosen.size === 0 ? (
+            <p className="text-sm text-muted-foreground">No services selected</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">{chosen.size} service{chosen.size === 1 ? "" : "s"} selected</p>
+          )}
+          {confirmed && (
             <div className="flex flex-wrap gap-1">
               {pathway.modules.map((m) => (
                 <Badge key={m} variant="outline" className="capitalize">{m.replace(/_/g, " ")}</Badge>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Modules update once you confirm. Generated policies are created as drafts and require human review and
-              approval — Guardian Guard never marks a policy compliant or approved for you.
-            </p>
-            <HumanReviewNotice />
-          </CardContent>
-        </Card>
-      )}
+          )}
+          <p className="text-xs text-muted-foreground">
+            Nothing is configured until you confirm. Generated policies are created as drafts and require human review
+            and approval — Guardian Guard never marks a policy compliant, approved or audit-ready for you.
+          </p>
+          <HumanReviewNotice />
+        </CardContent>
+      </Card>
 
       <BlockerAlert blockers={blockers} title="Before you can confirm" />
 
@@ -214,7 +221,7 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
           disabled={locked || blockers.length > 0 || save.isPending || confirm.isPending}
           onClick={submit}
         >
-          {confirmed ? "Update my services" : "Confirm my services"}
+          {confirmed ? "Update services and reconfigure Guardian Guard" : "Confirm services and configure Guardian Guard"}
         </Button>
         {confirmed && (
           <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -222,6 +229,11 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
           </span>
         )}
       </div>
+      {blockers.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Select at least one service and tell us whether the work is NDIS funded.
+        </p>
+      )}
       <Label className="sr-only">Service selection</Label>
     </div>
   );
