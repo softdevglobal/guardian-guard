@@ -422,14 +422,18 @@ export default function Incidents() {
           <ReportableAssessmentPanel />
         </TabsContent>
 
-        <TabsContent value="audit-sim" className="mt-4">
-          <AuditSimulation />
-        </TabsContent>
+        {hasMockAuditData && (
+          <>
+            <TabsContent value="audit-sim" className="mt-4">
+              <AuditSimulation />
+            </TabsContent>
 
-        {/* FAILURE CASES */}
-        <TabsContent value="failures" className="mt-4">
-          <FailureCasesDashboard />
-        </TabsContent>
+            {/* FAILURE CASES */}
+            <TabsContent value="failures" className="mt-4">
+              <FailureCasesDashboard />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
       <IncidentDetailSheet incident={selectedIncident} open={sheetOpen} onOpenChange={setSheetOpen} />
