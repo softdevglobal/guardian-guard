@@ -13,7 +13,7 @@ import {
   useConfirmSelections, useProviderPathway, useSaveSelections,
 } from "@/hooks/useServiceSelection";
 import {
-  NDIS_FUNDING_OPTIONS, selectionBlockers, type NdisFundingStatus,
+  NDIS_FUNDING_OPTIONS, normaliseFundingStatus, selectionBlockers, type NdisFundingStatus,
 } from "@/lib/serviceSelection";
 
 interface Props {
