@@ -140,12 +140,16 @@ export default function Incidents() {
           <TabsTrigger value="register">Incident Register</TabsTrigger>
           <TabsTrigger value="reporting">Reporting</TabsTrigger>
           <TabsTrigger value="reportable">Reportable Assessment</TabsTrigger>
-          <TabsTrigger value="audit-sim" className="flex items-center gap-1">
-            <Shield className="h-3.5 w-3.5" />Audit Simulation
-          </TabsTrigger>
-          <TabsTrigger value="failures" className="flex items-center gap-1">
-            <XCircle className="h-3.5 w-3.5" />Failure Cases
-          </TabsTrigger>
+          {hasMockAuditData && (
+            <>
+              <TabsTrigger value="audit-sim" className="flex items-center gap-1">
+                <Shield className="h-3.5 w-3.5" />Audit Simulation
+              </TabsTrigger>
+              <TabsTrigger value="failures" className="flex items-center gap-1">
+                <XCircle className="h-3.5 w-3.5" />Failure Cases
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         {/* DASHBOARD */}
