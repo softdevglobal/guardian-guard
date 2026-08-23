@@ -65,6 +65,11 @@ export default function Incidents() {
     },
   });
 
+  /** Audit Simulation and Failure Cases only apply to the seeded mock audit dataset. */
+  const hasMockAuditData = incidents.some((i) => (i.title ?? "").startsWith("[MOCK AUDIT DATA]"));
+
+
+
   // Stats
   const stats = useMemo(() => {
     const open = incidents.filter(i => !["closed", "actioned"].includes(i.status));
