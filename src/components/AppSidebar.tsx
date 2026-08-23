@@ -30,6 +30,7 @@ import {
   Building2,
   Wallet,
   Rocket,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
@@ -57,6 +58,7 @@ const platformItems = [
   { title: "Platform Dashboard", url: "/platform/dashboard", icon: Building2 },
   { title: "Clients", url: "/platform/clients", icon: Users },
   { title: "Packages", url: "/platform/packages", icon: Wallet },
+  { title: "Service Configuration", url: "/platform/service-config", icon: SlidersHorizontal },
   { title: "Onboarding Reviews", url: "/platform/onboarding-reviews", icon: ClipboardCheck },
   { title: "Platform Activity", url: "/platform/activity", icon: Activity },
   { title: "Income", url: "/platform/income", icon: Wallet },

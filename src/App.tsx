@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformRoute } from "@/components/PlatformRoute";
 import { OnboardingGate } from "@/components/OnboardingGate";
+import { ModuleGate } from "@/components/ModuleGate";
 import { AppLayout } from "@/components/AppLayout";
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import PlatformClients from "./pages/platform/Clients";
@@ -17,6 +18,7 @@ import PlatformPackages from "./pages/platform/Packages";
 import OnboardingReviews from "./pages/platform/OnboardingReviews";
 import PlatformActivity from "./pages/platform/Activity";
 import PlatformIncome from "./pages/platform/Income";
+import ServiceConfig from "./pages/platform/ServiceConfig";
 import Onboarding from "./pages/Onboarding";
 
 import Dashboard from "./pages/Dashboard";
@@ -57,7 +59,9 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <OnboardingGate>
-        <AppLayout>{children}</AppLayout>
+        <AppLayout>
+          <ModuleGate>{children}</ModuleGate>
+        </AppLayout>
       </OnboardingGate>
     </ProtectedRoute>
   );
@@ -89,6 +93,7 @@ const App = () => (
               <Route path="/platform/packages" element={<PlatformPage><PlatformPackages /></PlatformPage>} />
               <Route path="/platform/onboarding-reviews" element={<PlatformPage><OnboardingReviews /></PlatformPage>} />
               <Route path="/platform/activity" element={<PlatformPage><PlatformActivity /></PlatformPage>} />
+              <Route path="/platform/service-config" element={<PlatformPage><ServiceConfig /></PlatformPage>} />
               <Route path="/platform/income" element={<PlatformPage><PlatformIncome /></PlatformPage>} />
               <Route path="/onboarding" element={<ProtectedRoute><AppLayout><Onboarding /></AppLayout></ProtectedRoute>} />
               <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
