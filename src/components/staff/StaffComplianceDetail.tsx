@@ -17,6 +17,8 @@ import {
   AlertTriangle, Clock, FileText, RefreshCw, Loader2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ATTACHMENT_BUCKET } from "@/lib/attachmentUrls";
+import { AttachmentLink } from "@/components/AttachmentLink";
 import { format, differenceInDays } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import { evaluateStaffEligibility, ELIGIBILITY_BADGE_MAP, RECORD_STATUS_BADGE } from "@/lib/staffEligibility";
@@ -152,10 +154,10 @@ export default function StaffComplianceDetail({ staffId, onBack }: Props) {
       if (file) {
         const ext = file.name.split(".").pop() || "pdf";
         const path = `${user.id}/compliance/${requirementCode}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("form-attachments").upload(path, file);
+        const { error: upErr } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, file);
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("form-attachments").getPublicUrl(path);
-        fileUrl = urlData.publicUrl;
+        // Private bucket: keep the path and sign it when a user opens the document.
+        fileUrl = path;
       }
 
       const { error } = await supabase.from("staff_compliance_records").insert({
@@ -367,9 +369,9 @@ export default function StaffComplianceDetail({ staffId, onBack }: Props) {
                         </TableCell>
                         <TableCell>
                           {item.record?.uploaded_file_url ? (
-                            <a href={item.record.uploaded_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm flex items-center gap-1">
+                            <AttachmentLink value={item.record.uploaded_file_url} className="text-primary hover:underline text-sm flex items-center gap-1">
                               <FileText className="h-3 w-3" />View
-                            </a>
+                            </AttachmentLink>
                           ) : "—"}
                         </TableCell>
                         <TableCell className="text-sm">

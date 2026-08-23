@@ -19,6 +19,8 @@ import {
   Upload, FileText, XCircle, Filter, ArrowLeft, RefreshCw, Loader2, Plus
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ATTACHMENT_BUCKET } from "@/lib/attachmentUrls";
+import { AttachmentLink } from "@/components/AttachmentLink";
 import { format, differenceInDays } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
 import { evaluateStaffEligibility, RECORD_STATUS_BADGE } from "@/lib/staffEligibility";
@@ -505,10 +507,10 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
       if (params.file) {
         const ext = params.file.name.split(".").pop() || "pdf";
         const path = `${staffId}/training/${params.trainingCode}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("form-attachments").upload(path, params.file);
+        const { error: upErr } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, params.file);
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("form-attachments").getPublicUrl(path);
-        fileUrl = urlData.publicUrl;
+        // Private bucket: keep the path and sign it when a user opens the evidence.
+        fileUrl = path;
       }
 
       // Find training module to link
@@ -713,9 +715,9 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
                           <div>
                             {item.completion?.evidence_type ?? "—"}
                             {item.completion?.evidence_file_url && (
-                              <a href={item.completion.evidence_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
+                              <AttachmentLink value={item.completion.evidence_file_url} className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
                                 <FileText className="h-3 w-3" />View file
-                              </a>
+                              </AttachmentLink>
                             )}
                           </div>
                         </TableCell>

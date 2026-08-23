@@ -3,6 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Camera, ImagePlus, X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ATTACHMENT_BUCKET, useSignedAttachment } from "@/lib/attachmentUrls";
+
+function PhotoThumb({ value, index, onRemove }: { value: string; index: number; onRemove: () => void }) {
+  const url = useSignedAttachment(value);
+  return (
+    <div className="relative group rounded-md overflow-hidden border border-border">
+      {url ? (
+        <img src={url} alt={`Attachment ${index + 1}`} className="w-full h-24 object-cover" />
+      ) : (
+        <div className="w-full h-24 flex items-center justify-center bg-muted text-xs text-muted-foreground">
+          Loading…
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={`Remove photo ${index + 1}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
 
 interface PhotoUploadProps {
   folder: string; // e.g. "incidents", "complaints", "risks"
@@ -40,16 +64,13 @@ export function PhotoUpload({ folder, userId, photos, onPhotosChange, maxPhotos 
       const fileName = `${userId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
       const { error } = await supabase.storage
-        .from("form-attachments")
+        .from(ATTACHMENT_BUCKET)
         .upload(fileName, file, { contentType: file.type });
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from("form-attachments")
-        .getPublicUrl(fileName);
-
-      onPhotosChange([...photos, urlData.publicUrl]);
+      // The bucket is private: store the path and sign it at display time.
+      onPhotosChange([...photos, fileName]);
       toast({ title: "Photo uploaded" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
@@ -115,20 +136,11 @@ export function PhotoUpload({ folder, userId, photos, onPhotosChange, maxPhotos 
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((url, i) => (
-            <div key={i} className="relative group rounded-md overflow-hidden border border-border">
-              <img src={url} alt={`Attachment ${i + 1}`} className="w-full h-24 object-cover" />
-              <button
-                type="button"
-                onClick={() => removePhoto(i)}
-                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Remove photo ${i + 1}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
+            <PhotoThumb key={i} value={url} index={i} onRemove={() => removePhoto(i)} />
           ))}
         </div>
       )}
+
 
       <p className="text-xs text-muted-foreground">{photos.length}/{maxPhotos} photos • Max 10MB each</p>
     </div>

@@ -15,6 +15,8 @@ import { BlockerAlert, EmptyState, HumanReviewNotice, PageHeading } from "@/comp
 import { useParticipants, useStaff, withOrg } from "@/hooks/useComplianceLookups";
 import { assignmentBlockers } from "@/lib/serviceShifts";
 import { checkAssignmentEligible } from "@/lib/staffEligibility";
+import { emptyTemplateForm, selectableTemplates, templateBlockers, templatePayload } from "@/lib/serviceTaskTemplates";
+import { TASK_TEMPLATE_QUERY_KEYS } from "@/lib/queryKeys";
 
 export default function ServiceOperations() {
   const { user, hasRole, isMockAudit } = useAuth();
@@ -30,7 +32,7 @@ export default function ServiceOperations() {
   const [assignBlockers, setAssignBlockers] = useState<string[]>([]);
 
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useQuery({
-    queryKey: ["task-templates"],
+    queryKey: [TASK_TEMPLATE_QUERY_KEYS[0]],
     queryFn: async () => {
       const { data, error } = await supabase.from("service_task_templates" as any).select("*").eq("record_status", "active").order("name");
       if (error) throw error;
@@ -39,7 +41,7 @@ export default function ServiceOperations() {
   });
 
   /** Only templates marked active can be attached to a new shift. */
-  const activeTemplates = templates.filter((t) => t.is_active !== false);
+  const activeTemplates = selectableTemplates(templates);
 
 
   const { data: locations = [] } = useQuery({
@@ -314,13 +316,14 @@ export default function ServiceOperations() {
                   className="min-h-[44px]"
                   disabled={!canManage || saveRow.isPending}
                   onClick={() => {
-                    if (!String(templateForm.name ?? "").trim()) {
-                      toast({ variant: "destructive", title: "Name required", description: "Give the task template a name workers will recognise." });
+                    const blockers = templateBlockers(templateForm);
+                    if (blockers.length > 0) {
+                      toast({ variant: "destructive", title: "Template incomplete", description: blockers.join(" ") });
                       return;
                     }
                     saveRow.mutate(
-                      { table: "service_task_templates", values: { ...templateForm, is_active: templateForm.is_active !== false }, key: "task-templates" },
-                      { onSuccess: () => setTemplateForm({}) }
+                      { table: "service_task_templates", values: templatePayload(templateForm), key: TASK_TEMPLATE_QUERY_KEYS[0] },
+                      { onSuccess: () => setTemplateForm(emptyTemplateForm()) }
                     );
                   }}
                 >
