@@ -275,12 +275,24 @@ export default function Onboarding() {
           </div>
           <Progress value={progress} aria-label="Onboarding progress" />
           <div className="flex flex-wrap gap-1 pt-1">
-            {ONBOARDING_STEPS.map((s, i) => (
-              <Button key={s.key} size="sm" variant={i === stepIndex ? "default" : "outline"} className="min-h-[36px]" onClick={() => setStepIndex(i)}>
-                {s.label}
-              </Button>
-            ))}
+            {ONBOARDING_STEPS.map((s, i) => {
+              const stepLocked = i > 1 && !servicesConfirmed;
+              return (
+                <Button
+                  key={s.key}
+                  size="sm"
+                  variant={i === stepIndex ? "default" : "outline"}
+                  className="min-h-[36px]"
+                  disabled={stepLocked}
+                  title={stepLocked ? "Confirm your services first" : undefined}
+                  onClick={() => setStepIndex(i)}
+                >
+                  {s.label}
+                </Button>
+              );
+            })}
           </div>
+
         </CardContent>
       </Card>
 
