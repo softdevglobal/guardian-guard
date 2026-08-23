@@ -5700,6 +5700,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_form_attachment: {
+        Args: { _object_name: string }
+        Returns: boolean
+      }
       can_access_participant: {
         Args: { _participant_id: string }
         Returns: boolean
