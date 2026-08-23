@@ -64,6 +64,22 @@ const ROLE_MODULES: Record<AppRole, string[]> = {
   participant: ["dashboard", "training", "complaints"],
 };
 
+/** Most privileged first — decides the primary role when an account holds several. */
+const ROLE_PRIORITY: AppRole[] = [
+  "platform_super_admin",
+  "super_admin",
+  "tenant_admin",
+  "compliance_officer",
+  "supervisor",
+  "hr_admin",
+  "trainer",
+  "executive",
+  "support_worker",
+  "participant",
+];
+
+
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
