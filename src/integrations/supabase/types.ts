@@ -356,6 +356,42 @@ export type Database = {
           },
         ]
       }
+      business_categories: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+          requires_ndis_registration: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+          requires_ndis_registration?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+          requires_ndis_registration?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_url: string | null
@@ -626,6 +662,63 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_requirement_rules: {
+        Row: {
+          active: boolean
+          business_category_id: string | null
+          condition_json: Json | null
+          created_at: string
+          id: string
+          label: string | null
+          required: boolean
+          requirement_reference: string
+          requirement_type: string
+          service_type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_category_id?: string | null
+          condition_json?: Json | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          required?: boolean
+          requirement_reference: string
+          requirement_type: string
+          service_type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_category_id?: string | null
+          condition_json?: Json | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          required?: boolean
+          requirement_reference?: string
+          requirement_type?: string
+          service_type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_requirement_rules_business_category_id_fkey"
+            columns: ["business_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirement_rules_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1608,6 +1701,60 @@ export type Database = {
           },
         ]
       }
+      master_templates: {
+        Row: {
+          active: boolean
+          body_template: string | null
+          business_category_codes: string[]
+          code: string
+          created_at: string
+          effective_date: string
+          id: string
+          name: string
+          placeholder_fields: string[]
+          registration_group_codes: string[]
+          requirement_type: string
+          review_date: string | null
+          service_type_codes: string[]
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          body_template?: string | null
+          business_category_codes?: string[]
+          code: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          name: string
+          placeholder_fields?: string[]
+          registration_group_codes?: string[]
+          requirement_type?: string
+          review_date?: string | null
+          service_type_codes?: string[]
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          body_template?: string | null
+          business_category_codes?: string[]
+          code?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          name?: string
+          placeholder_fields?: string[]
+          registration_group_codes?: string[]
+          requirement_type?: string
+          review_date?: string | null
+          service_type_codes?: string[]
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       mealtime_profiles: {
         Row: {
           allergies: string | null
@@ -2141,6 +2288,7 @@ export type Database = {
           answered_by: string | null
           created_at: string
           id: string
+          is_archived: boolean
           is_masked: boolean
           onboarding_id: string
           organisation_id: string
@@ -2157,6 +2305,7 @@ export type Database = {
           answered_by?: string | null
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_masked?: boolean
           onboarding_id: string
           organisation_id: string
@@ -2173,6 +2322,7 @@ export type Database = {
           answered_by?: string | null
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_masked?: boolean
           onboarding_id?: string
           organisation_id?: string
@@ -2198,6 +2348,85 @@ export type Database = {
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_pathway_rules: {
+        Row: {
+          active: boolean
+          business_category_id: string | null
+          condition_json: Json | null
+          created_at: string
+          display_order: number
+          field_type: string
+          id: string
+          label: string | null
+          question_definition_id: string | null
+          required: boolean
+          requirement_key: string | null
+          requires_document: boolean
+          requires_expiry: boolean
+          service_type_id: string | null
+          step_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_category_id?: string | null
+          condition_json?: Json | null
+          created_at?: string
+          display_order?: number
+          field_type?: string
+          id?: string
+          label?: string | null
+          question_definition_id?: string | null
+          required?: boolean
+          requirement_key?: string | null
+          requires_document?: boolean
+          requires_expiry?: boolean
+          service_type_id?: string | null
+          step_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_category_id?: string | null
+          condition_json?: Json | null
+          created_at?: string
+          display_order?: number
+          field_type?: string
+          id?: string
+          label?: string | null
+          question_definition_id?: string | null
+          required?: boolean
+          requirement_key?: string | null
+          requires_document?: boolean
+          requires_expiry?: boolean
+          service_type_id?: string | null
+          step_key?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_pathway_rules_business_category_id_fkey"
+            columns: ["business_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_pathway_rules_question_definition_id_fkey"
+            columns: ["question_definition_id"]
+            isOneToOne: false
+            referencedRelation: "pathway_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_pathway_rules_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
             referencedColumns: ["id"]
           },
         ]
@@ -2456,12 +2685,15 @@ export type Database = {
           created_at: string
           current_step: string
           id: string
+          ndis_funding_status: string | null
           organisation_id: string
           pathway_id: string | null
+          pathway_status: string
           progress_pct: number
           returned_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          services_confirmed_at: string | null
           status: string
           submitted_at: string | null
           submitted_by: string | null
@@ -2473,12 +2705,15 @@ export type Database = {
           created_at?: string
           current_step?: string
           id?: string
+          ndis_funding_status?: string | null
           organisation_id: string
           pathway_id?: string | null
+          pathway_status?: string
           progress_pct?: number
           returned_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          services_confirmed_at?: string | null
           status?: string
           submitted_at?: string | null
           submitted_by?: string | null
@@ -2490,12 +2725,15 @@ export type Database = {
           created_at?: string
           current_step?: string
           id?: string
+          ndis_funding_status?: string | null
           organisation_id?: string
           pathway_id?: string | null
+          pathway_status?: string
           progress_pct?: number
           returned_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          services_confirmed_at?: string | null
           status?: string
           submitted_at?: string | null
           submitted_by?: string | null
@@ -2514,6 +2752,79 @@ export type Database = {
             columns: ["pathway_id"]
             isOneToOne: false
             referencedRelation: "provider_pathways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_service_selections: {
+        Row: {
+          business_category_id: string
+          commencement_date: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          delivery_status: string
+          id: string
+          is_archived: boolean
+          ndis_funded: boolean
+          organisation_id: string
+          registered_service: boolean
+          review_date: string | null
+          service_type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_category_id: string
+          commencement_date?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          is_archived?: boolean
+          ndis_funded?: boolean
+          organisation_id: string
+          registered_service?: boolean
+          review_date?: string | null
+          service_type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_category_id?: string
+          commencement_date?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          is_archived?: boolean
+          ndis_funded?: boolean
+          organisation_id?: string
+          registered_service?: boolean
+          review_date?: string | null
+          service_type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_service_selections_business_category_id_fkey"
+            columns: ["business_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_service_selections_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_service_selections_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
             referencedColumns: ["id"]
           },
         ]
@@ -3564,6 +3875,8 @@ export type Database = {
           last_review_date: string | null
           linked_standard_id: string | null
           linked_training_module_id: string | null
+          master_template_id: string | null
+          master_template_version: number | null
           next_review_date: string | null
           organisation_id: string
           owner_id: string | null
@@ -3587,6 +3900,8 @@ export type Database = {
           last_review_date?: string | null
           linked_standard_id?: string | null
           linked_training_module_id?: string | null
+          master_template_id?: string | null
+          master_template_version?: number | null
           next_review_date?: string | null
           organisation_id: string
           owner_id?: string | null
@@ -3610,6 +3925,8 @@ export type Database = {
           last_review_date?: string | null
           linked_standard_id?: string | null
           linked_training_module_id?: string | null
+          master_template_id?: string | null
+          master_template_version?: number | null
           next_review_date?: string | null
           organisation_id?: string
           owner_id?: string | null
@@ -3634,6 +3951,13 @@ export type Database = {
             columns: ["linked_training_module_id"]
             isOneToOne: false
             referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_master_template_id_fkey"
+            columns: ["master_template_id"]
+            isOneToOne: false
+            referencedRelation: "master_templates"
             referencedColumns: ["id"]
           },
           {
@@ -4916,6 +5240,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_types: {
+        Row: {
+          active: boolean
+          business_category_id: string
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number
+          high_risk: boolean
+          id: string
+          name: string
+          requires_clinical_governance: boolean
+          requires_participant_management: boolean
+          requires_photos: boolean
+          requires_registration_group: boolean
+          requires_worker_screening: boolean
+          supports_geolocation: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_category_id: string
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          high_risk?: boolean
+          id?: string
+          name: string
+          requires_clinical_governance?: boolean
+          requires_participant_management?: boolean
+          requires_photos?: boolean
+          requires_registration_group?: boolean
+          requires_worker_screening?: boolean
+          supports_geolocation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_category_id?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          high_risk?: boolean
+          id?: string
+          name?: string
+          requires_clinical_governance?: boolean
+          requires_participant_management?: boolean
+          requires_photos?: boolean
+          requires_registration_group?: boolean
+          requires_worker_screening?: boolean
+          supports_geolocation?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_types_business_category_id_fkey"
+            columns: ["business_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shift_completion_confirmations: {
         Row: {
