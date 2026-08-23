@@ -61,6 +61,7 @@ const platformItems = [
   { title: "Income", url: "/platform/income", icon: Wallet },
 ];
 
+/** `badgeKey` reads from the shared organisation snapshot — badges are never hard-coded. */
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
   { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
@@ -68,9 +69,9 @@ const navItems = [
 
   { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
   { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
-  { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badge: 3 },
-  { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks" },
-  { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badge: 1 },
+  { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" as const },
+  { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks", badgeKey: "risks_open" as const },
+  { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
@@ -87,6 +88,7 @@ const navItems = [
   { title: "Restrictive Practices", url: "/restrictive-practices", icon: Hand, module: "restrictive_practices" },
   { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
+
 
 const governanceItems = [
   { title: "Governance", url: "/governance", icon: Landmark, module: "governance" },
