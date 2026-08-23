@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
           name: b.trading_name || b.legal_name,
           legal_name: b.legal_name,
           trading_name: b.trading_name,
-          abn: b.abn.replace(/\s/g, ""),
+          abn: normalisedAbn,
           acn: b.acn,
           primary_contact_name: b.primary_contact_name,
           primary_contact_email: b.primary_contact_email,
@@ -254,8 +254,16 @@ Deno.serve(async (req) => {
           .from("user_profiles")
           .update({ organisation_id: org.id, full_name: b.admin_full_name })
           .eq("id", adminUserId);
-        await admin.from("user_roles").delete().eq("user_id", adminUserId);
-        await admin.from("user_roles").insert({ user_id: adminUserId, role: "tenant_admin" });
+        // Never clear a platform owner's role; replace only tenant-scoped roles.
+        const { data: existingRoles } = await admin.from("user_roles").select("role").eq("user_id", adminUserId);
+        if ((existingRoles ?? []).some((r) => r.role === "platform_super_admin")) {
+          throw new Error("This email belongs to a platform owner account and cannot be used as a tenant admin.");
+        }
+        await admin.from("user_roles").delete().eq("user_id", adminUserId).neq("role", "platform_super_admin");
+        await admin.from("user_roles").upsert(
+          { user_id: adminUserId, role: "tenant_admin" },
+          { onConflict: "user_id,role", ignoreDuplicates: true },
+        );
 
         await admin
           .from("organisation_invitations")
