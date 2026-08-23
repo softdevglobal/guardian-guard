@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Settings as SettingsIcon, Shield, Bell, Users, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { orgSettingsErrors, persistedMatches, trimOrgSettings } from "@/lib/orgSettings";
+import { reportError, toSafeError } from "@/lib/userFacingError";
+import { BlockerAlert } from "@/components/compliance/GateUI";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -158,6 +161,7 @@ export default function Settings() {
                   <div className="space-y-2"><Label htmlFor="org-ndis">NDIS Registration</Label><Input id="org-ndis" value={currentForm.ndis_registration} onChange={e => setOrgForm({ ...currentForm, ndis_registration: e.target.value })} /></div>
                   <div className="space-y-2"><Label htmlFor="org-email">Primary Contact Email</Label><Input id="org-email" type="email" value={currentForm.primary_contact_email} onChange={e => setOrgForm({ ...currentForm, primary_contact_email: e.target.value })} /></div>
                 </div>
+                <BlockerAlert blockers={formErrors} title="Check these fields" />
                 <Button type="submit" className="touch-target" disabled={saveMutation.isPending}>{saveMutation.isPending ? "Saving..." : "Save Changes"}</Button>
               </form>
             </CardContent>
