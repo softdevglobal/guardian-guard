@@ -8,19 +8,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ShieldAlert } from "lucide-react";
 
-const DEMO_PASSWORD = "Demo1234!";
-
-const DEMO_ACCOUNTS = [
-  { email: "admin@dgtg.demo", label: "Super Admin" },
-  { email: "compliance@dgtg.demo", label: "Compliance Officer" },
-  { email: "supervisor@dgtg.demo", label: "Supervisor" },
-  { email: "trainer@dgtg.demo", label: "Trainer" },
-  { email: "worker@dgtg.demo", label: "Support Worker" },
-  { email: "hr@dgtg.demo", label: "HR Admin" },
-  { email: "executive@dgtg.demo", label: "Executive" },
-  { email: "participant@dgtg.demo", label: "Participant" },
-];
-
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -59,22 +46,6 @@ export default function Auth() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const demoLogin = async (demoEmail: string) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: demoEmail,
-        password: DEMO_PASSWORD,
-      });
-      if (error) throw error;
-      navigate("/");
-    } catch (error: any) {
-      toast({ title: "Demo login failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

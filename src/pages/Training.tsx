@@ -620,7 +620,6 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Staff Training Evidence Register</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Internal mock audit sample data for system demonstration and readiness testing.</p>
           </div>
           {(isAdmin || isSelf) && (
             <TrainingUploadDialog
