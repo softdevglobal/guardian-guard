@@ -115,20 +115,11 @@ export function PhotoUpload({ folder, userId, photos, onPhotosChange, maxPhotos 
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((url, i) => (
-            <div key={i} className="relative group rounded-md overflow-hidden border border-border">
-              <img src={url} alt={`Attachment ${i + 1}`} className="w-full h-24 object-cover" />
-              <button
-                type="button"
-                onClick={() => removePhoto(i)}
-                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Remove photo ${i + 1}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
+            <PhotoThumb key={i} value={url} index={i} onRemove={() => removePhoto(i)} />
           ))}
         </div>
       )}
+
 
       <p className="text-xs text-muted-foreground">{photos.length}/{maxPhotos} photos • Max 10MB each</p>
     </div>
