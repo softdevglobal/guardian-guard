@@ -40,16 +40,13 @@ export function PhotoUpload({ folder, userId, photos, onPhotosChange, maxPhotos 
       const fileName = `${userId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
       const { error } = await supabase.storage
-        .from("form-attachments")
+        .from(ATTACHMENT_BUCKET)
         .upload(fileName, file, { contentType: file.type });
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from("form-attachments")
-        .getPublicUrl(fileName);
-
-      onPhotosChange([...photos, urlData.publicUrl]);
+      // The bucket is private: store the path and sign it at display time.
+      onPhotosChange([...photos, fileName]);
       toast({ title: "Photo uploaded" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
