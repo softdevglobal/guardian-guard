@@ -41,7 +41,7 @@ export default function ServiceOperations() {
   });
 
   /** Only templates marked active can be attached to a new shift. */
-  const activeTemplates = templates.filter((t) => t.is_active !== false);
+  const activeTemplates = selectableTemplates(templates);
 
 
   const { data: locations = [] } = useQuery({
