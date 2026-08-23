@@ -6958,6 +6958,10 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: boolean
       }
+      confirm_service_selections: {
+        Args: { _ndis_funding_status: string; _org: string }
+        Returns: Json
+      }
       evaluate_staff_eligibility: { Args: { _staff_id: string }; Returns: Json }
       evaluate_staff_eligibility_impl: {
         Args: { _staff_id: string }
@@ -6967,6 +6971,7 @@ export type Database = {
         Args: { _org: string }
         Returns: number
       }
+      generate_org_policies: { Args: { _org: string }; Returns: number }
       geo_distance_metres: {
         Args: { _lat1: number; _lat2: number; _lon1: number; _lon2: number }
         Returns: number
@@ -7018,6 +7023,17 @@ export type Database = {
       org_compliance_snapshot: {
         Args: { _include_test?: boolean }
         Returns: Json
+      }
+      organisation_active_modules: { Args: { _org: string }; Returns: string[] }
+      organisation_applicable_requirements: {
+        Args: { _org: string }
+        Returns: {
+          label: string
+          required: boolean
+          requirement_reference: string
+          requirement_type: string
+          source: string
+        }[]
       }
       platform_dashboard_summary: { Args: never; Returns: Json }
       shift_submission_blockers: {
