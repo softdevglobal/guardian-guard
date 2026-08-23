@@ -193,7 +193,7 @@ describe("selection gate and templates", () => {
 });
 
 describe("confirmed-only requirement engine", () => {
-  const draft = { business_category_id: "cat-1", service_type_id: "type-1", is_archived: false, confirmed_at: null };
+  const draft = { business_category_id: "cat-1", service_type_id: "type-1", ndis_funded: false, is_archived: false, confirmed_at: null as string | null };
   const live = { ...draft, confirmed_at: "2026-08-24T00:00:00Z" };
 
   it("ignores unconfirmed selections", () => {
