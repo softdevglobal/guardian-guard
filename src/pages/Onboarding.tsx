@@ -225,12 +225,20 @@ export default function Onboarding() {
 
   // Never surface "no organisation" while the profile or pack is still loading.
   if (authLoading || (!!orgId && (data.isLoading || pathway.isLoading))) {
-    return <div className="p-6"><LoadingState rows={5} /></div>;
+    return (
+      <div className="p-6 space-y-3" aria-busy="true">
+        <p className="text-sm text-muted-foreground">Loading organisation…</p>
+        <LoadingState rows={5} />
+      </div>
+    );
   }
   if (!orgId) {
     return <div className="p-6"><EmptyState title="No organisation linked" description="Your account is not linked to a provider organisation yet. Contact your administrator." /></div>;
   }
   if (data.error) return <div className="p-6"><ErrorState error={data.error} onRetry={() => data.refetch()} /></div>;
+  if (pathway.error) {
+    return <div className="p-6"><ErrorState error={pathway.error} scope="onboarding-service-config" /></div>;
+  }
   if (!data.data?.onb) {
     return (
       <div className="p-6">
