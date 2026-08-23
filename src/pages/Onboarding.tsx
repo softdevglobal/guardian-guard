@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,9 @@ import { toast } from "@/hooks/use-toast";
 import {
   BlockerAlert, EmptyState, ErrorState, HumanReviewNotice, LoadingState, PageHeading, StatusPill,
 } from "@/components/compliance/GateUI";
+import { ServiceSelectionStep } from "@/components/onboarding/ServiceSelectionStep";
+import { useProviderPathway } from "@/hooks/useServiceSelection";
+import type { NdisFundingStatus, QuestionRule } from "@/lib/serviceSelection";
 import { logAudit } from "@/lib/auditLog";
 import {
   ONBOARDING_STEPS, onboardingProgress, requirementApplies, stepBlockers, submitBlockers,
@@ -23,10 +26,32 @@ import {
   canSubmit, isEditingLocked, showsStartSetup, statusLabel, submissionBlockers, type OnboardingStatus,
 } from "@/lib/onboardingState";
 
+/** Configurable question rules render through the same field component as legacy requirements. */
+function questionToRequirement(q: QuestionRule): PathwayRequirement {
+  return {
+    id: q.id,
+    step_key: q.step_key,
+    requirement_key: q.requirement_key,
+    label: q.label,
+    help_text: null,
+    field_type: q.field_type,
+    options: {},
+    is_mandatory: q.required,
+    requires_document: q.requires_document,
+    requires_expiry: q.requires_expiry,
+    conditional_on: (q.condition_json as any) ?? null,
+    sensitivity: null,
+    sort_order: q.display_order,
+    is_active: q.active,
+  };
+}
+
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [stepIndex, setStepIndex] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, AnswerValue>>({});
 
@@ -38,26 +63,28 @@ export default function Onboarding() {
     queryFn: async () => {
       const { data: onb, error } = await supabase
         .from("organisation_onboarding" as any)
-        .select("*, provider_pathways(name, code)")
+        .select("*")
         .eq("organisation_id", orgId)
         .maybeSingle();
       if (error) throw error;
-      if (!onb) return { onb: null, reqs: [] as PathwayRequirement[], answers: [] as any[], docs: [] as any[], confirmedGroups: 0 };
-      const [reqs, answers, docs, groups] = await Promise.all([
-        supabase.from("pathway_requirements" as any).select("*").eq("pathway_id", (onb as any).pathway_id).eq("is_active", true).order("sort_order"),
-        supabase.from("onboarding_answers" as any).select("*").eq("onboarding_id", (onb as any).id),
+      if (!onb) return { onb: null, answers: [] as any[], docs: [] as any[], confirmedGroups: 0 };
+      const [answers, docs, groups] = await Promise.all([
+        supabase.from("onboarding_answers" as any).select("*").eq("onboarding_id", (onb as any).id).eq("is_archived", false),
         supabase.from("organisation_documents" as any).select("*").eq("organisation_id", orgId),
         supabase.from("registration_groups" as any).select("id").eq("organisation_id", orgId).eq("is_confirmed", true),
       ]);
       return {
         onb: onb as any,
-        reqs: ((reqs.data ?? []) as any[]) as PathwayRequirement[],
         answers: (answers.data ?? []) as any[],
         docs: (docs.data ?? []) as any[],
         confirmedGroups: ((groups.data ?? []) as any[]).length,
       };
     },
   });
+
+  const ndisStatus = (data.data?.onb?.ndis_funding_status ?? null) as NdisFundingStatus | null;
+  const servicesConfirmed = data.data?.onb?.pathway_status === "services_confirmed";
+  const pathway = useProviderPathway(ndisStatus);
 
   const answers: Record<string, AnswerValue> = useMemo(() => {
     const map: Record<string, AnswerValue> = {};
@@ -69,12 +96,13 @@ export default function Onboarding() {
     return { ...map, ...drafts };
   }, [data.data, drafts]);
 
+
   const documentKeys = useMemo(
     () => new Set((data.data?.docs ?? []).map((d) => d.requirement_key as string)),
     [data.data],
   );
 
-  const reqs = data.data?.reqs ?? [];
+  const reqs = useMemo(() => pathway.applicableQuestions.map(questionToRequirement), [pathway.applicableQuestions]);
   const progress = onboardingProgress(reqs, answers, documentKeys);
   const step = ONBOARDING_STEPS[stepIndex];
   const stepReqs = reqs.filter((r) => r.step_key === step.key && requirementApplies(r, answers));
@@ -84,16 +112,22 @@ export default function Onboarding() {
   const missingDocs = reqs
     .filter((r) => r.is_mandatory && r.requires_document && requirementApplies(r, answers) && !documentKeys.has(r.requirement_key))
     .map((r) => r.label);
+  const needsRegistrationGroups = pathway.requirements.some((r) => r.requirement_type === "registration_group");
   const submissionInput = {
     status,
     progressPct: progress,
     requirementCount: reqs.length,
-    confirmedRegistrationGroups: data.data?.confirmedGroups ?? 0,
+    // Registration groups are only demanded of providers whose services are NDIS registered/applying.
+    confirmedRegistrationGroups: needsRegistrationGroups ? (data.data?.confirmedGroups ?? 0) : 1,
     missingMandatoryDocuments: missingDocs,
-    outstandingBlockers: outstanding,
+    outstandingBlockers: [
+      ...outstanding,
+      ...(servicesConfirmed ? [] : ["Confirm the services your organisation provides before submitting."]),
+    ],
   };
   const allBlockers = submissionBlockers(submissionInput);
   const locked = isEditingLocked(status);
+
 
   const saveAnswers = useMutation({
     mutationFn: async () => {
@@ -189,11 +223,14 @@ export default function Onboarding() {
     onError: (e: any) => toast({ variant: "destructive", title: "Could not submit", description: e.message }),
   });
 
+  // Never surface "no organisation" while the profile or pack is still loading.
+  if (authLoading || (!!orgId && (data.isLoading || pathway.isLoading))) {
+    return <div className="p-6"><LoadingState rows={5} /></div>;
+  }
   if (!orgId) {
     return <div className="p-6"><EmptyState title="No organisation linked" description="Your account is not linked to a provider organisation yet. Contact your administrator." /></div>;
   }
-  if (data.isLoading) return <div className="p-6"><LoadingState rows={5} /></div>;
-  if (data.error) return <div className="p-6"><ErrorState error={data.error} /></div>;
+  if (data.error) return <div className="p-6"><ErrorState error={data.error} onRetry={() => data.refetch()} /></div>;
   if (!data.data?.onb) {
     return (
       <div className="p-6">
@@ -213,9 +250,10 @@ export default function Onboarding() {
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <PageHeading
         title="Get set up"
-        description={`Tenant admin setup for ${onb.provider_pathways?.name ?? "your pathway"}. Save and resume at any time — nothing is submitted until you choose to.`}
+        description="Tell us what your organisation does, then complete the requirements Guardian Guard configures for you. Save and resume at any time — nothing is submitted until you choose to."
         actions={<StatusPill tone={approved ? "ok" : submitted ? "warn" : status === "changes_requested" ? "bad" : "neutral"}>{statusLabel(status)}</StatusPill>}
       />
+
 
       <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/5 p-3 text-sm">
         <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
@@ -237,12 +275,24 @@ export default function Onboarding() {
           </div>
           <Progress value={progress} aria-label="Onboarding progress" />
           <div className="flex flex-wrap gap-1 pt-1">
-            {ONBOARDING_STEPS.map((s, i) => (
-              <Button key={s.key} size="sm" variant={i === stepIndex ? "default" : "outline"} className="min-h-[36px]" onClick={() => setStepIndex(i)}>
-                {s.label}
-              </Button>
-            ))}
+            {ONBOARDING_STEPS.map((s, i) => {
+              const stepLocked = i > 1 && !servicesConfirmed;
+              return (
+                <Button
+                  key={s.key}
+                  size="sm"
+                  variant={i === stepIndex ? "default" : "outline"}
+                  className="min-h-[36px]"
+                  disabled={stepLocked}
+                  title={stepLocked ? "Confirm your services first" : undefined}
+                  onClick={() => setStepIndex(i)}
+                >
+                  {s.label}
+                </Button>
+              );
+            })}
           </div>
+
         </CardContent>
       </Card>
 
@@ -264,16 +314,30 @@ export default function Onboarding() {
         </Card>
       )}
 
+      {step.key === "services" && (
+        <ServiceSelectionStep
+          ndisStatus={ndisStatus}
+          confirmed={servicesConfirmed}
+          locked={locked}
+          onConfirmed={() => {
+            qc.invalidateQueries({ queryKey: ["tenant-onboarding", orgId] });
+            setStepIndex(2);
+          }}
+        />
+      )}
+
       {step.key === "review" ? (
+
         <Card>
           <CardHeader><CardTitle className="text-base">Review and submit</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <BlockerAlert blockers={allBlockers} title="Still outstanding" />
             <p className="text-sm text-muted-foreground">
-              {progress}% of mandatory items complete · {data.data?.confirmedGroups ?? 0} confirmed registration groups
+              {progress}% of mandatory items complete
+              {needsRegistrationGroups ? ` · ${data.data?.confirmedGroups ?? 0} confirmed registration groups` : ""}
             </p>
             {approved ? (
-              <p className="text-sm">Your setup has been approved and your modules are active. <Button variant="link" onClick={() => navigate("/")}>Go to your dashboard</Button></p>
+              <p className="text-sm">Your setup has been approved and your modules are active. <Button variant="link" onClick={() => navigate(returnTo || "/")}>Continue</Button></p>
             ) : submitted ? (
               <p className="text-sm text-muted-foreground">Submitted on {new Date(onb.submitted_at).toLocaleString()}. You will be notified when the review is complete.</p>
             ) : (
@@ -283,17 +347,18 @@ export default function Onboarding() {
             )}
           </CardContent>
         </Card>
-      ) : step.key !== "welcome" && (
+      ) : step.key !== "welcome" && step.key !== "services" && (
         <Card>
           <CardHeader><CardTitle className="text-base">{step.label}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             {stepReqs.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 {reqs.length === 0
-                  ? "No setup requirements are loaded for your pathway yet. Contact your administrator before submitting — you cannot submit an empty pack."
-                  : "Nothing to complete on this step for your pathway."}
+                  ? "Confirm the services your organisation provides on the previous step — Guardian Guard then configures the requirements that apply to you."
+                  : "Nothing to complete on this step for the services you selected."}
               </p>
             )}
+
             {stepReqs.map((req) => (
               <RequirementField
                 key={req.id}
