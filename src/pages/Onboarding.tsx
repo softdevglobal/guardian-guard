@@ -19,6 +19,9 @@ import {
   ONBOARDING_STEPS, onboardingProgress, requirementApplies, stepBlockers, submitBlockers,
   type AnswerValue, type PathwayRequirement,
 } from "@/lib/platform";
+import {
+  canSubmit, isEditingLocked, showsStartSetup, statusLabel, submissionBlockers, type OnboardingStatus,
+} from "@/lib/onboardingState";
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -39,17 +42,19 @@ export default function Onboarding() {
         .eq("organisation_id", orgId)
         .maybeSingle();
       if (error) throw error;
-      if (!onb) return { onb: null, reqs: [] as PathwayRequirement[], answers: [] as any[], docs: [] as any[] };
-      const [reqs, answers, docs] = await Promise.all([
+      if (!onb) return { onb: null, reqs: [] as PathwayRequirement[], answers: [] as any[], docs: [] as any[], confirmedGroups: 0 };
+      const [reqs, answers, docs, groups] = await Promise.all([
         supabase.from("pathway_requirements" as any).select("*").eq("pathway_id", (onb as any).pathway_id).eq("is_active", true).order("sort_order"),
         supabase.from("onboarding_answers" as any).select("*").eq("onboarding_id", (onb as any).id),
         supabase.from("organisation_documents" as any).select("*").eq("organisation_id", orgId),
+        supabase.from("registration_groups" as any).select("id").eq("organisation_id", orgId).eq("is_confirmed", true),
       ]);
       return {
         onb: onb as any,
         reqs: ((reqs.data ?? []) as any[]) as PathwayRequirement[],
         answers: (answers.data ?? []) as any[],
         docs: (docs.data ?? []) as any[],
+        confirmedGroups: ((groups.data ?? []) as any[]).length,
       };
     },
   });
@@ -74,7 +79,21 @@ export default function Onboarding() {
   const step = ONBOARDING_STEPS[stepIndex];
   const stepReqs = reqs.filter((r) => r.step_key === step.key && requirementApplies(r, answers));
   const blockers = stepBlockers(step.key, reqs, answers, documentKeys);
-  const allBlockers = submitBlockers(reqs, answers, documentKeys);
+  const outstanding = submitBlockers(reqs, answers, documentKeys);
+  const status = ((data.data?.onb?.status as OnboardingStatus | undefined) ?? "not_started");
+  const missingDocs = reqs
+    .filter((r) => r.is_mandatory && r.requires_document && requirementApplies(r, answers) && !documentKeys.has(r.requirement_key))
+    .map((r) => r.label);
+  const submissionInput = {
+    status,
+    progressPct: progress,
+    requirementCount: reqs.length,
+    confirmedRegistrationGroups: data.data?.confirmedGroups ?? 0,
+    missingMandatoryDocuments: missingDocs,
+    outstandingBlockers: outstanding,
+  };
+  const allBlockers = submissionBlockers(submissionInput);
+  const locked = isEditingLocked(status);
 
   const saveAnswers = useMutation({
     mutationFn: async () => {
@@ -155,7 +174,7 @@ export default function Onboarding() {
     mutationFn: async () => {
       const onb = data.data?.onb;
       if (!onb) throw new Error("No onboarding record.");
-      if (allBlockers.length > 0) throw new Error("Complete every mandatory item before submitting.");
+      if (!canSubmit(submissionInput)) throw new Error("Complete every mandatory item before submitting.");
       const { error } = await supabase
         .from("organisation_onboarding" as any)
         .update({ status: "submitted", submitted_at: new Date().toISOString(), submitted_by: user?.id ?? null, progress_pct: progress })
@@ -187,15 +206,15 @@ export default function Onboarding() {
   }
 
   const onb = data.data.onb;
-  const submitted = onb.status === "submitted";
-  const approved = onb.status === "approved";
+  const submitted = status === "submitted";
+  const approved = status === "approved";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <PageHeading
         title="Get set up"
         description={`Tenant admin setup for ${onb.provider_pathways?.name ?? "your pathway"}. Save and resume at any time — nothing is submitted until you choose to.`}
-        actions={<StatusPill tone={approved ? "ok" : submitted ? "warn" : "neutral"}>{onb.status.replace(/_/g, " ")}</StatusPill>}
+        actions={<StatusPill tone={approved ? "ok" : submitted ? "warn" : status === "changes_requested" ? "bad" : "neutral"}>{statusLabel(status)}</StatusPill>}
       />
 
       <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/5 p-3 text-sm">
@@ -203,8 +222,11 @@ export default function Onboarding() {
         Documents are stored in private storage and only opened through short-lived signed links. Dates of birth and screening numbers are masked by default.
       </div>
 
-      {onb.status === "returned" && onb.returned_reason && (
-        <BlockerAlert title="Returned for changes" blockers={[onb.returned_reason]} />
+      {(status === "changes_requested" || status === "returned") && (
+        <BlockerAlert
+          title="Changes requested"
+          blockers={[onb.returned_reason ?? "A reviewer asked for changes. Update the sections below and submit again."]}
+        />
       )}
 
       <Card>
@@ -231,7 +253,13 @@ export default function Onboarding() {
             <p>This short setup collects your business details, licences, insurance and workforce screening evidence so your compliance records have a verified starting point.</p>
             <p>Guardian Guard records and organises your evidence. It does not certify your organisation, and nothing here means you are NDIS registered or compliant — a human reviewer checks everything you submit.</p>
             <HumanReviewNotice />
-            <Button className="min-h-[44px]" onClick={() => setStepIndex(1)}>Start setup</Button>
+            {showsStartSetup(status) ? (
+              <Button className="min-h-[44px]" onClick={() => setStepIndex(1)}>Start setup</Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Your pack is {statusLabel(status)}. Editing is locked while it is with the reviewer.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -241,12 +269,15 @@ export default function Onboarding() {
           <CardHeader><CardTitle className="text-base">Review and submit</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <BlockerAlert blockers={allBlockers} title="Still outstanding" />
+            <p className="text-sm text-muted-foreground">
+              {progress}% of mandatory items complete · {data.data?.confirmedGroups ?? 0} confirmed registration groups
+            </p>
             {approved ? (
               <p className="text-sm">Your setup has been approved and your modules are active. <Button variant="link" onClick={() => navigate("/")}>Go to your dashboard</Button></p>
             ) : submitted ? (
               <p className="text-sm text-muted-foreground">Submitted on {new Date(onb.submitted_at).toLocaleString()}. You will be notified when the review is complete.</p>
             ) : (
-              <Button className="min-h-[44px]" disabled={allBlockers.length > 0 || submit.isPending} onClick={() => submit.mutate()}>
+              <Button className="min-h-[44px]" disabled={!canSubmit(submissionInput) || submit.isPending} onClick={() => submit.mutate()}>
                 Submit for review
               </Button>
             )}
@@ -256,13 +287,19 @@ export default function Onboarding() {
         <Card>
           <CardHeader><CardTitle className="text-base">{step.label}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {stepReqs.length === 0 && <p className="text-sm text-muted-foreground">Nothing to complete on this step for your pathway.</p>}
+            {stepReqs.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                {reqs.length === 0
+                  ? "No setup requirements are loaded for your pathway yet. Contact your administrator before submitting — you cannot submit an empty pack."
+                  : "Nothing to complete on this step for your pathway."}
+              </p>
+            )}
             {stepReqs.map((req) => (
               <RequirementField
                 key={req.id}
                 req={req}
                 value={answers[req.requirement_key]}
-                disabled={submitted || approved}
+                disabled={locked}
                 uploaded={(data.data?.docs ?? []).find((d) => d.requirement_key === req.requirement_key)}
                 onChange={(v) => setDrafts((d) => ({ ...d, [req.requirement_key]: v }))}
                 onUpload={(file, expiry) => uploadDoc.mutate({ req, file, expiry })}
@@ -270,7 +307,7 @@ export default function Onboarding() {
             ))}
             <BlockerAlert blockers={blockers} title="Before this step is complete" />
             <div className="flex flex-wrap gap-2">
-              <Button className="min-h-[44px]" disabled={saveAnswers.isPending || submitted || approved} onClick={() => saveAnswers.mutate()}>
+              <Button className="min-h-[44px]" disabled={saveAnswers.isPending || locked} onClick={() => saveAnswers.mutate()}>
                 Save and continue later
               </Button>
               <Button variant="outline" className="min-h-[44px]" disabled={stepIndex === 0} onClick={() => setStepIndex((i) => Math.max(0, i - 1))}>Back</Button>
