@@ -77,7 +77,12 @@ export function useProviderPathway(ndisStatus?: NdisFundingStatus | null, extras
     const serviceTypes = config.data?.serviceTypes ?? [];
     const rules = config.data?.rules ?? [];
     const questions = config.data?.questions ?? [];
-    const sels = (selections.data ?? []) as ServiceSelection[];
+    // An empty result stays empty — never substituted with defaults or recommendations.
+    const sels = Array.isArray(selections.data) ? (selections.data as StoredSelection[]) : [];
+    const live = sels.filter((s) => !s.is_archived);
+    // Requirements, licences and modules derive exclusively from CONFIRMED services.
+    const confirmed = confirmedSelections(sels) as ServiceSelection[];
+    const servicesConfirmed = confirmed.length > 0;
     return {
       isLoading: config.isLoading || selections.isLoading,
       error: config.error ?? selections.error ?? null,
@@ -85,10 +90,13 @@ export function useProviderPathway(ndisStatus?: NdisFundingStatus | null, extras
       serviceTypes,
       rules,
       questions,
-      selections: sels,
-      modules: activeModules({ selections: sels, categories, serviceTypes, rules, ...extras }),
-      requirements: applicableRequirements(sels, rules, ndisStatus),
-      applicableQuestions: applicableQuestions(sels, questions),
+      /** Draft + confirmed rows, for the selection screen only. */
+      selections: live as ServiceSelection[],
+      confirmedSelections: confirmed,
+      servicesConfirmed,
+      modules: activeModules({ selections: confirmed, categories, serviceTypes, rules, ...extras }),
+      requirements: applicableRequirements(confirmed, rules, ndisStatus),
+      applicableQuestions: applicableQuestions(confirmed, questions),
     };
   }, [config.data, config.isLoading, config.error, selections.data, selections.isLoading, selections.error, ndisStatus, extras]);
 }
