@@ -33,18 +33,21 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
   const save = useSaveSelections();
   const confirm = useConfirmSelections();
 
+  // Nothing is pre-selected: an empty stored selection stays an empty selection.
   const [chosen, setChosen] = useState<Set<string>>(new Set());
-  const [funding, setFunding] = useState<NdisFundingStatus | null>(ndisStatus);
+  const [funding, setFunding] = useState<NdisFundingStatus | null>(normaliseFundingStatus(ndisStatus));
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (pathway.selections.length > 0) {
-      setChosen(new Set(pathway.selections.filter((s) => s.service_type_id).map((s) => s.service_type_id!)));
-      setOpenCategories(new Set(pathway.selections.map((s) => s.business_category_id)));
-    }
-  }, [pathway.selections.length]);
+  const storedSelections = Array.isArray(pathway.selections) ? pathway.selections : [];
 
-  useEffect(() => { if (ndisStatus) setFunding(ndisStatus); }, [ndisStatus]);
+  useEffect(() => {
+    if (storedSelections.length > 0) {
+      setChosen(new Set(storedSelections.filter((s) => s.service_type_id).map((s) => s.service_type_id!)));
+      setOpenCategories(new Set(storedSelections.map((s) => s.business_category_id)));
+    }
+  }, [storedSelections.length]);
+
+  useEffect(() => { setFunding(normaliseFundingStatus(ndisStatus)); }, [ndisStatus]);
 
   const typesByCategory = useMemo(() => {
     const map = new Map<string, typeof pathway.serviceTypes>();
