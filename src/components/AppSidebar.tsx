@@ -30,7 +30,8 @@ import {
   Building2,
   Wallet,
   Rocket,
-} , SlidersHorizontal } from "lucide-react";
+  SlidersHorizontal,
+} from "lucide-react";
 
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
