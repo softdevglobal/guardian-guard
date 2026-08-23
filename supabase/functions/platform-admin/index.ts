@@ -350,8 +350,15 @@ Deno.serve(async (req) => {
             .from("user_profiles")
             .update({ organisation_id: inv.organisation_id, full_name: inv.full_name })
             .eq("id", adminUserId);
-          await admin.from("user_roles").delete().eq("user_id", adminUserId);
-          await admin.from("user_roles").insert({ user_id: adminUserId, role: inv.role });
+          const { data: currentRoles } = await admin.from("user_roles").select("role").eq("user_id", adminUserId);
+          if ((currentRoles ?? []).some((r) => r.role === "platform_super_admin")) {
+            throw new Error("This email belongs to a platform owner account and cannot be used as a tenant admin.");
+          }
+          await admin.from("user_roles").delete().eq("user_id", adminUserId).neq("role", "platform_super_admin");
+          await admin.from("user_roles").upsert(
+            { user_id: adminUserId, role: inv.role },
+            { onConflict: "user_id,role", ignoreDuplicates: true },
+          );
         } else {
           const { data: link } = await admin.auth.admin.generateLink({
             type: "recovery",
