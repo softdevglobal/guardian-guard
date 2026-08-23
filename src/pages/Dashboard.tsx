@@ -7,6 +7,8 @@ import { AlertTriangle, CheckCircle, Clock, ShieldAlert, TrendingUp, Users, File
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { computeIncidentEvidenceScore, computeAggregateScore } from "@/lib/evidenceScore";
+import { GettingStarted } from "@/components/GettingStarted";
+
 
 function ComplianceGauge({ label, score, icon: Icon }: { label: string; score: number; icon: React.ElementType }) {
   const getColor = (s: number) => s >= 80 ? "text-success" : s >= 60 ? "text-warning" : "text-destructive";
@@ -154,6 +156,10 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold tracking-tight">Compliance Pulse Dashboard</h1>
         <p className="text-muted-foreground">Real-time audit readiness overview</p>
       </div>
+
+      <GettingStarted />
+
+
 
       <section aria-label="Compliance scores">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
