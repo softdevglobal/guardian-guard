@@ -1,6 +1,8 @@
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { AccessRestricted, LoadingState } from "@/components/compliance/GateUI";
+import { LoadingState } from "@/components/compliance/GateUI";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ShieldOff } from "lucide-react";
 import { isServiceGated, moduleForPath } from "@/lib/moduleAccess";
 
 /**
@@ -23,10 +25,15 @@ export function ModuleGate({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="p-6">
-      <AccessRestricted
-        title="This module is not available"
-        description="Your role, or the services your organisation has confirmed in onboarding, do not include this area. Update your service selections in Get set up, or ask an administrator to review your role."
-      />
+      <Alert>
+        <ShieldOff className="h-4 w-4" aria-hidden="true" />
+        <AlertTitle>This module is not available</AlertTitle>
+        <AlertDescription>
+          Your role, or the services your organisation confirmed during onboarding, do not include
+          this area. Update your service selections in “Get set up”, or ask an administrator to
+          review your role.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
