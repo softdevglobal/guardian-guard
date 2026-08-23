@@ -97,6 +97,7 @@ export function ServiceSelectionStep({ ndisStatus, confirmed, locked, onConfirme
       });
       onConfirmed?.();
     } catch (e) {
+      reportError("service-selection", e);
       toast({ variant: "destructive", title: "Could not save your services", description: toSafeError(e, "save your services").description });
     }
   };
