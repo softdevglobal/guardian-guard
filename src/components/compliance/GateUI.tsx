@@ -90,15 +90,15 @@ export function ErrorState({ error, onRetry, scope = "load" }: { error: unknown;
       <AlertTitle>{safe.title}</AlertTitle>
       <AlertDescription className="space-y-2">
         <p>{safe.description}</p>
-        {safe.canRetry && onRetry && (
-          <Button size="sm" variant="outline" onClick={onRetry}>
-            Retry
-          </Button>
-        )}
+        <p className="text-xs">Support reference: <span className="font-mono">{safe.supportReference}</span></p>
+        <Button size="sm" variant="outline" onClick={() => (onRetry ? onRetry() : window.location.reload())}>
+          Retry
+        </Button>
       </AlertDescription>
     </Alert>
   );
 }
+
 
 /** Explains exactly who can grant the missing permission and what to do next. */
 export function AccessRestricted({
