@@ -361,8 +361,8 @@ export default function Onboarding() {
           <CardContent className="space-y-4">
             {stepReqs.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                {reqs.length === 0
-                  ? "Confirm the services your organisation provides on the previous step — Guardian Guard then configures the requirements that apply to you."
+                {!servicesConfirmed || reqs.length === 0
+                  ? "No service-specific licence requirements have been generated yet. Confirm your services first."
                   : "Nothing to complete on this step for the services you selected."}
               </p>
             )}
