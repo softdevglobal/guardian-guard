@@ -6,7 +6,19 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PlatformRoute } from "@/components/PlatformRoute";
+import { OnboardingGate } from "@/components/OnboardingGate";
 import { AppLayout } from "@/components/AppLayout";
+import PlatformDashboard from "./pages/platform/PlatformDashboard";
+import PlatformClients from "./pages/platform/Clients";
+import NewClient from "./pages/platform/NewClient";
+import ClientDetail from "./pages/platform/ClientDetail";
+import PlatformPackages from "./pages/platform/Packages";
+import OnboardingReviews from "./pages/platform/OnboardingReviews";
+import PlatformActivity from "./pages/platform/Activity";
+import PlatformIncome from "./pages/platform/Income";
+import Onboarding from "./pages/Onboarding";
+
 import Dashboard from "./pages/Dashboard";
 import Incidents from "./pages/Incidents";
 import Risks from "./pages/Risks";
@@ -44,8 +56,18 @@ const queryClient = new QueryClient();
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <AppLayout>{children}</AppLayout>
+      <OnboardingGate>
+        <AppLayout>{children}</AppLayout>
+      </OnboardingGate>
     </ProtectedRoute>
+  );
+}
+
+function PlatformPage({ children }: { children: React.ReactNode }) {
+  return (
+    <PlatformRoute>
+      <AppLayout>{children}</AppLayout>
+    </PlatformRoute>
   );
 }
 
@@ -60,7 +82,17 @@ const App = () => (
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/platform/dashboard" element={<PlatformPage><PlatformDashboard /></PlatformPage>} />
+              <Route path="/platform/clients" element={<PlatformPage><PlatformClients /></PlatformPage>} />
+              <Route path="/platform/clients/new" element={<PlatformPage><NewClient /></PlatformPage>} />
+              <Route path="/platform/clients/:id" element={<PlatformPage><ClientDetail /></PlatformPage>} />
+              <Route path="/platform/packages" element={<PlatformPage><PlatformPackages /></PlatformPage>} />
+              <Route path="/platform/onboarding-reviews" element={<PlatformPage><OnboardingReviews /></PlatformPage>} />
+              <Route path="/platform/activity" element={<PlatformPage><PlatformActivity /></PlatformPage>} />
+              <Route path="/platform/income" element={<PlatformPage><PlatformIncome /></PlatformPage>} />
+              <Route path="/onboarding" element={<ProtectedRoute><AppLayout><Onboarding /></AppLayout></ProtectedRoute>} />
               <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+
               <Route path="/incidents" element={<ProtectedPage><Incidents /></ProtectedPage>} />
               <Route path="/risks" element={<ProtectedPage><Risks /></ProtectedPage>} />
               <Route path="/complaints" element={<ProtectedPage><Complaints /></ProtectedPage>} />

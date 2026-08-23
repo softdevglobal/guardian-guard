@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
 export type AppRole =
+  | "platform_super_admin"
+  | "tenant_admin"
   | "super_admin"
   | "compliance_officer"
   | "supervisor"
@@ -11,6 +13,7 @@ export type AppRole =
   | "hr_admin"
   | "executive"
   | "participant";
+
 
 export interface UserProfile {
   id: string;
@@ -44,7 +47,10 @@ export function useAuth() {
 }
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
-  super_admin: ["staff_enrollment", "service_delivery", "service_approvals", "service_operations", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  platform_super_admin: ["platform", "dashboard", "settings", "audit"],
+  tenant_admin: ["onboarding", "staff_enrollment", "service_approvals", "service_operations", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  super_admin: ["onboarding", "staff_enrollment", "service_delivery", "service_approvals", "service_operations", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+
   compliance_officer: ["staff_enrollment", "service_approvals", "service_operations", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
   supervisor: ["service_approvals", "service_operations", "safe_environment", "sil", "restrictive_practices", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
   trainer: ["service_delivery", "participant_care", "dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],

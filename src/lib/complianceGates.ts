@@ -3,8 +3,10 @@
 // *why* an action is blocked before the user attempts it, and are covered by tests.
 
 export type Role =
+  | "platform_super_admin" | "tenant_admin"
   | "super_admin" | "compliance_officer" | "supervisor" | "trainer"
   | "support_worker" | "hr_admin" | "executive" | "participant";
+
 
 const AUTHORISER_ROLES: Role[] = ["super_admin", "compliance_officer", "supervisor"];
 const COMPLIANCE_ROLES: Role[] = ["super_admin", "compliance_officer"];

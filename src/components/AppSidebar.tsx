@@ -27,7 +27,11 @@ import {
   CheckSquare,
   CalendarCog,
   UserPlus,
+  Building2,
+  Wallet,
+  Rocket,
 } from "lucide-react";
+
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
 import { NavLink } from "@/components/NavLink";
@@ -48,9 +52,20 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 
+const platformItems = [
+  { title: "Platform Dashboard", url: "/platform/dashboard", icon: Building2 },
+  { title: "Clients", url: "/platform/clients", icon: Users },
+  { title: "Packages", url: "/platform/packages", icon: Wallet },
+  { title: "Onboarding Reviews", url: "/platform/onboarding-reviews", icon: ClipboardCheck },
+  { title: "Platform Activity", url: "/platform/activity", icon: Activity },
+  { title: "Income", url: "/platform/income", icon: Wallet },
+];
+
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
+  { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
   { title: "My Shifts", url: "/my-shifts", icon: CalendarClock, module: "service_delivery" },
+
   { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
   { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badge: 3 },
@@ -87,8 +102,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { hasModule, user } = useAuth();
+  const { hasModule, hasRole, user } = useAuth();
 
+  const isPlatformOwner = hasRole("platform_super_admin");
   const filteredItems = navItems.filter((item) => hasModule(item.module));
   const filteredGovernance = governanceItems.filter((item) => hasModule(item.module));
 
@@ -110,7 +126,32 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        {isPlatformOwner && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Platform console</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {platformItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-sidebar-accent touch-target flex items-center"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                        {!collapsed && <span className="flex-1">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarGroup>
+
           <SidebarGroupLabel>Modules</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
