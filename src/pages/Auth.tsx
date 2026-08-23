@@ -110,30 +110,6 @@ export default function Auth() {
               {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
             </button>
           </div>
-
-          <div className="mt-6 border-t pt-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2 text-center">
-              Demo logins (one click)
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMO_ACCOUNTS.map((acct) => (
-                <Button
-                  key={acct.email}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="justify-start text-xs"
-                  disabled={loading}
-                  onClick={() => demoLogin(acct.email)}
-                >
-                  {acct.label}
-                </Button>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground text-center">
-              All demo accounts use password <code>{DEMO_PASSWORD}</code>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
