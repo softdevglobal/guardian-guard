@@ -505,10 +505,10 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
       if (params.file) {
         const ext = params.file.name.split(".").pop() || "pdf";
         const path = `${staffId}/training/${params.trainingCode}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("form-attachments").upload(path, params.file);
+        const { error: upErr } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, params.file);
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("form-attachments").getPublicUrl(path);
-        fileUrl = urlData.publicUrl;
+        // Private bucket: keep the path and sign it when a user opens the evidence.
+        fileUrl = path;
       }
 
       // Find training module to link
