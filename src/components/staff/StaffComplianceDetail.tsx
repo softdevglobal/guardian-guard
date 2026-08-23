@@ -367,9 +367,9 @@ export default function StaffComplianceDetail({ staffId, onBack }: Props) {
                         </TableCell>
                         <TableCell>
                           {item.record?.uploaded_file_url ? (
-                            <a href={item.record.uploaded_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm flex items-center gap-1">
+                            <AttachmentLink value={item.record.uploaded_file_url} className="text-primary hover:underline text-sm flex items-center gap-1">
                               <FileText className="h-3 w-3" />View
-                            </a>
+                            </AttachmentLink>
                           ) : "—"}
                         </TableCell>
                         <TableCell className="text-sm">
