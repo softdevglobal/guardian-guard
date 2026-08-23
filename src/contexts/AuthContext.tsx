@@ -73,24 +73,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq("id", authUser.id)
       .single();
 
-    const { data: roleData } = await supabase
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", authUser.id)
-      .limit(1)
-      .single();
+      .eq("user_id", authUser.id);
+
+    const roles = (roleRows ?? []).map((r) => r.role as AppRole);
+    const primaryRole =
+      ROLE_PRIORITY.find((r) => roles.includes(r)) ?? roles[0] ?? "support_worker";
 
     if (profile) {
       setUser({
         id: profile.id,
         email: profile.email,
         full_name: profile.full_name,
-        role: (roleData?.role as AppRole) || "support_worker",
+        role: primaryRole,
+        roles: roles.length ? roles : [primaryRole],
         team_id: profile.team_id,
         organisation_id: profile.organisation_id,
         avatar_url: profile.avatar_url ?? undefined,
       });
     }
+
   }, []);
 
   useEffect(() => {
