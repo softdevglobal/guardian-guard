@@ -156,8 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasRole = useCallback(
     (role: AppRole | AppRole[]) => {
       if (!user) return false;
-      const roles = Array.isArray(role) ? role : [role];
-      return roles.includes(user.role);
+      const wanted = Array.isArray(role) ? role : [role];
+      const held = user.roles?.length ? user.roles : [user.role];
+      return wanted.some((r) => held.includes(r));
     },
     [user]
   );
@@ -165,10 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasModule = useCallback(
     (module: string) => {
       if (!user) return false;
-      return ROLE_MODULES[user.role]?.includes(module) ?? false;
+      const held = user.roles?.length ? user.roles : [user.role];
+      return held.some((r) => ROLE_MODULES[r]?.includes(module));
     },
     [user]
   );
+
 
   const setMockAudit = useCallback((val: boolean) => {
     setIsMockAudit(val);
