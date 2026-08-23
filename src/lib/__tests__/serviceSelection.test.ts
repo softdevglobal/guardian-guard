@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeModules, applicableQuestions, applicableRequirements, fillTemplate,
+  activeModules, applicableQuestions, applicableRequirements, confirmedSelections, fillTemplate,
+  normaliseFundingStatus,
   ndisRequirementsApply, reconcileAnswers, registrationGroupsApply, selectionBlockers,
   type BusinessCategory, type QuestionRule, type RequirementRule, type ServiceType,
 } from "@/lib/serviceSelection";
@@ -188,5 +189,29 @@ describe("selection gate and templates", () => {
   it("fills approved placeholders only", () => {
     const out = fillTemplate("{{legal_business_name}} ABN {{abn}} {{unknown}}", { legal_business_name: "Acme", abn: "123" });
     expect(out).toBe("Acme ABN 123 {{unknown}}");
+  });
+});
+
+describe("confirmed-only requirement engine", () => {
+  const draft = { business_category_id: "cat-1", service_type_id: "type-1", ndis_funded: false, is_archived: false, confirmed_at: null as string | null };
+  const live = { ...draft, confirmed_at: "2026-08-24T00:00:00Z" };
+
+  it("ignores unconfirmed selections", () => {
+    expect(confirmedSelections([draft])).toHaveLength(0);
+  });
+
+  it("keeps confirmed, non-archived selections", () => {
+    expect(confirmedSelections([live, { ...live, is_archived: true }])).toHaveLength(1);
+  });
+
+  it("treats a missing selection set as empty rather than defaulting", () => {
+    expect(confirmedSelections(null)).toEqual([]);
+    expect(confirmedSelections(undefined)).toEqual([]);
+  });
+
+  it("never guesses an NDIS funding answer", () => {
+    expect(normaliseFundingStatus(null)).toBeNull();
+    expect(normaliseFundingStatus("registered_ndis")).toBe(normaliseFundingStatus("registered_ndis"));
+    expect(normaliseFundingStatus("something_else")).toBeNull();
   });
 });
