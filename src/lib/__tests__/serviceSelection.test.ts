@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeModules, applicableQuestions, applicableRequirements, fillTemplate,
+  activeModules, applicableQuestions, applicableRequirements, confirmedSelections, fillTemplate,
+  normaliseFundingStatus,
   ndisRequirementsApply, reconcileAnswers, registrationGroupsApply, selectionBlockers,
   type BusinessCategory, type QuestionRule, type RequirementRule, type ServiceType,
 } from "@/lib/serviceSelection";
