@@ -19,11 +19,15 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
+  /** Highest-priority role, used for single-role displays and gates. */
   role: AppRole;
+  /** Every role granted to the account. */
+  roles: AppRole[];
   team_id: string | null;
   organisation_id: string | null;
   avatar_url?: string;
 }
+
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -60,6 +64,22 @@ const ROLE_MODULES: Record<AppRole, string[]> = {
   participant: ["dashboard", "training", "complaints"],
 };
 
+/** Most privileged first — decides the primary role when an account holds several. */
+const ROLE_PRIORITY: AppRole[] = [
+  "platform_super_admin",
+  "super_admin",
+  "tenant_admin",
+  "compliance_officer",
+  "supervisor",
+  "hr_admin",
+  "trainer",
+  "executive",
+  "support_worker",
+  "participant",
+];
+
+
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -73,24 +93,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq("id", authUser.id)
       .single();
 
-    const { data: roleData } = await supabase
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", authUser.id)
-      .limit(1)
-      .single();
+      .eq("user_id", authUser.id);
+
+    const roles = (roleRows ?? []).map((r) => r.role as AppRole);
+    const primaryRole =
+      ROLE_PRIORITY.find((r) => roles.includes(r)) ?? roles[0] ?? "support_worker";
 
     if (profile) {
       setUser({
         id: profile.id,
         email: profile.email,
         full_name: profile.full_name,
-        role: (roleData?.role as AppRole) || "support_worker",
+        role: primaryRole,
+        roles: roles.length ? roles : [primaryRole],
         team_id: profile.team_id,
         organisation_id: profile.organisation_id,
         avatar_url: profile.avatar_url ?? undefined,
       });
     }
+
   }, []);
 
   useEffect(() => {
@@ -132,8 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasRole = useCallback(
     (role: AppRole | AppRole[]) => {
       if (!user) return false;
-      const roles = Array.isArray(role) ? role : [role];
-      return roles.includes(user.role);
+      const wanted = Array.isArray(role) ? role : [role];
+      const held = user.roles?.length ? user.roles : [user.role];
+      return wanted.some((r) => held.includes(r));
     },
     [user]
   );
@@ -141,10 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasModule = useCallback(
     (module: string) => {
       if (!user) return false;
-      return ROLE_MODULES[user.role]?.includes(module) ?? false;
+      const held = user.roles?.length ? user.roles : [user.role];
+      return held.some((r) => ROLE_MODULES[r]?.includes(module));
     },
     [user]
   );
+
 
   const setMockAudit = useCallback((val: boolean) => {
     setIsMockAudit(val);
