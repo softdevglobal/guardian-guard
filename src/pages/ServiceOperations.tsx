@@ -15,6 +15,8 @@ import { BlockerAlert, EmptyState, HumanReviewNotice, PageHeading } from "@/comp
 import { useParticipants, useStaff, withOrg } from "@/hooks/useComplianceLookups";
 import { assignmentBlockers } from "@/lib/serviceShifts";
 import { checkAssignmentEligible } from "@/lib/staffEligibility";
+import { emptyTemplateForm, selectableTemplates, templateBlockers, templatePayload } from "@/lib/serviceTaskTemplates";
+import { TASK_TEMPLATE_QUERY_KEYS } from "@/lib/queryKeys";
 
 export default function ServiceOperations() {
   const { user, hasRole, isMockAudit } = useAuth();
