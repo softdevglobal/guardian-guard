@@ -891,6 +891,7 @@ export type Database = {
           include_in_export: boolean
           linked_policy_id: string | null
           linked_policy_version: number | null
+          module_code: string | null
           organisation_id: string
           outcome_code: string
           owner_id: string | null
@@ -900,6 +901,8 @@ export type Database = {
           requirement_title: string
           requires_human_review: boolean
           review_date: string | null
+          standards_effective_date: string
+          standards_version: string
           status: Database["public"]["Enums"]["evidence_status"]
           updated_at: string
         }
@@ -911,6 +914,7 @@ export type Database = {
           include_in_export?: boolean
           linked_policy_id?: string | null
           linked_policy_version?: number | null
+          module_code?: string | null
           organisation_id: string
           outcome_code: string
           owner_id?: string | null
@@ -920,6 +924,8 @@ export type Database = {
           requirement_title: string
           requires_human_review?: boolean
           review_date?: string | null
+          standards_effective_date?: string
+          standards_version?: string
           status?: Database["public"]["Enums"]["evidence_status"]
           updated_at?: string
         }
@@ -931,6 +937,7 @@ export type Database = {
           include_in_export?: boolean
           linked_policy_id?: string | null
           linked_policy_version?: number | null
+          module_code?: string | null
           organisation_id?: string
           outcome_code?: string
           owner_id?: string | null
@@ -940,6 +947,8 @@ export type Database = {
           requirement_title?: string
           requires_human_review?: boolean
           review_date?: string | null
+          standards_effective_date?: string
+          standards_version?: string
           status?: Database["public"]["Enums"]["evidence_status"]
           updated_at?: string
         }
@@ -3918,9 +3927,11 @@ export type Database = {
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
+          delivery_status: string
           id: string
           is_confirmed: boolean
           name: string
+          next_review_date: string | null
           notes: string | null
           organisation_id: string
           record_status: Database["public"]["Enums"]["record_status"]
@@ -3931,9 +3942,11 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
+          delivery_status?: string
           id?: string
           is_confirmed?: boolean
           name: string
+          next_review_date?: string | null
           notes?: string | null
           organisation_id: string
           record_status?: Database["public"]["Enums"]["record_status"]
@@ -3944,9 +3957,11 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
+          delivery_status?: string
           id?: string
           is_confirmed?: boolean
           name?: string
+          next_review_date?: string | null
           notes?: string | null
           organisation_id?: string
           record_status?: Database["public"]["Enums"]["record_status"]
@@ -6667,7 +6682,13 @@ export type Database = {
         | "phone_call"
         | "other"
       escalation_level: "monitor" | "urgent_review" | "immediate_intervention"
-      evidence_status: "missing" | "in_progress" | "ready" | "overdue"
+      evidence_status:
+        | "missing"
+        | "in_progress"
+        | "ready"
+        | "overdue"
+        | "ready_for_review"
+        | "not_applicable"
       geofence_result: "inside" | "outside" | "unknown" | "inaccurate"
       incident_category:
         | "injury"
@@ -6965,7 +6986,14 @@ export const Constants = {
         "other",
       ],
       escalation_level: ["monitor", "urgent_review", "immediate_intervention"],
-      evidence_status: ["missing", "in_progress", "ready", "overdue"],
+      evidence_status: [
+        "missing",
+        "in_progress",
+        "ready",
+        "overdue",
+        "ready_for_review",
+        "not_applicable",
+      ],
       geofence_result: ["inside", "outside", "unknown", "inaccurate"],
       incident_category: [
         "injury",
