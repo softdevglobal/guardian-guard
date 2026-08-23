@@ -713,9 +713,9 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
                           <div>
                             {item.completion?.evidence_type ?? "—"}
                             {item.completion?.evidence_file_url && (
-                              <a href={item.completion.evidence_file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
+                              <AttachmentLink value={item.completion.evidence_file_url} className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
                                 <FileText className="h-3 w-3" />View file
-                              </a>
+                              </AttachmentLink>
                             )}
                           </div>
                         </TableCell>
