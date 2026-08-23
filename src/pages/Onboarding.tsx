@@ -333,10 +333,11 @@ export default function Onboarding() {
           <CardContent className="space-y-3">
             <BlockerAlert blockers={allBlockers} title="Still outstanding" />
             <p className="text-sm text-muted-foreground">
-              {progress}% of mandatory items complete · {data.data?.confirmedGroups ?? 0} confirmed registration groups
+              {progress}% of mandatory items complete
+              {needsRegistrationGroups ? ` · ${data.data?.confirmedGroups ?? 0} confirmed registration groups` : ""}
             </p>
             {approved ? (
-              <p className="text-sm">Your setup has been approved and your modules are active. <Button variant="link" onClick={() => navigate("/")}>Go to your dashboard</Button></p>
+              <p className="text-sm">Your setup has been approved and your modules are active. <Button variant="link" onClick={() => navigate(returnTo || "/")}>Continue</Button></p>
             ) : submitted ? (
               <p className="text-sm text-muted-foreground">Submitted on {new Date(onb.submitted_at).toLocaleString()}. You will be notified when the review is complete.</p>
             ) : (
@@ -346,17 +347,18 @@ export default function Onboarding() {
             )}
           </CardContent>
         </Card>
-      ) : step.key !== "welcome" && (
+      ) : step.key !== "welcome" && step.key !== "services" && (
         <Card>
           <CardHeader><CardTitle className="text-base">{step.label}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             {stepReqs.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 {reqs.length === 0
-                  ? "No setup requirements are loaded for your pathway yet. Contact your administrator before submitting — you cannot submit an empty pack."
-                  : "Nothing to complete on this step for your pathway."}
+                  ? "Confirm the services your organisation provides on the previous step — Guardian Guard then configures the requirements that apply to you."
+                  : "Nothing to complete on this step for the services you selected."}
               </p>
             )}
+
             {stepReqs.map((req) => (
               <RequirementField
                 key={req.id}
