@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,9 @@ import { toast } from "@/hooks/use-toast";
 import {
   BlockerAlert, EmptyState, ErrorState, HumanReviewNotice, LoadingState, PageHeading, StatusPill,
 } from "@/components/compliance/GateUI";
+import { ServiceSelectionStep } from "@/components/onboarding/ServiceSelectionStep";
+import { useProviderPathway } from "@/hooks/useServiceSelection";
+import type { NdisFundingStatus, QuestionRule } from "@/lib/serviceSelection";
 import { logAudit } from "@/lib/auditLog";
 import {
   ONBOARDING_STEPS, onboardingProgress, requirementApplies, stepBlockers, submitBlockers,
@@ -23,10 +26,32 @@ import {
   canSubmit, isEditingLocked, showsStartSetup, statusLabel, submissionBlockers, type OnboardingStatus,
 } from "@/lib/onboardingState";
 
+/** Configurable question rules render through the same field component as legacy requirements. */
+function questionToRequirement(q: QuestionRule): PathwayRequirement {
+  return {
+    id: q.id,
+    step_key: q.step_key,
+    requirement_key: q.requirement_key,
+    label: q.label,
+    help_text: null,
+    field_type: q.field_type,
+    options: {},
+    is_mandatory: q.required,
+    requires_document: q.requires_document,
+    requires_expiry: q.requires_expiry,
+    conditional_on: (q.condition_json as any) ?? null,
+    sensitivity: null,
+    sort_order: q.display_order,
+    is_active: q.active,
+  };
+}
+
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [stepIndex, setStepIndex] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, AnswerValue>>({});
 
@@ -38,26 +63,28 @@ export default function Onboarding() {
     queryFn: async () => {
       const { data: onb, error } = await supabase
         .from("organisation_onboarding" as any)
-        .select("*, provider_pathways(name, code)")
+        .select("*")
         .eq("organisation_id", orgId)
         .maybeSingle();
       if (error) throw error;
-      if (!onb) return { onb: null, reqs: [] as PathwayRequirement[], answers: [] as any[], docs: [] as any[], confirmedGroups: 0 };
-      const [reqs, answers, docs, groups] = await Promise.all([
-        supabase.from("pathway_requirements" as any).select("*").eq("pathway_id", (onb as any).pathway_id).eq("is_active", true).order("sort_order"),
-        supabase.from("onboarding_answers" as any).select("*").eq("onboarding_id", (onb as any).id),
+      if (!onb) return { onb: null, answers: [] as any[], docs: [] as any[], confirmedGroups: 0 };
+      const [answers, docs, groups] = await Promise.all([
+        supabase.from("onboarding_answers" as any).select("*").eq("onboarding_id", (onb as any).id).eq("is_archived", false),
         supabase.from("organisation_documents" as any).select("*").eq("organisation_id", orgId),
         supabase.from("registration_groups" as any).select("id").eq("organisation_id", orgId).eq("is_confirmed", true),
       ]);
       return {
         onb: onb as any,
-        reqs: ((reqs.data ?? []) as any[]) as PathwayRequirement[],
         answers: (answers.data ?? []) as any[],
         docs: (docs.data ?? []) as any[],
         confirmedGroups: ((groups.data ?? []) as any[]).length,
       };
     },
   });
+
+  const ndisStatus = (data.data?.onb?.ndis_funding_status ?? null) as NdisFundingStatus | null;
+  const servicesConfirmed = data.data?.onb?.pathway_status === "services_confirmed";
+  const pathway = useProviderPathway(ndisStatus);
 
   const answers: Record<string, AnswerValue> = useMemo(() => {
     const map: Record<string, AnswerValue> = {};
@@ -68,6 +95,7 @@ export default function Onboarding() {
     }
     return { ...map, ...drafts };
   }, [data.data, drafts]);
+
 
   const documentKeys = useMemo(
     () => new Set((data.data?.docs ?? []).map((d) => d.requirement_key as string)),
