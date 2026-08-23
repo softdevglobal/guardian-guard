@@ -52,12 +52,12 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_ROLE_GATE: Record<string, string[]> = {
-  submitted: ["super_admin", "compliance_officer", "supervisor", "support_worker", "trainer"],
-  supervisor_review: ["super_admin", "compliance_officer", "supervisor"],
-  compliance_review: ["super_admin", "compliance_officer"],
-  investigating: ["super_admin", "compliance_officer"],
-  actioned: ["super_admin", "compliance_officer"],
-  closed: ["super_admin", "compliance_officer"],
+  submitted: ["tenant_admin", "super_admin", "compliance_officer", "supervisor", "support_worker", "trainer"],
+  supervisor_review: ["tenant_admin", "super_admin", "compliance_officer", "supervisor"],
+  compliance_review: ["tenant_admin", "super_admin", "compliance_officer"],
+  investigating: ["tenant_admin", "super_admin", "compliance_officer"],
+  actioned: ["tenant_admin", "super_admin", "compliance_officer"],
+  closed: ["tenant_admin", "super_admin", "compliance_officer"],
 };
 
 const statusColors: Record<string, string> = {
@@ -245,7 +245,7 @@ export function IncidentDetailSheet({ incident, open, onOpenChange }: Props) {
       if (!nextStatus) throw new Error("No next status available");
 
       // Training check for non-admin actions
-      if (!trainingCheck?.has_incident_training && !["super_admin", "compliance_officer"].includes(user.role)) {
+      if (!trainingCheck?.has_incident_training && !["tenant_admin", "super_admin", "compliance_officer"].includes(user.role)) {
         throw new Error("You must complete verified Incident Management Training before handling incidents.");
       }
 

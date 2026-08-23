@@ -62,7 +62,7 @@ export function AppHeader() {
         </div>
 
         <div className="flex items-center gap-1">
-          {!isMockAudit && hasRole(["super_admin", "compliance_officer"]) && (
+          {!isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]) && (
             <Button variant="ghost" size="sm" onClick={toggleMockAudit} className="text-xs hidden md:flex" aria-label="Enter mock audit mode">
               <Eye className="mr-1 h-4 w-4" />Mock Audit
             </Button>

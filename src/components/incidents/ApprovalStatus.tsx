@@ -34,7 +34,7 @@ export function ApprovalStatus({ recordType, recordId, organisationId }: Props) 
     },
   });
 
-  const canApprove = user && ["super_admin", "compliance_officer", "supervisor"].includes(user.role);
+  const canApprove = user && ["tenant_admin", "super_admin", "compliance_officer", "supervisor"].includes(user.role);
 
   const approveMutation = useMutation({
     mutationFn: async () => {

@@ -20,7 +20,7 @@ import { reportableAssessmentBlockers } from "@/lib/complianceGates";
 export function ReportableAssessmentPanel() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canAssess = !isMockAudit && hasRole(["super_admin", "compliance_officer"]);
+  const canAssess = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const [sheet, setSheet] = useState<Record<string, any> | null>(null);
 
   const { data, isLoading, error } = useQuery({

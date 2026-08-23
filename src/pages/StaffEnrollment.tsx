@@ -13,18 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { UserPlus, ShieldAlert, KeyRound, Copy } from "lucide-react";
+import { tenantRoleOptions } from "@/lib/permissions";
+import { AccessRestricted } from "@/components/compliance/GateUI";
 
-const ROLE_OPTIONS: AppRole[] = [
-  "support_worker",
-  "supervisor",
-  "trainer",
-  "compliance_officer",
-  "hr_admin",
-  "executive",
-  "super_admin",
-];
+/** Provider role selector — platform roles are never offered to a tenant. */
+const ROLE_OPTIONS: AppRole[] = tenantRoleOptions();
 
-const ADMIN_ROLES: AppRole[] = ["super_admin", "compliance_officer", "hr_admin"];
+const ADMIN_ROLES: AppRole[] = ["tenant_admin", "super_admin", "compliance_officer", "hr_admin"];
 
 const label = (r: string) => r.replace(/_/g, " ");
 
@@ -91,13 +86,11 @@ export default function StaffEnrollment() {
 
   if (!canEnroll) {
     return (
-      <Alert variant="destructive">
-        <ShieldAlert className="h-4 w-4" aria-hidden />
-        <AlertTitle>Access restricted</AlertTitle>
-        <AlertDescription>
-          Staff enrollment is limited to super admin, compliance officer and HR admin roles.
-        </AlertDescription>
-      </Alert>
+      <AccessRestricted
+        action="staff.enrol"
+        roles={user?.roles ?? []}
+        description="Staff enrolment is limited to provider administrators."
+      />
     );
   }
 

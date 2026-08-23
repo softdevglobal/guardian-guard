@@ -28,10 +28,10 @@ const STATUS_FLOW: Record<string, string> = {
 };
 
 const STATUS_ROLE_GATE: Record<string, string[]> = {
-  contained: ["super_admin", "compliance_officer"],
-  assessed: ["super_admin", "compliance_officer"],
-  actioned: ["super_admin", "compliance_officer"],
-  closed: ["super_admin", "compliance_officer"],
+  contained: ["tenant_admin", "super_admin", "compliance_officer"],
+  assessed: ["tenant_admin", "super_admin", "compliance_officer"],
+  actioned: ["tenant_admin", "super_admin", "compliance_officer"],
+  closed: ["tenant_admin", "super_admin", "compliance_officer"],
 };
 
 const statusColors: Record<string, string> = {

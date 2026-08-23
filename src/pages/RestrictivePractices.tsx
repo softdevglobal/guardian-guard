@@ -17,8 +17,8 @@ import { restrictivePracticeBlockers } from "@/lib/complianceGates";
 export default function RestrictivePractices() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor"]);
-  const canAuthorise = !isMockAudit && hasRole(["super_admin", "compliance_officer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor"]);
+  const canAuthorise = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const { data: participants = [] } = useParticipants();
   const [sheet, setSheet] = useState<Record<string, any> | null>(null);
 

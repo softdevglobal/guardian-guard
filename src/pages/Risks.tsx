@@ -23,6 +23,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays, isPast } from "date-fns";
 import { logAudit } from "@/lib/auditLog";
+import { riskPersistenceWarnings } from "@/lib/riskForm";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -64,10 +65,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_ROLE_GATE: Record<string, string[]> = {
-  assessed: ["super_admin", "compliance_officer", "supervisor"],
-  mitigating: ["super_admin", "compliance_officer"],
-  monitoring: ["super_admin", "compliance_officer"],
-  closed: ["super_admin", "compliance_officer"],
+  assessed: ["tenant_admin", "super_admin", "compliance_officer", "supervisor"],
+  mitigating: ["tenant_admin", "super_admin", "compliance_officer"],
+  monitoring: ["tenant_admin", "super_admin", "compliance_officer"],
+  closed: ["tenant_admin", "super_admin", "compliance_officer"],
 };
 
 const STATUSES = ["open", "assessed", "mitigating", "monitoring", "closed"];
@@ -202,7 +203,7 @@ export default function Risks() {
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
       const score = form.likelihood_score * form.impact_score;
-      const { error } = await supabase.from("risks").insert({
+      const { data: saved, error } = await supabase.from("risks").insert({
         title: form.title,
         category: form.category,
         description: form.description,
@@ -214,6 +215,7 @@ export default function Risks() {
         existing_controls: form.existing_controls || null,
         escalation_required: form.escalation_required || score >= 7,
         review_date: form.review_date || null,
+        review_frequency: form.review_frequency || null,
         date_identified: new Date().toISOString().split("T")[0],
         linked_participant_id: form.linked_participant_id || null,
         linked_staff_id: form.linked_staff_id || null,
@@ -221,17 +223,25 @@ export default function Risks() {
         linked_complaint_id: form.linked_complaint_id || null,
         created_by: user.id,
         organisation_id: user.organisation_id!,
-      });
+      }).select("id, likelihood_score, impact_score, risk_score, risk_level, review_date, review_frequency").maybeSingle();
       if (error) throw error;
       await logAudit({ action: "created", module: "risks", details: { title: form.title, risk_score: score } });
+      return saved;
     },
-    onSuccess: () => {
+    onSuccess: (saved: any) => {
       queryClient.invalidateQueries({ queryKey: ["risks"] });
       queryClient.invalidateQueries({ queryKey: ["risk-audit-logs"] });
+      const submitted = { ...form };
       setDialogOpen(false);
       setForm(INITIAL_FORM);
       setPhotos([]);
-      toast({ title: "Risk added" });
+      // The database calculates the authoritative score; warn if it differs from what was entered.
+      const drift = riskPersistenceWarnings(submitted, saved);
+      if (drift.length > 0) {
+        toast({ title: "Saved with changes", description: drift.join(" "), variant: "destructive" });
+      } else {
+        toast({ title: "Risk added", description: `Stored score ${saved?.risk_score ?? "—"} (likelihood x impact).` });
+      }
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });

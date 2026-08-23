@@ -87,7 +87,7 @@ export default function Training() {
   const [searchTerm, setSearchTerm] = useState("");
   const [requirementDialogOpen, setRequirementDialogOpen] = useState(false);
 
-  const isAdmin = user?.role && ["super_admin", "compliance_officer", "hr_admin"].includes(user.role);
+  const isAdmin = user?.role && ["tenant_admin", "super_admin", "compliance_officer", "hr_admin"].includes(user.role);
 
   // Training requirements
   const { data: requirements = [] } = useQuery({
@@ -443,7 +443,7 @@ function StaffTrainingDetail({ staffId, requirements, onBack }: {
   const [selectedCompletion, setSelectedCompletion] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const isAdmin = user?.role && ["super_admin", "compliance_officer", "hr_admin"].includes(user.role);
+  const isAdmin = user?.role && ["tenant_admin", "super_admin", "compliance_officer", "hr_admin"].includes(user.role);
   const isSelf = user?.id === staffId;
 
   const { data: profile } = useQuery({

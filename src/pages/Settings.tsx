@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Settings as SettingsIcon, Shield, Bell, Users, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { orgSettingsErrors, persistedMatches, trimOrgSettings } from "@/lib/orgSettings";
+import { reportError, toSafeError } from "@/lib/userFacingError";
+import { BlockerAlert } from "@/components/compliance/GateUI";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -78,24 +81,52 @@ export default function Settings() {
     primary_contact_email: org?.primary_contact_email ?? "",
   };
 
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.organisation_id) throw new Error("No org");
-      const { error } = await supabase.from("organisations").update({
-        name: currentForm.name,
-        abn: currentForm.abn,
-        ndis_registration: currentForm.ndis_registration,
-        primary_contact_email: currentForm.primary_contact_email,
-      }).eq("id", user.organisation_id);
+      if (!user?.organisation_id) throw new Error("Your account is not linked to an organisation.");
+      const cleaned = trimOrgSettings(currentForm);
+      const errors = orgSettingsErrors(cleaned);
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        throw new Error("validation");
+      }
+      setFormErrors([]);
+      // Organisation is resolved from the authenticated membership, never from the form.
+      const { data, error } = await supabase
+        .from("organisations")
+        .update({
+          name: cleaned.name,
+          abn: cleaned.abn,
+          ndis_registration: cleaned.ndis_registration,
+          primary_contact_email: cleaned.primary_contact_email,
+        })
+        .eq("id", user.organisation_id)
+        .select("id, name, abn, ndis_registration, primary_contact_email")
+        .maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error("row-level security: no row returned");
+      if (!persistedMatches(data as any, cleaned)) {
+        throw new Error("The saved values differ from what was submitted.");
+      }
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organisation"] });
-      toast({ title: "Settings saved" });
+    onSuccess: async (saved) => {
+      // Refresh UI state from the row the database returned.
+      queryClient.setQueryData(["organisation", user?.organisation_id], (prev: any) => ({ ...(prev ?? {}), ...saved }));
+      await queryClient.invalidateQueries({ queryKey: ["organisation", user?.organisation_id] });
       setOrgForm(null);
+      toast({ title: "Settings saved" });
     },
-    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => {
+      if (err.message === "validation") return;
+      reportError("settings.organisation", err);
+      const safe = toSafeError(err, "save your organisation settings");
+      toast({ title: safe.title, description: safe.description, variant: "destructive" });
+    },
   });
+
 
   const currentPrefs = {
     email_enabled: prefs?.email_enabled ?? true,
@@ -130,6 +161,7 @@ export default function Settings() {
                   <div className="space-y-2"><Label htmlFor="org-ndis">NDIS Registration</Label><Input id="org-ndis" value={currentForm.ndis_registration} onChange={e => setOrgForm({ ...currentForm, ndis_registration: e.target.value })} /></div>
                   <div className="space-y-2"><Label htmlFor="org-email">Primary Contact Email</Label><Input id="org-email" type="email" value={currentForm.primary_contact_email} onChange={e => setOrgForm({ ...currentForm, primary_contact_email: e.target.value })} /></div>
                 </div>
+                <BlockerAlert blockers={formErrors} title="Check these fields" />
                 <Button type="submit" className="touch-target" disabled={saveMutation.isPending}>{saveMutation.isPending ? "Saving..." : "Save Changes"}</Button>
               </form>
             </CardContent>

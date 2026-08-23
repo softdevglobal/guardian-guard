@@ -103,7 +103,7 @@ export default function ControlsMatrix() {
           <h1 className="text-2xl font-bold tracking-tight">Controls Matrix</h1>
           <p className="text-muted-foreground">Practice Standard → Quality Indicator → Policy → Workflow → Evidence</p>
         </div>
-        {!isMockAudit && hasRole(["super_admin", "compliance_officer"]) && (
+        {!isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]) && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild><Button className="touch-target"><Plus className="mr-2 h-4 w-4" />Add Control Mapping</Button></DialogTrigger>
             <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

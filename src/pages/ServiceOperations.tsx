@@ -23,7 +23,7 @@ export default function ServiceOperations() {
   const qc = useQueryClient();
   const { data: participants = [] } = useParticipants();
   const { data: staff = [] } = useStaff();
-  const canManage = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor"]);
+  const canManage = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor"]);
 
   const [shiftForm, setShiftForm] = useState<Record<string, any>>({ geofence_radius_metres: 150, repeat_weeks: 1 });
   const [templateForm, setTemplateForm] = useState<Record<string, any>>({});

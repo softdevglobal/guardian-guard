@@ -28,7 +28,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   if (!applies || isLoading) return <>{children}</>;
   const status = data?.status as string | undefined;
-  const mustFinish = status === "not_started" || status === "in_progress" || status === "returned";
+  const mustFinish = status === "not_started" || status === "in_progress" || status === "returned" || status === "changes_requested" || status === "ready_for_review";
   if (mustFinish && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }

@@ -19,8 +19,8 @@ type Table = "check_templates" | "environment_checks" | "waste_register";
 export default function SafeEnvironment() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor", "support_worker"]);
-  const canManageTemplates = !isMockAudit && hasRole(["super_admin", "compliance_officer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor", "support_worker"]);
+  const canManageTemplates = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer"]);
   const { data: staff = [] } = useStaff();
   const [sheet, setSheet] = useState<{ table: Table; initial?: Record<string, any> } | null>(null);
 

@@ -51,6 +51,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { useOrgSnapshot } from "@/lib/orgSnapshot";
 
 const platformItems = [
   { title: "Platform Dashboard", url: "/platform/dashboard", icon: Building2 },
@@ -61,6 +62,7 @@ const platformItems = [
   { title: "Income", url: "/platform/income", icon: Wallet },
 ];
 
+/** `badgeKey` reads from the shared organisation snapshot — badges are never hard-coded. */
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
   { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
@@ -68,9 +70,9 @@ const navItems = [
 
   { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
   { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
-  { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badge: 3 },
-  { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks" },
-  { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badge: 1 },
+  { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" as const },
+  { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks", badgeKey: "risks_open" as const },
+  { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
@@ -88,6 +90,7 @@ const navItems = [
   { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
 
+
 const governanceItems = [
   { title: "Governance", url: "/governance", icon: Landmark, module: "governance" },
   { title: "Evidence Matrix", url: "/evidence-matrix", icon: ClipboardCheck, module: "controls" },
@@ -103,6 +106,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { hasModule, hasRole, user } = useAuth();
+  const { data: snapshot } = useOrgSnapshot();
 
   const isPlatformOwner = hasRole("platform_super_admin");
   const filteredItems = navItems.filter((item) => hasModule(item.module));
@@ -166,9 +170,13 @@ export function AppSidebar() {
                     >
                       <item.icon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
                       {!collapsed && <span className="flex-1">{item.title}</span>}
-                      {!collapsed && item.badge && (
-                        <Badge variant="destructive" className="ml-auto text-xs" aria-label={`${item.badge} pending`}>
-                          {item.badge}
+                      {!collapsed && "badgeKey" in item && (snapshot?.counts?.[item.badgeKey] ?? 0) > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="ml-auto text-xs"
+                          aria-label={`${snapshot?.counts?.[item.badgeKey]} open`}
+                        >
+                          {snapshot?.counts?.[item.badgeKey]}
                         </Badge>
                       )}
                     </NavLink>

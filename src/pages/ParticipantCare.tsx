@@ -34,7 +34,7 @@ export default function ParticipantCare() {
   const { user, hasRole, isMockAudit } = useAuth();
   const qc = useQueryClient();
   const role = (user?.role ?? "support_worker") as Role;
-  const canEdit = !isMockAudit && hasRole(["super_admin", "compliance_officer", "supervisor", "trainer"]);
+  const canEdit = !isMockAudit && hasRole(["tenant_admin", "super_admin", "compliance_officer", "supervisor", "trainer"]);
   const readOnlyReason = isMockAudit
     ? "Mock audit mode is active — records are locked."
     : "Your role can view these records but cannot change them.";
