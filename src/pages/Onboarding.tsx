@@ -182,6 +182,7 @@ export default function Onboarding() {
       const previous = (data.data?.docs ?? []).find((d) => d.requirement_key === req.requirement_key);
       const { error } = await supabase.from("organisation_documents" as any).insert({
         organisation_id: orgId,
+        uploaded_by: user?.id ?? null,
         requirement_key: req.requirement_key,
         document_type: req.field_type,
         title: req.label,
