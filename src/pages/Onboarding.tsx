@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { CheckCircle2, ShieldCheck, UploadCloud } from "lucide-react";
+import { OrgDocumentLink } from "@/components/OrgDocumentLink";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
