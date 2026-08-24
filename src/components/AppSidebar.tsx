@@ -31,6 +31,9 @@ import {
   Wallet,
   Rocket,
   SlidersHorizontal,
+  MapPin,
+  BriefcaseBusiness,
+  PiggyBank,
 } from "lucide-react";
 
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
@@ -77,6 +80,9 @@ const navItems = [
   { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
+  { title: "Participant Funding", url: "/participant-funding", icon: PiggyBank, module: "funding" },
+  { title: "Sites", url: "/sites", icon: MapPin, module: "sites" },
+  { title: "Workforce", url: "/workforce", icon: BriefcaseBusiness, module: "workforce" },
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
   { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
   { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },

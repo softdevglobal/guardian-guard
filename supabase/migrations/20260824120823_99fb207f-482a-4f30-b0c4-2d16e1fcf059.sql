@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.calc_participant_funding_remaining() FROM PUBLIC, anon, authenticated;
