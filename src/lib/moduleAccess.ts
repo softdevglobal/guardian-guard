@@ -86,6 +86,9 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/my-shifts": "service_delivery",
   "/service-approvals": "service_approvals",
   "/service-operations": "service_operations",
+  "/sites": "sites",
+  "/workforce": "workforce",
+  "/participant-funding": "funding",
 };
 
 export function moduleForPath(pathname: string): string | null {
