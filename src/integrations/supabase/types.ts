@@ -3243,6 +3243,75 @@ export type Database = {
           },
         ]
       }
+      participant_funding: {
+        Row: {
+          allocated_budget: number
+          claimed_amount: number
+          committed_budget: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          participant_id: string
+          plan_end_date: string | null
+          plan_start_date: string | null
+          remaining_budget: number
+          service_rate: number | null
+          support_category: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_budget?: number
+          claimed_amount?: number
+          committed_budget?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          participant_id: string
+          plan_end_date?: string | null
+          plan_start_date?: string | null
+          remaining_budget?: number
+          service_rate?: number | null
+          support_category: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_budget?: number
+          claimed_amount?: number
+          committed_budget?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          participant_id?: string
+          plan_end_date?: string | null
+          plan_start_date?: string | null
+          remaining_budget?: number
+          service_rate?: number | null
+          support_category?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_funding_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_funding_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_goals: {
         Row: {
           baseline_score: number | null
@@ -3551,23 +3620,33 @@ export type Database = {
         Row: {
           address: string | null
           assigned_trainer_id: string | null
+          communication_method: string | null
           consent_date: string | null
           consent_status: Database["public"]["Enums"]["consent_status"]
           created_at: string
           created_by: string | null
+          cultural_preferences: string | null
           date_of_birth: string | null
           email: string | null
+          emergency_contact: Json | null
           first_name: string
+          funding_management_type: string | null
           government_id: string | null
           id: string
           last_name: string
           ndis_number: string | null
           organisation_id: string
+          participant_number: string | null
           phone: string | null
+          plan_end_date: string | null
+          plan_manager: string | null
+          plan_start_date: string | null
+          preferred_name: string | null
           record_status: Database["public"]["Enums"]["record_status"]
           risk_flags: string[] | null
           sensitivity_level: Database["public"]["Enums"]["sensitivity_level"]
           status: string
+          support_coordinator: string | null
           support_type: string | null
           team_id: string | null
           updated_at: string
@@ -3576,23 +3655,33 @@ export type Database = {
         Insert: {
           address?: string | null
           assigned_trainer_id?: string | null
+          communication_method?: string | null
           consent_date?: string | null
           consent_status?: Database["public"]["Enums"]["consent_status"]
           created_at?: string
           created_by?: string | null
+          cultural_preferences?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: Json | null
           first_name: string
+          funding_management_type?: string | null
           government_id?: string | null
           id?: string
           last_name: string
           ndis_number?: string | null
           organisation_id: string
+          participant_number?: string | null
           phone?: string | null
+          plan_end_date?: string | null
+          plan_manager?: string | null
+          plan_start_date?: string | null
+          preferred_name?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
           risk_flags?: string[] | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
+          support_coordinator?: string | null
           support_type?: string | null
           team_id?: string | null
           updated_at?: string
@@ -3601,23 +3690,33 @@ export type Database = {
         Update: {
           address?: string | null
           assigned_trainer_id?: string | null
+          communication_method?: string | null
           consent_date?: string | null
           consent_status?: Database["public"]["Enums"]["consent_status"]
           created_at?: string
           created_by?: string | null
+          cultural_preferences?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: Json | null
           first_name?: string
+          funding_management_type?: string | null
           government_id?: string | null
           id?: string
           last_name?: string
           ndis_number?: string | null
           organisation_id?: string
+          participant_number?: string | null
           phone?: string | null
+          plan_end_date?: string | null
+          plan_manager?: string | null
+          plan_start_date?: string | null
+          preferred_name?: string | null
           record_status?: Database["public"]["Enums"]["record_status"]
           risk_flags?: string[] | null
           sensitivity_level?: Database["public"]["Enums"]["sensitivity_level"]
           status?: string
+          support_coordinator?: string | null
           support_type?: string | null
           team_id?: string | null
           updated_at?: string
@@ -5062,6 +5161,7 @@ export type Database = {
           service_agreement_id: string | null
           service_notes: string | null
           service_type: string | null
+          site_id: string | null
           status: Database["public"]["Enums"]["shift_status"]
           submitted_at: string | null
           supervisor_id: string | null
@@ -5106,6 +5206,7 @@ export type Database = {
           service_agreement_id?: string | null
           service_notes?: string | null
           service_type?: string | null
+          site_id?: string | null
           status?: Database["public"]["Enums"]["shift_status"]
           submitted_at?: string | null
           supervisor_id?: string | null
@@ -5150,6 +5251,7 @@ export type Database = {
           service_agreement_id?: string | null
           service_notes?: string | null
           service_type?: string | null
+          site_id?: string | null
           status?: Database["public"]["Enums"]["shift_status"]
           submitted_at?: string | null
           supervisor_id?: string | null
@@ -5186,6 +5288,13 @@ export type Database = {
             columns: ["service_agreement_id"]
             isOneToOne: false
             referencedRelation: "service_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_shifts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
             referencedColumns: ["id"]
           },
         ]
@@ -5621,6 +5730,71 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          active: boolean
+          address_line1: string | null
+          created_at: string
+          created_by: string | null
+          geofence_radius_metres: number
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          organisation_id: string
+          postcode: string | null
+          site_type: string
+          state: string | null
+          suburb: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address_line1?: string | null
+          created_at?: string
+          created_by?: string | null
+          geofence_radius_metres?: number
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          organisation_id: string
+          postcode?: string | null
+          site_type?: string
+          state?: string | null
+          suburb?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address_line1?: string | null
+          created_at?: string
+          created_by?: string | null
+          geofence_radius_metres?: number
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          postcode?: string | null
+          site_type?: string
+          state?: string | null
+          suburb?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sites_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -6917,6 +7091,87 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_profiles: {
+        Row: {
+          availability: Json
+          award_classification: string | null
+          created_at: string
+          created_by: string | null
+          employment_status: string
+          employment_type: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          pay_rate: number | null
+          position: string | null
+          primary_site_id: string | null
+          qualifications: string[]
+          screening_status: string
+          skills: string[]
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability?: Json
+          award_classification?: string | null
+          created_at?: string
+          created_by?: string | null
+          employment_status?: string
+          employment_type?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          pay_rate?: number | null
+          position?: string | null
+          primary_site_id?: string | null
+          qualifications?: string[]
+          screening_status?: string
+          skills?: string[]
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability?: Json
+          award_classification?: string | null
+          created_at?: string
+          created_by?: string | null
+          employment_status?: string
+          employment_type?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          pay_rate?: number | null
+          position?: string | null
+          primary_site_id?: string | null
+          qualifications?: string[]
+          screening_status?: string
+          skills?: string[]
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_profiles_primary_site_id_fkey"
+            columns: ["primary_site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
             referencedColumns: ["id"]
           },
         ]
