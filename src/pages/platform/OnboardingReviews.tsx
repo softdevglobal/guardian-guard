@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { EmptyState, ErrorState, HumanReviewNotice, LoadingState, PageHeading, StatusPill } from "@/components/compliance/GateUI";
 import { maskSensitive } from "@/lib/platform";
 import { callPlatformAdmin } from "@/lib/platformApi";
+import { OrgDocumentLink } from "@/components/OrgDocumentLink";
 
 export default function OnboardingReviews() {
   const qc = useQueryClient();
@@ -29,7 +30,7 @@ export default function OnboardingReviews() {
         supabase.from("pathway_requirements" as any).select("*").eq("is_active", true),
         ids.length ? supabase.from("onboarding_answers" as any).select("*").in("onboarding_id", ids) : Promise.resolve({ data: [] as any[] }),
         ids.length ? supabase.from("onboarding_review_findings" as any).select("*").in("onboarding_id", ids) : Promise.resolve({ data: [] as any[] }),
-        supabase.from("organisation_documents" as any).select("id, organisation_id, requirement_key, title, expiry_date"),
+        supabase.from("organisation_documents" as any).select("id, organisation_id, requirement_key, title, expiry_date, storage_path, file_name, version, created_at"),
       ]);
       return {
         rows,
@@ -126,9 +127,10 @@ export default function OnboardingReviews() {
                       <div>
                         <p className="text-sm font-medium">{r.label}{r.is_mandatory && " *"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {a?.is_masked ? maskSensitive(value, "sensitive") : (value ?? "No answer")} {doc ? `· document: ${doc.title}` : r.requires_document ? "· no document uploaded" : ""}
+                          {a?.is_masked ? maskSensitive(value, "sensitive") : (value ?? "No answer")} {doc ? `· document: ${doc.file_name ?? doc.title}` : r.requires_document ? "· no document uploaded" : ""}
                         </p>
                       </div>
+                      {doc && <OrgDocumentLink storagePath={doc.storage_path} fileName={doc.file_name} className="min-h-[40px]" />}
                       <StatusPill tone={f?.decision === "approved" ? "ok" : f?.decision === "returned" ? "bad" : "neutral"}>
                         {f?.decision ?? "not reviewed"}
                       </StatusPill>
@@ -152,6 +154,26 @@ export default function OnboardingReviews() {
                   </div>
                 );
               })}
+
+              <div className="space-y-2 rounded-md border p-3">
+                <p className="text-sm font-medium">Submitted documents ({orgDocs.length})</p>
+                {orgDocs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">This client has not uploaded any documents yet.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {orgDocs.map((docRow) => (
+                      <li key={docRow.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs">
+                          <span className="font-medium">{docRow.file_name ?? docRow.title}</span>
+                          {docRow.version ? ` (v${docRow.version})` : ""}
+                          {docRow.expiry_date ? ` · expires ${new Date(docRow.expiry_date).toLocaleDateString()}` : ""}
+                        </span>
+                        <OrgDocumentLink storagePath={docRow.storage_path} fileName={docRow.file_name} className="min-h-[40px]" />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button className="min-h-[44px]" disabled={finalise.isPending}

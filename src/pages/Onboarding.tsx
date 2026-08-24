@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { CheckCircle2, ShieldCheck, UploadCloud } from "lucide-react";
+import { OrgDocumentLink } from "@/components/OrgDocumentLink";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -433,15 +435,28 @@ function RequirementField({
 
       {req.requires_document && (
         <div className="space-y-2 rounded-md bg-muted/40 p-2">
-          <p className="text-xs text-muted-foreground">
-            {uploaded ? `Uploaded: ${uploaded.file_name} (v${uploaded.version})` : "Upload the supporting certificate or licence."}
-          </p>
+          {uploaded ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-success/40 bg-success/5 p-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+              <span className="text-xs">
+                Uploaded: <span className="font-medium">{uploaded.file_name}</span> (v{uploaded.version})
+                {uploaded.expiry_date ? ` · expires ${new Date(uploaded.expiry_date).toLocaleDateString()}` : ""}
+              </span>
+              <OrgDocumentLink storagePath={uploaded.storage_path} fileName={uploaded.file_name} label="View" className="min-h-[36px]" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <UploadCloud className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground">Upload the supporting certificate or licence.</p>
+            </div>
+          )}
           {req.requires_expiry && (
             <div className="space-y-1">
               <Label htmlFor={`${id}-expiry`} className="text-xs">Expiry date</Label>
               <Input id={`${id}-expiry`} type="date" disabled={disabled} className="min-h-[44px] max-w-[200px]" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
             </div>
           )}
+
           <Input
             aria-label={`Upload document for ${req.label}`}
             type="file"
