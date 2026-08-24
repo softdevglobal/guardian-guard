@@ -26,6 +26,7 @@ import {
   CalendarClock,
   CheckSquare,
   CalendarCog,
+  CalendarDays,
   UserPlus,
   Building2,
   Wallet,
@@ -73,6 +74,7 @@ const navItems = [
   { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
   { title: "My Shifts", url: "/my-shifts", icon: CalendarClock, module: "service_delivery" },
 
+  { title: "Roster", url: "/roster", icon: CalendarDays, module: "rostering" },
   { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
   { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" as const },
