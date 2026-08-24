@@ -54,7 +54,7 @@ describe("fundingFlag", () => {
   });
 
   it("flags near exhaustion and plans ending soon", () => {
-    expect(fundingFlag({ ...base, committed_budget: 9500 }, "2026-06-01")).toBe("nearly_exhausted");
+    expect(fundingFlag({ ...base, committed_budget: 8500 }, "2026-06-01")).toBe("nearly_exhausted");
     expect(fundingFlag(base, "2026-12-15")).toBe("plan_ending_soon");
   });
 
