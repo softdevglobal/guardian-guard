@@ -50,6 +50,7 @@ import MyShifts from "./pages/MyShifts";
 import MyShiftDetail from "./pages/MyShiftDetail";
 import ServiceApprovals from "./pages/ServiceApprovals";
 import ServiceOperations from "./pages/ServiceOperations";
+import Roster from "./pages/Roster";
 import Sites from "./pages/Sites";
 import Workforce from "./pages/Workforce";
 import ParticipantFunding from "./pages/ParticipantFunding";
@@ -128,6 +129,7 @@ const App = () => (
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
               <Route path="/my-shifts" element={<ProtectedPage><MyShifts /></ProtectedPage>} />
               <Route path="/my-shifts/:id" element={<ProtectedPage><MyShiftDetail /></ProtectedPage>} />
+              <Route path="/roster" element={<ProtectedPage><Roster /></ProtectedPage>} />
               <Route path="/service-approvals" element={<ProtectedPage><ServiceApprovals /></ProtectedPage>} />
               <Route path="/service-operations" element={<ProtectedPage><ServiceOperations /></ProtectedPage>} />
               <Route path="/sites" element={<ProtectedPage><Sites /></ProtectedPage>} />

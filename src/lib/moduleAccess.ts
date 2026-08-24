@@ -24,6 +24,7 @@ export const SERVICE_GATED_MODULES = [
   "trade_compliance",
   "service_operations",
   "service_approvals",
+  "rostering",
   "service_delivery",
   "photo_evidence",
   "geolocation",
@@ -33,6 +34,7 @@ export const SERVICE_GATED_MODULES = [
 const ENGINE_ALIAS: Record<string, string> = {
   service_approvals: "service_operations",
   service_delivery: "service_operations",
+  rostering: "service_operations",
 };
 
 const GATED = new Set<string>(SERVICE_GATED_MODULES);
@@ -86,6 +88,7 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/my-shifts": "service_delivery",
   "/service-approvals": "service_approvals",
   "/service-operations": "service_operations",
+  "/roster": "rostering",
   "/sites": "sites",
   "/workforce": "workforce",
   "/participant-funding": "funding",
