@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
-import { moduleAllowed } from "@/lib/moduleAccess";
+import { moduleAllowed, type ModuleEntitlements } from "@/lib/moduleAccess";
 
 export type AppRole =
   | "platform_super_admin"
