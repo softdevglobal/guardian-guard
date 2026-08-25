@@ -34,6 +34,19 @@ export function isServiceGated(module: string): boolean {
 }
 
 /**
+ * Module entitlements granted (or withheld) by the organisation's package.
+ * `null` means the entitlement set is unknown; a module missing from the map has
+ * never been provisioned and therefore falls back to role/service gating.
+ */
+export type ModuleEntitlements = Record<string, boolean> | null;
+
+export function entitlementAllows(module: string, entitlements: ModuleEntitlements): boolean {
+  if (!entitlements) return true;
+  if (!(module in entitlements)) return true;
+  return entitlements[module] === true;
+}
+
+/**
  * `orgModules === null` means the activation set has not loaded (or the caller is
  * a platform user with no tenant); in that case service gating is not applied.
  */
@@ -41,12 +54,15 @@ export function moduleAllowed(
   module: string,
   roleAllows: boolean,
   orgModules: string[] | null,
+  entitlements: ModuleEntitlements = null,
 ): boolean {
   if (!roleAllows) return false;
+  if (!entitlementAllows(module, entitlements)) return false;
   if (!isServiceGated(module) || orgModules === null) return true;
   const engineModule = ENGINE_ALIAS[module] ?? module;
   return orgModules.includes(engineModule);
 }
+
 
 /** Route path (exact, or prefix before the first dynamic segment) to module key. */
 export const ROUTE_MODULES: Record<string, string> = {
