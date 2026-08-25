@@ -390,84 +390,8 @@ export default function Participants() {
           </Card>
         </TabsContent>
 
-        {/* OUTCOMES TAB */}
-        <TabsContent value="outcomes" className="space-y-4 mt-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{allGoals.length}</div><p className="text-sm text-muted-foreground">Active Goals</p></CardContent></Card>
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{allProgress.length}</div><p className="text-sm text-muted-foreground">Progress Entries</p></CardContent></Card>
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{stats.withGoals}</div><p className="text-sm text-muted-foreground">Participants with Goals</p></CardContent></Card>
-          </div>
 
-          {allGoals.length === 0 ? (
-            <Card><CardContent className="py-8 text-center text-muted-foreground">No goals recorded yet. Open a participant profile to add goals.</CardContent></Card>
-          ) : (
-            <div className="space-y-3">
-              {allGoals.map(goal => {
-                const participant = participants.find(p => p.id === goal.participant_id);
-                const entries = allProgress.filter(p => p.goal_id === goal.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                const latest = entries[0];
-                const baseline = (goal as any).baseline_score as number | null;
-                const target = (goal as any).target_score as number | null;
-                const progressPct = baseline != null && target != null && latest?.metric_value != null
-                  ? Math.min(100, Math.max(0, ((latest.metric_value - baseline) / (target - baseline)) * 100))
-                  : null;
-                const isStale = entries.length === 0 && differenceInDays(new Date(), new Date(goal.created_at)) > 14;
 
-                return (
-                  <Card key={goal.id} className={isStale ? "border-warning/50" : ""}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{goal.title}</h3>
-                            <Badge variant="outline" className="capitalize text-xs">{goal.status}</Badge>
-                            {isStale && <Badge variant="destructive" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" />No Progress</Badge>}
-                          </div>
-                          {participant && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {maskField(`${participant.first_name} ${participant.last_name}`, maskLevel, false)}
-                            </p>
-                          )}
-                          {goal.description && <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>}
-                        </div>
-                        <div className="text-right text-sm">
-                          {baseline != null && <div>Baseline: <span className="font-medium">{baseline}</span></div>}
-                          {target != null && <div>Target: <span className="font-medium">{target}</span></div>}
-                          {latest?.metric_value != null && <div>Current: <span className="font-bold">{latest.metric_value}</span></div>}
-                        </div>
-                      </div>
-                      {progressPct != null && (
-                        <div className="mt-3 space-y-1">
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>Progress</span>
-                            <span>{Math.round(progressPct)}%</span>
-                          </div>
-                          <Progress value={progressPct} className="h-2" />
-                        </div>
-                      )}
-                      {entries.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">{entries.length} progress entries</p>
-                          <div className="flex gap-1">
-                            {entries.slice(0, 10).map((e, i) => {
-                              const prev = entries[i + 1];
-                              const trend = prev && e.metric_value != null && prev.metric_value != null
-                                ? e.metric_value > prev.metric_value ? "up" : e.metric_value < prev.metric_value ? "down" : "flat"
-                                : "flat";
-                              return (
-                                <div key={e.id} className={`w-3 h-3 rounded-full ${trend === "up" ? "bg-success" : trend === "down" ? "bg-destructive" : "bg-muted-foreground/30"}`} title={`${e.metric_value} - ${format(new Date(e.created_at), "PP")}`} />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
 
         {/* COMPLIANCE & ALERTS TAB */}
         <TabsContent value="compliance" className="space-y-4 mt-4">
