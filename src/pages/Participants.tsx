@@ -640,130 +640,21 @@ function ParticipantDetailSheet({
             </CardContent>
           </Card>
 
-          {/* Goals & Outcomes */}
+          {/* Compliance evidence pointer */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2"><Activity className="h-4 w-4" />Goals & Outcomes</CardTitle>
-                <Dialog open={goalDialogOpen} onOpenChange={setGoalDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" disabled={!isConsentGranted}>
-                      <Plus className="h-3 w-3 mr-1" />Add Goal
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Add Goal</DialogTitle></DialogHeader>
-                    <form className="space-y-4" onSubmit={e => { e.preventDefault(); addGoalMutation.mutate(); }}>
-                      <div className="space-y-2"><Label>Goal Title *</Label><Input value={goalForm.title} onChange={e => setGoalForm(f => ({ ...f, title: e.target.value }))} required /></div>
-                      <div className="space-y-2"><Label>Description</Label><Textarea value={goalForm.description} onChange={e => setGoalForm(f => ({ ...f, description: e.target.value }))} /></div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-2"><Label>Baseline</Label><Input type="number" value={goalForm.baseline_score} onChange={e => setGoalForm(f => ({ ...f, baseline_score: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Target</Label><Input type="number" value={goalForm.target_score} onChange={e => setGoalForm(f => ({ ...f, target_score: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Unit</Label><Input value={goalForm.measurement_unit} onChange={e => setGoalForm(f => ({ ...f, measurement_unit: e.target.value }))} /></div>
-                      </div>
-                      <div className="space-y-2"><Label>Target Date</Label><Input type="date" value={goalForm.target_date} onChange={e => setGoalForm(f => ({ ...f, target_date: e.target.value }))} /></div>
-                      <Button type="submit" className="w-full" disabled={addGoalMutation.isPending}>
-                        {addGoalMutation.isPending ? "Adding..." : "Add Goal"}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4" aria-hidden="true" />Compliance evidence
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {goals.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No goals yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {goals.map(goal => {
-                    const entries = progress.filter(p => p.goal_id === goal.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    const latest = entries[0];
-                    const baseline = (goal as any).baseline_score as number | null;
-                    const target = (goal as any).target_score as number | null;
-                    const unit = (goal as any).measurement_unit as string | null;
-                    const pct = baseline != null && target != null && latest?.metric_value != null
-                      ? Math.min(100, Math.max(0, ((latest.metric_value - baseline) / (target - baseline)) * 100))
-                      : null;
-
-                    return (
-                      <div key={goal.id} className="p-3 rounded-lg border space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-sm font-medium">{goal.title}</h4>
-                            {goal.description && <p className="text-xs text-muted-foreground">{goal.description}</p>}
-                          </div>
-                          <Badge variant="outline" className="capitalize text-xs">{goal.status}</Badge>
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                          {baseline != null && <span>Baseline: {baseline} {unit}</span>}
-                          {target != null && <span>Target: {target} {unit}</span>}
-                          {latest?.metric_value != null && <span className="font-medium text-foreground">Current: {latest.metric_value} {unit}</span>}
-                        </div>
-                        {pct != null && <Progress value={pct} className="h-1.5" />}
-                        {entries.length > 0 && (
-                          <div className="space-y-1 mt-2">
-                            {entries.slice(0, 5).map(e => (
-                              <div key={e.id} className="flex items-center justify-between text-xs p-1.5 bg-muted/50 rounded">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{e.metric_value ?? "—"}</span>
-                                  {e.notes && <span className="text-muted-foreground truncate max-w-[150px]">{e.notes}</span>}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {(e as any).evidence_notes && <span title="Has evidence"><FileText className="h-3 w-3 text-primary" /></span>}
-                                  <span className="text-muted-foreground">{format(new Date(e.created_at), "PP")}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Add Progress Button */}
-              {goals.length > 0 && (
-                <div className="mt-4">
-                  <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="w-full" disabled={!isConsentGranted}>
-                        <Plus className="h-3 w-3 mr-1" />Record Progress
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Record Progress</DialogTitle></DialogHeader>
-                      <form className="space-y-4" onSubmit={e => { e.preventDefault(); addProgressMutation.mutate(); }}>
-                        <div className="space-y-2">
-                          <Label>Goal *</Label>
-                          <Select value={selectedGoalId} onValueChange={setSelectedGoalId}>
-                            <SelectTrigger><SelectValue placeholder="Select goal..." /></SelectTrigger>
-                            <SelectContent>
-                              {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2"><Label>Score / Value</Label><Input type="number" value={progressForm.metric_value} onChange={e => setProgressForm(f => ({ ...f, metric_value: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Notes</Label><Textarea value={progressForm.notes} onChange={e => setProgressForm(f => ({ ...f, notes: e.target.value }))} /></div>
-                        <div className="space-y-2">
-                          <Label>Evidence Notes * <span className="text-xs text-muted-foreground">(required)</span></Label>
-                          <Textarea
-                            value={progressForm.evidence_notes}
-                            onChange={e => setProgressForm(f => ({ ...f, evidence_notes: e.target.value }))}
-                            placeholder="Describe the evidence supporting this progress entry..."
-                            required
-                          />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={addProgressMutation.isPending || !selectedGoalId}>
-                          {addProgressMutation.isPending ? "Recording..." : "Record Progress"}
-                        </Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground">
+                Consent, service agreements, support plans, risk assessments and emergency and
+                continuity plans for this participant are held in Participant support compliance.
+              </p>
             </CardContent>
           </Card>
+
 
           {/* Compliance Chain View */}
           <ComplianceChainView
