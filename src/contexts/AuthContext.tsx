@@ -132,9 +132,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         _org: profile.organisation_id,
       });
       setOrgModules(error ? null : ((mods as string[] | null) ?? []));
+
+      // Package entitlements. Anything explicitly disabled is hidden from the
+      // navigation and refused on direct URL access.
+      const { data: ents, error: entErr } = await supabase
+        .from("organisation_module_entitlements")
+        .select("module_key, is_enabled")
+        .eq("organisation_id", profile.organisation_id);
+      setModuleEntitlements(
+        entErr || !ents
+          ? null
+          : Object.fromEntries(ents.map((e) => [e.module_key, !!e.is_enabled])),
+      );
     } else {
       setOrgModules(null);
+      setModuleEntitlements(null);
     }
+
+
 
   }, []);
 
