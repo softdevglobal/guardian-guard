@@ -208,9 +208,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const roleAllows = held.some((r) => ROLE_MODULES[r]?.includes(module));
       // Platform owners are not tenants — service activation never applies to them.
       if (held.includes("platform_super_admin")) return roleAllows;
-      return moduleAllowed(module, roleAllows, orgModules);
+      return moduleAllowed(module, roleAllows, orgModules, moduleEntitlements);
     },
-    [user, orgModules]
+    [user, orgModules, moduleEntitlements]
   );
 
 
@@ -219,7 +219,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule, orgModules }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule, orgModules, moduleEntitlements }}>
+
       {children}
     </AuthContext.Provider>
   );
