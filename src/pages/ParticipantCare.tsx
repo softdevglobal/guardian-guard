@@ -16,8 +16,8 @@ import {
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
 import { toOptions, useParticipants, useStaff, withOrg } from "@/hooks/useComplianceLookups";
 import {
-  agreementSignBlockers, mealtimeRosterBlockers,
-  supportPlanActivationBlockers, workerAssignmentBlockers, type Role,
+  agreementSignBlockers,
+  supportPlanActivationBlockers, type Role,
 } from "@/lib/complianceGates";
 
 type Entity =
@@ -80,16 +80,6 @@ export default function ParticipantCare() {
     },
   });
 
-  const { data: eligibility = [] } = useQuery({
-    queryKey: ["staff-eligibility-all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("staff_eligibility_status")
-        .select("staff_id, is_eligible_for_assignment, reason_summary");
-      if (error) throw error;
-      return data as any[];
-    },
-  });
 
   const save = useMutation({
     mutationFn: async ({ entity, values }: { entity: Entity; values: Record<string, any> }) => {
