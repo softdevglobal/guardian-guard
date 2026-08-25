@@ -20,6 +20,46 @@ export default function ClientDetail() {
   const [reason, setReason] = useState("");
   const [extraDays, setExtraDays] = useState("14");
   const [packageId, setPackageId] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskInstructions, setTaskInstructions] = useState("");
+  const [taskDue, setTaskDue] = useState("");
+
+  const assignTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("platform_tasks" as any).insert({
+        organisation_id: id,
+        title: taskTitle.trim(),
+        instructions: taskInstructions.trim() || null,
+        due_date: taskDue || null,
+        status: "assigned",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["platform-client", id] });
+      setTaskTitle("");
+      setTaskInstructions("");
+      setTaskDue("");
+      toast({ title: "Task assigned", description: "The provider will see this task in their NDIS registration centre." });
+    },
+    onError: (e: any) => toast({ variant: "destructive", title: "Could not assign task", description: e.message }),
+  });
+
+  const reviewTask = useMutation({
+    mutationFn: async ({ taskId, status, notes }: { taskId: string; status: string; notes?: string }) => {
+      const { error } = await supabase
+        .from("platform_tasks" as any)
+        .update({ status, review_notes: notes ?? null, reviewed_at: new Date().toISOString() })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["platform-client", id] });
+      toast({ title: "Review recorded" });
+    },
+    onError: (e: any) => toast({ variant: "destructive", title: "Could not record review", description: e.message }),
+  });
+
 
   const client = useQuery({
     queryKey: ["platform-client", id],
