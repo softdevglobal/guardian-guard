@@ -93,8 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMockAudit, setIsMockAudit] = useState(false);
   const [orgModules, setOrgModules] = useState<string[] | null>(null);
+  const [moduleEntitlements, setModuleEntitlements] = useState<ModuleEntitlements>(null);
 
-  const fetchUserProfile = useCallback(async (authUser: User) => {
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("id, email, full_name, avatar_url, team_id, organisation_id")
