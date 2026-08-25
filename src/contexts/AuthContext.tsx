@@ -162,7 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
           setOrgModules(null);
+          setModuleEntitlements(null);
         }
+
         setIsLoading(false);
       }
     );
