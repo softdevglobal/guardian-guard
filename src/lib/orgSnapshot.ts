@@ -30,6 +30,9 @@ export interface OrgSnapshot {
     staff: number;
     governance_meetings: number;
     registration_groups_confirmed: number;
+    corrective_actions_open: number;
+    worker_requirements: number;
+    worker_requirements_verified: number;
   };
   evidence: {
     total_applicable: number;
@@ -45,6 +48,7 @@ export interface OrgSnapshot {
     supports: ScoreBlock;
     environment: ScoreBlock;
     ai_oversight: ScoreBlock;
+    worker_compliance: ScoreBlock;
   };
 }
 
