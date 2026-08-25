@@ -190,8 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setOrgModules(null);
+    setModuleEntitlements(null);
     setIsMockAudit(false);
   }, []);
+
 
   const hasRole = useCallback(
     (role: AppRole | AppRole[]) => {
