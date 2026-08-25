@@ -46,16 +46,14 @@ import SafeEnvironment from "./pages/SafeEnvironment";
 import SIL from "./pages/SIL";
 import RestrictivePractices from "./pages/RestrictivePractices";
 import Governance from "./pages/Governance";
-import MyShifts from "./pages/MyShifts";
-import MyShiftDetail from "./pages/MyShiftDetail";
-import ServiceApprovals from "./pages/ServiceApprovals";
-import ServiceOperations from "./pages/ServiceOperations";
-import Roster from "./pages/Roster";
-import Sites from "./pages/Sites";
-import Workforce from "./pages/Workforce";
-import ParticipantFunding from "./pages/ParticipantFunding";
+import CorrectiveActions from "./pages/CorrectiveActions";
+import Registration from "./pages/Registration";
+import ComplianceCalendar from "./pages/ComplianceCalendar";
+import TrustPortal from "./pages/TrustPortal";
+import PublicTrust from "./pages/PublicTrust";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
@@ -90,6 +88,8 @@ const App = () => (
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/trust/:slug" element={<PublicTrust />} />
+
               <Route path="/platform/dashboard" element={<PlatformPage><PlatformDashboard /></PlatformPage>} />
               <Route path="/platform/clients" element={<PlatformPage><PlatformClients /></PlatformPage>} />
               <Route path="/platform/clients/new" element={<PlatformPage><NewClient /></PlatformPage>} />
@@ -127,14 +127,18 @@ const App = () => (
               <Route path="/restrictive-practices" element={<ProtectedPage><RestrictivePractices /></ProtectedPage>} />
               <Route path="/governance" element={<ProtectedPage><Governance /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
-              <Route path="/my-shifts" element={<ProtectedPage><MyShifts /></ProtectedPage>} />
-              <Route path="/my-shifts/:id" element={<ProtectedPage><MyShiftDetail /></ProtectedPage>} />
-              <Route path="/roster" element={<ProtectedPage><Roster /></ProtectedPage>} />
-              <Route path="/service-approvals" element={<ProtectedPage><ServiceApprovals /></ProtectedPage>} />
-              <Route path="/service-operations" element={<ProtectedPage><ServiceOperations /></ProtectedPage>} />
-              <Route path="/sites" element={<ProtectedPage><Sites /></ProtectedPage>} />
-              <Route path="/workforce" element={<ProtectedPage><Workforce /></ProtectedPage>} />
-              <Route path="/participant-funding" element={<ProtectedPage><ParticipantFunding /></ProtectedPage>} />
+              <Route path="/registration" element={<ProtectedPage><Registration /></ProtectedPage>} />
+              <Route path="/corrective-actions" element={<ProtectedPage><CorrectiveActions /></ProtectedPage>} />
+              <Route path="/calendar" element={<ProtectedPage><ComplianceCalendar /></ProtectedPage>} />
+              <Route path="/trust-portal" element={<ProtectedPage><TrustPortal /></ProtectedPage>} />
+
+
+
+
+
+
+
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

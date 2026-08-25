@@ -16,12 +16,12 @@ import {
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
 import { toOptions, useParticipants, useStaff, withOrg } from "@/hooks/useComplianceLookups";
 import {
-  agreementSignBlockers, mealtimeRosterBlockers, serviceDeliveryBlockers,
+  agreementSignBlockers, mealtimeRosterBlockers,
   supportPlanActivationBlockers, workerAssignmentBlockers, type Role,
 } from "@/lib/complianceGates";
 
 type Entity =
-  | "participant_consents" | "service_agreements" | "service_delivery_records" | "support_plans"
+  | "participant_consents" | "service_agreements" | "support_plans"
   | "participant_risk_assessments" | "participant_continuity_plans" | "worker_assignments"
   | "mealtime_profiles" | "participant_concerns";
 
@@ -46,7 +46,7 @@ export default function ParticipantCare() {
   const [sheet, setSheet] = useState<{ entity: Entity; initial?: Record<string, any> } | null>(null);
 
   const tables: Entity[] = [
-    "participant_consents", "service_agreements", "service_delivery_records", "support_plans",
+    "participant_consents", "service_agreements", "support_plans",
     "participant_risk_assessments", "participant_continuity_plans", "worker_assignments",
     "mealtime_profiles", "participant_concerns",
   ];
@@ -169,27 +169,6 @@ export default function ParticipantCare() {
           { name: "signed_at", label: "Signed at", type: "datetime" },
           { name: "signed_copy_url", label: "Signed copy URL", type: "text" },
         ];
-      case "service_delivery_records":
-        return [
-          { name: "service_date", label: "Service date", type: "date", required: true },
-          { name: "support_item", label: "Support item", type: "text", required: true },
-          { name: "duration_hours", label: "Duration (hours)", type: "number" },
-          {
-            name: "worker_id", label: "Worker", type: "select", required: true, options: toOptions(staff),
-          },
-          { name: "notes", label: "Delivery notes", type: "textarea" },
-          {
-            name: "status", label: "Status", type: "select", required: true,
-            options: [
-              { value: "draft", label: "Draft" },
-              { value: "finalised", label: "Finalised" },
-            ],
-          },
-          {
-            name: "exception_reason", label: "Exception reason (no covering agreement)", type: "textarea",
-            help: "Only a supervisor, compliance officer or administrator may authorise an exception.",
-          },
-        ];
       case "support_plans":
         return [
           { name: "goals", label: "Goals", type: "textarea", required: true },
@@ -289,15 +268,6 @@ export default function ParticipantCare() {
     switch (entity) {
       case "service_agreements":
         return ["signed", "active"].includes(values.status) ? agreementSignBlockers(values) : [];
-      case "service_delivery_records":
-        return values.status === "finalised"
-          ? serviceDeliveryBlockers({
-              serviceDate: values.service_date,
-              agreements: activeAgreements,
-              exceptionReason: values.exception_reason,
-              authoriserRole: role,
-            })
-          : [];
       case "support_plans":
         return values.status === "active" ? supportPlanActivationBlockers(values) : [];
       case "worker_assignments": {
@@ -341,10 +311,6 @@ export default function ParticipantCare() {
     { value: "service_agreements", label: "Agreements", columns: [
       { key: "agreement_number", label: "Number" }, { key: "status", label: "Status" },
       { key: "start_date", label: "Start" }, { key: "end_date", label: "End" }, { key: "signed_by_name", label: "Signed by" },
-    ]},
-    { value: "service_delivery_records", label: "Service delivery", columns: [
-      { key: "service_date", label: "Date" }, { key: "support_item", label: "Support" },
-      { key: "status", label: "Status" }, { key: "exception_reason", label: "Exception" },
     ]},
     { value: "support_plans", label: "Support plans", columns: [
       { key: "version_number", label: "Version" }, { key: "status", label: "Status" }, { key: "review_due_date", label: "Review due" },

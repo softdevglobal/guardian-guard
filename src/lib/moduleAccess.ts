@@ -22,20 +22,10 @@ export const SERVICE_GATED_MODULES = [
   "safe_environment",
   "waste_register",
   "trade_compliance",
-  "service_operations",
-  "service_approvals",
-  "rostering",
-  "service_delivery",
-  "photo_evidence",
-  "geolocation",
 ] as const;
 
 /** Some app modules are switched on by a differently named engine module. */
-const ENGINE_ALIAS: Record<string, string> = {
-  service_approvals: "service_operations",
-  service_delivery: "service_operations",
-  rostering: "service_operations",
-};
+const ENGINE_ALIAS: Record<string, string> = {};
 
 const GATED = new Set<string>(SERVICE_GATED_MODULES);
 
@@ -66,6 +56,10 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/complaints": "complaints",
   "/policies": "policies",
   "/participants": "participants",
+  "/registration": "registration",
+  "/corrective-actions": "corrective_actions",
+  "/calendar": "calendar",
+  "/trust-portal": "trust_portal",
   "/participant-care": "participant_care",
   "/medication": "medication",
   "/staff": "staff",
@@ -85,13 +79,6 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/sil": "sil",
   "/restrictive-practices": "restrictive_practices",
   "/governance": "governance",
-  "/my-shifts": "service_delivery",
-  "/service-approvals": "service_approvals",
-  "/service-operations": "service_operations",
-  "/roster": "rostering",
-  "/sites": "sites",
-  "/workforce": "workforce",
-  "/participant-funding": "funding",
 };
 
 export function moduleForPath(pathname: string): string | null {
