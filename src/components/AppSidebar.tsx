@@ -10,14 +10,14 @@ import {
   ClipboardList,
   Settings,
   Activity,
-  HeartHandshake,
+  HeartPulse,
   Lock,
   Bell,
   Grid3X3,
   Award,
   Archive,
   ClipboardCheck,
-  HeartPulse,
+  HeartHandshake,
   Pill,
   SprayCan,
   Home,
@@ -37,7 +37,6 @@ import {
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
 const logoImg = logoAsset.url;
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -65,44 +64,79 @@ const platformItems = [
   { title: "Income", url: "/platform/income", icon: Wallet },
 ];
 
-/** `badgeKey` reads from the shared organisation snapshot — badges are never hard-coded. */
-const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
-  { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
-  { title: "NDIS Registration", url: "/registration", icon: BadgeCheck, module: "registration" },
+type NavItem = {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  module: string;
+  badgeKey?: "incidents_open" | "risks_open" | "complaints_open";
+};
 
-  { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
-  { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" as const },
-  { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks", badgeKey: "risks_open" as const },
-  { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
-  { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
-  { title: "Participants", url: "/participants", icon: Users, module: "participants" },
-  
-  { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
-  { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
-  { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },
-  { title: "Staff Enrollment", url: "/staff-enrollment", icon: UserPlus, module: "staff_enrollment" },
-  { title: "Training", url: "/training", icon: GraduationCap, module: "training" },
-  { title: "Audit Logs", url: "/audit", icon: ClipboardList, module: "audit" },
-  { title: "Heartbeat", url: "/heartbeat", icon: Activity, module: "dashboard" },
-  { title: "Safeguarding", url: "/safeguarding", icon: HeartHandshake, module: "safeguarding" },
-  { title: "Privacy", url: "/privacy", icon: Lock, module: "privacy" },
-  { title: "Safe Environment", url: "/safe-environment", icon: SprayCan, module: "safe_environment" },
-  { title: "SIL", url: "/sil", icon: Home, module: "sil" },
-  { title: "Restrictive Practices", url: "/restrictive-practices", icon: Hand, module: "restrictive_practices" },
-  { title: "Corrective Actions", url: "/corrective-actions", icon: CheckSquare, module: "corrective_actions" },
-  { title: "Compliance Calendar", url: "/calendar", icon: CalendarDays, module: "calendar" },
-  { title: "Trust Portal", url: "/trust-portal", icon: Globe, module: "trust_portal" },
-  { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
-];
-
-
-const governanceItems = [
-  { title: "Governance", url: "/governance", icon: Landmark, module: "governance" },
-  { title: "Evidence Matrix", url: "/evidence-matrix", icon: ClipboardCheck, module: "controls" },
-  { title: "Controls Matrix", url: "/controls", icon: Grid3X3, module: "controls" },
-  { title: "Competency Vault", url: "/competency-vault", icon: Award, module: "competency" },
-  { title: "Evidence Room", url: "/evidence-room", icon: Archive, module: "evidence_room" },
+/**
+ * Provider navigation is compliance-only. Daily operations (rosters, shifts,
+ * attendance, tasks, timesheets, invoicing) belong to BMS Pro Trade and are
+ * deliberately absent here. `badgeKey` reads the shared organisation snapshot.
+ */
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Overview",
+    items: [
+      { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
+      { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
+      { title: "NDIS Registration", url: "/registration", icon: BadgeCheck, module: "registration" },
+    ],
+  },
+  {
+    label: "People compliance",
+    items: [
+      { title: "Participants", url: "/participants", icon: Users, module: "participants" },
+      { title: "Participant support compliance", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
+      { title: "Medication plans", url: "/medication", icon: Pill, module: "medication" },
+      { title: "Workers", url: "/staff", icon: UserCog, module: "staff" },
+      { title: "Workers and access", url: "/staff-enrollment", icon: UserPlus, module: "staff_enrollment" },
+      { title: "Training", url: "/training", icon: GraduationCap, module: "training" },
+    ],
+  },
+  {
+    label: "Compliance",
+    items: [
+      { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" },
+      { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" },
+      { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks", badgeKey: "risks_open" },
+      { title: "Safeguarding", url: "/safeguarding", icon: HeartHandshake, module: "safeguarding" },
+      { title: "Privacy", url: "/privacy", icon: Lock, module: "privacy" },
+      { title: "Safe environment and waste", url: "/safe-environment", icon: SprayCan, module: "safe_environment" },
+      { title: "Restrictive practices", url: "/restrictive-practices", icon: Hand, module: "restrictive_practices" },
+      { title: "SIL", url: "/sil", icon: Home, module: "sil" },
+    ],
+  },
+  {
+    label: "Documents and governance",
+    items: [
+      { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
+      { title: "Governance", url: "/governance", icon: Landmark, module: "governance" },
+      { title: "Evidence Matrix", url: "/evidence-matrix", icon: ClipboardCheck, module: "controls" },
+      { title: "Controls Matrix", url: "/controls", icon: Grid3X3, module: "controls" },
+      { title: "Competency Vault", url: "/competency-vault", icon: Award, module: "competency" },
+      { title: "Evidence Room", url: "/evidence-room", icon: Archive, module: "evidence_room" },
+    ],
+  },
+  {
+    label: "Audit management",
+    items: [
+      { title: "Corrective Actions", url: "/corrective-actions", icon: CheckSquare, module: "corrective_actions" },
+      { title: "Compliance Calendar", url: "/calendar", icon: CalendarDays, module: "calendar" },
+      { title: "Trust Portal", url: "/trust-portal", icon: Globe, module: "trust_portal" },
+      { title: "Audit Logs", url: "/audit", icon: ClipboardList, module: "audit" },
+      { title: "Compliance Pulse", url: "/heartbeat", icon: Activity, module: "dashboard" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
+    ],
+  },
 ];
 
 const settingsItem = { title: "Settings", url: "/settings", icon: Settings, module: "settings" };
@@ -110,13 +144,13 @@ const settingsItem = { title: "Settings", url: "/settings", icon: Settings, modu
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const { hasModule, hasRole, user } = useAuth();
   const { data: snapshot } = useOrgSnapshot();
 
   const isPlatformOwner = hasRole("platform_super_admin");
-  const filteredItems = navItems.filter((item) => hasModule(item.module));
-  const filteredGovernance = governanceItems.filter((item) => hasModule(item.module));
+  const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => hasModule(i.module)) })).filter(
+    (g) => g.items.length > 0
+  );
 
   return (
     <Sidebar collapsible="icon" aria-label="Main navigation">
@@ -160,54 +194,31 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup>
-
-          <SidebarGroupLabel>Modules</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent touch-target flex items-center"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
-                      {!collapsed && <span className="flex-1">{item.title}</span>}
-                      {!collapsed && "badgeKey" in item && (snapshot?.counts?.[item.badgeKey] ?? 0) > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="ml-auto text-xs"
-                          aria-label={`${snapshot?.counts?.[item.badgeKey]} open`}
-                        >
-                          {snapshot?.counts?.[item.badgeKey]}
-                        </Badge>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {filteredGovernance.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Governance</SidebarGroupLabel>
+        {groups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {filteredGovernance.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
+                        end={item.url === "/"}
                         className="hover:bg-sidebar-accent touch-target flex items-center"
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
                         <item.icon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
                         {!collapsed && <span className="flex-1">{item.title}</span>}
+                        {!collapsed && item.badgeKey && (snapshot?.counts?.[item.badgeKey] ?? 0) > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="ml-auto text-xs"
+                            aria-label={`${snapshot?.counts?.[item.badgeKey]} open`}
+                          >
+                            {snapshot?.counts?.[item.badgeKey]}
+                          </Badge>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -215,7 +226,7 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
