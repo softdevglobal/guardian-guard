@@ -46,14 +46,6 @@ import SafeEnvironment from "./pages/SafeEnvironment";
 import SIL from "./pages/SIL";
 import RestrictivePractices from "./pages/RestrictivePractices";
 import Governance from "./pages/Governance";
-import MyShifts from "./pages/MyShifts";
-import MyShiftDetail from "./pages/MyShiftDetail";
-import ServiceApprovals from "./pages/ServiceApprovals";
-import ServiceOperations from "./pages/ServiceOperations";
-import Roster from "./pages/Roster";
-import Sites from "./pages/Sites";
-import Workforce from "./pages/Workforce";
-import ParticipantFunding from "./pages/ParticipantFunding";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -127,14 +119,13 @@ const App = () => (
               <Route path="/restrictive-practices" element={<ProtectedPage><RestrictivePractices /></ProtectedPage>} />
               <Route path="/governance" element={<ProtectedPage><Governance /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
-              <Route path="/my-shifts" element={<ProtectedPage><MyShifts /></ProtectedPage>} />
-              <Route path="/my-shifts/:id" element={<ProtectedPage><MyShiftDetail /></ProtectedPage>} />
-              <Route path="/roster" element={<ProtectedPage><Roster /></ProtectedPage>} />
-              <Route path="/service-approvals" element={<ProtectedPage><ServiceApprovals /></ProtectedPage>} />
-              <Route path="/service-operations" element={<ProtectedPage><ServiceOperations /></ProtectedPage>} />
-              <Route path="/sites" element={<ProtectedPage><Sites /></ProtectedPage>} />
-              <Route path="/workforce" element={<ProtectedPage><Workforce /></ProtectedPage>} />
-              <Route path="/participant-funding" element={<ProtectedPage><ParticipantFunding /></ProtectedPage>} />
+
+
+
+
+
+
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
