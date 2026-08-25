@@ -23,18 +23,15 @@ import {
   Home,
   Hand,
   Landmark,
-  CalendarClock,
   CheckSquare,
-  CalendarCog,
   CalendarDays,
   UserPlus,
   Building2,
   Wallet,
   Rocket,
   SlidersHorizontal,
-  MapPin,
-  BriefcaseBusiness,
-  PiggyBank,
+  BadgeCheck,
+  Globe,
 } from "lucide-react";
 
 import logoAsset from "@/assets/dgtg-logo.png.asset.json";
@@ -72,19 +69,15 @@ const platformItems = [
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
   { title: "Get set up", url: "/onboarding", icon: Rocket, module: "onboarding" },
-  { title: "My Shifts", url: "/my-shifts", icon: CalendarClock, module: "service_delivery" },
+  { title: "NDIS Registration", url: "/registration", icon: BadgeCheck, module: "registration" },
 
-  { title: "Roster", url: "/roster", icon: CalendarDays, module: "rostering" },
   { title: "Service Approvals", url: "/service-approvals", icon: CheckSquare, module: "service_approvals" },
-  { title: "Service Operations", url: "/service-operations", icon: CalendarCog, module: "service_operations" },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle, module: "incidents", badgeKey: "incidents_open" as const },
   { title: "Risks", url: "/risks", icon: ShieldAlert, module: "risks", badgeKey: "risks_open" as const },
   { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
-  { title: "Participant Funding", url: "/participant-funding", icon: PiggyBank, module: "funding" },
   { title: "Sites", url: "/sites", icon: MapPin, module: "sites" },
-  { title: "Workforce", url: "/workforce", icon: BriefcaseBusiness, module: "workforce" },
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
   { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
   { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },
@@ -97,6 +90,9 @@ const navItems = [
   { title: "Safe Environment", url: "/safe-environment", icon: SprayCan, module: "safe_environment" },
   { title: "SIL", url: "/sil", icon: Home, module: "sil" },
   { title: "Restrictive Practices", url: "/restrictive-practices", icon: Hand, module: "restrictive_practices" },
+  { title: "Corrective Actions", url: "/corrective-actions", icon: CheckSquare, module: "corrective_actions" },
+  { title: "Compliance Calendar", url: "/calendar", icon: CalendarDays, module: "calendar" },
+  { title: "Trust Portal", url: "/trust-portal", icon: Globe, module: "trust_portal" },
   { title: "Notifications", url: "/notifications", icon: Bell, module: "dashboard" },
 ];
 

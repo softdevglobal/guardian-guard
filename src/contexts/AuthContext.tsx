@@ -56,15 +56,15 @@ export function useAuth() {
 
 const ROLE_MODULES: Record<AppRole, string[]> = {
   platform_super_admin: ["platform", "dashboard", "settings", "audit"],
-  tenant_admin: ["sites", "workforce", "funding", "onboarding", "staff_enrollment", "service_approvals", "service_operations", "rostering", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
-  super_admin: ["sites", "workforce", "funding", "onboarding", "staff_enrollment", "service_delivery", "service_approvals", "service_operations", "rostering", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  tenant_admin: ["trust_portal", "calendar", "corrective_actions", "registration", "onboarding", "staff_enrollment", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
+  super_admin: ["trust_portal", "calendar", "corrective_actions", "registration", "onboarding", "staff_enrollment", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "settings", "controls", "competency", "evidence_room"],
 
-  compliance_officer: ["sites", "workforce", "funding", "staff_enrollment", "service_approvals", "service_operations", "rostering", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
-  supervisor: ["sites", "workforce", "service_approvals", "service_operations", "rostering", "safe_environment", "sil", "restrictive_practices", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
-  trainer: ["service_delivery", "participant_care", "dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],
-  support_worker: ["service_delivery", "safe_environment", "participant_care", "medication", "dashboard", "incidents", "participants", "safeguarding"],
-  hr_admin: ["workforce", "staff_enrollment", "dashboard", "staff", "training", "privacy", "competency"],
-  executive: ["funding", "governance", "dashboard", "incidents", "risks", "complaints", "policies", "audit", "controls", "evidence_room"],
+  compliance_officer: ["trust_portal", "calendar", "corrective_actions", "registration", "staff_enrollment", "safe_environment", "sil", "restrictive_practices", "governance", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "policies", "participants", "staff", "training", "audit", "heartbeat", "safeguarding", "privacy", "controls", "competency", "evidence_room"],
+  supervisor: ["calendar", "corrective_actions", "safe_environment", "sil", "restrictive_practices", "participant_care", "medication", "dashboard", "incidents", "risks", "complaints", "participants", "staff", "training", "safeguarding"],
+  trainer: ["participant_care", "dashboard", "incidents", "complaints", "participants", "training", "safeguarding"],
+  support_worker: ["safe_environment", "participant_care", "medication", "dashboard", "incidents", "participants", "safeguarding"],
+  hr_admin: ["calendar", "staff_enrollment", "dashboard", "staff", "training", "privacy", "competency"],
+  executive: ["calendar", "corrective_actions", "governance", "dashboard", "incidents", "risks", "complaints", "policies", "audit", "controls", "evidence_room"],
   participant: ["dashboard", "training", "complaints"],
 };
 
