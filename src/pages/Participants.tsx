@@ -89,29 +89,22 @@ export default function Participants() {
     },
   });
 
-  const { data: allGoals = [] } = useQuery({
-    queryKey: ["participant-goals"],
+  // Compliance evidence coverage — which participants hold each core record.
+  const { data: evidence = { plans: new Set<string>(), agreements: new Set<string>(), risks: new Set<string>(), continuity: new Set<string>() } } = useQuery({
+    queryKey: ["participant-compliance-evidence"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("participant_goals")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const [plans, agreements, risks, continuity] = await Promise.all([
+        supabase.from("support_plans").select("participant_id").eq("status", "active"),
+        supabase.from("service_agreements").select("participant_id"),
+        supabase.from("participant_risk_assessments").select("participant_id"),
+        supabase.from("participant_continuity_plans").select("participant_id"),
+      ]);
+      const ids = (r: { data: { participant_id: string | null }[] | null }) =>
+        new Set((r.data ?? []).map((x) => x.participant_id).filter(Boolean) as string[]);
+      return { plans: ids(plans), agreements: ids(agreements), risks: ids(risks), continuity: ids(continuity) };
     },
   });
 
-  const { data: allProgress = [] } = useQuery({
-    queryKey: ["participant-progress"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("participant_progress")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: accessLogs = [] } = useQuery({
     queryKey: ["access-reveal-logs"],
