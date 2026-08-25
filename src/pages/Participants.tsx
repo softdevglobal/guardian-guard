@@ -562,70 +562,11 @@ function ParticipantDetailSheet({
   onToggleReveal: (field: string) => void;
 }) {
 
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
-  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
-  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
-  const [goalForm, setGoalForm] = useState({ title: "", description: "", baseline_score: "", target_score: "", measurement_unit: "score", target_date: "" });
-  const [progressForm, setProgressForm] = useState({ metric_value: "", notes: "", evidence_notes: "" });
-
   const consent = (participant as any).consent_status as string ?? "pending";
   const isConsentGranted = consent === "granted";
   const supportType = (participant as any).support_type as string | null;
   const riskFlags = ((participant as any).risk_flags as string[] | null) ?? [];
 
-  const addGoalMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("participant_goals").insert({
-        participant_id: participant.id,
-        title: goalForm.title,
-        description: goalForm.description || null,
-        baseline_score: goalForm.baseline_score ? Number(goalForm.baseline_score) : null,
-        target_score: goalForm.target_score ? Number(goalForm.target_score) : null,
-        measurement_unit: goalForm.measurement_unit,
-        target_date: goalForm.target_date || null,
-        created_by: user.id,
-      } as any);
-      if (error) throw error;
-      await logAudit({ action: "goal_created", module: "participant_goals", record_id: participant.id, details: { title: goalForm.title } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participant-goals"] });
-      setGoalDialogOpen(false);
-      setGoalForm({ title: "", description: "", baseline_score: "", target_score: "", measurement_unit: "score", target_date: "" });
-      toast({ title: "Goal added" });
-    },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
-
-  const addProgressMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      if (!selectedGoalId) throw new Error("Select a goal");
-      const goal = goals.find(g => g.id === selectedGoalId);
-      const { error } = await supabase.from("participant_progress").insert({
-        participant_id: participant.id,
-        goal_id: selectedGoalId,
-        metric_name: goal?.title ?? "Progress",
-        metric_value: progressForm.metric_value ? Number(progressForm.metric_value) : null,
-        notes: progressForm.notes || null,
-        evidence_notes: progressForm.evidence_notes || null,
-        evidence_type: "notes",
-        recorded_by: user.id,
-      } as any);
-      if (error) throw error;
-      await logAudit({ action: "progress_recorded", module: "participant_progress", record_id: participant.id, details: { goal_id: selectedGoalId, value: progressForm.metric_value } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participant-progress"] });
-      setProgressDialogOpen(false);
-      setProgressForm({ metric_value: "", notes: "", evidence_notes: "" });
-      toast({ title: "Progress recorded" });
-    },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
 
   const MaskedField = ({ label, value, field }: { label: string; value: string | null; field: string }) => (
     <div className="flex items-center justify-between py-1.5">
