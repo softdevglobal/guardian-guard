@@ -97,7 +97,9 @@ export default function ClientDetail() {
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="income">Income</TabsTrigger>
+          <TabsTrigger value="tasks">Compliance tasks</TabsTrigger>
           <TabsTrigger value="support">Support access</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 pt-4">
