@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -132,14 +132,17 @@ const App = () => (
               <Route path="/calendar" element={<ProtectedPage><ComplianceCalendar /></ProtectedPage>} />
               <Route path="/trust-portal" element={<ProtectedPage><TrustPortal /></ProtectedPage>} />
 
-
-
-
-
-
-
+              {/* Retired operational routes now handled by BMS Pro Trade — never show a 404. */}
+              <Route path="/service-approvals" element={<Navigate to="/registration" replace />} />
+              <Route path="/service-operations" element={<Navigate to="/" replace />} />
+              <Route path="/participant-funding" element={<Navigate to="/participants" replace />} />
+              <Route path="/sites" element={<Navigate to="/safe-environment" replace />} />
+              <Route path="/workforce" element={<Navigate to="/staff" replace />} />
+              <Route path="/roster" element={<Navigate to="/" replace />} />
+              <Route path="/my-shifts" element={<Navigate to="/" replace />} />
 
               <Route path="*" element={<NotFound />} />
+
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

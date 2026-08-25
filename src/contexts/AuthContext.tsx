@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
-import { moduleAllowed } from "@/lib/moduleAccess";
+import { moduleAllowed, type ModuleEntitlements } from "@/lib/moduleAccess";
 
 export type AppRole =
   | "platform_super_admin"
@@ -43,6 +43,9 @@ interface AuthContextType {
   hasModule: (module: string) => boolean;
   /** Modules switched on by the organisation's confirmed services; null while unknown. */
   orgModules: string[] | null;
+  /** Package entitlements; a module set to false is hidden and route-blocked. */
+  moduleEntitlements: ModuleEntitlements;
+
 }
 
 
@@ -90,8 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMockAudit, setIsMockAudit] = useState(false);
   const [orgModules, setOrgModules] = useState<string[] | null>(null);
+  const [moduleEntitlements, setModuleEntitlements] = useState<ModuleEntitlements>(null);
 
   const fetchUserProfile = useCallback(async (authUser: User) => {
+
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("id, email, full_name, avatar_url, team_id, organisation_id")
@@ -127,9 +132,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         _org: profile.organisation_id,
       });
       setOrgModules(error ? null : ((mods as string[] | null) ?? []));
+
+      // Package entitlements. Anything explicitly disabled is hidden from the
+      // navigation and refused on direct URL access.
+      const { data: ents, error: entErr } = await supabase
+        .from("organisation_module_entitlements")
+        .select("module_key, is_enabled")
+        .eq("organisation_id", profile.organisation_id);
+      setModuleEntitlements(
+        entErr || !ents
+          ? null
+          : Object.fromEntries(ents.map((e) => [e.module_key, !!e.is_enabled])),
+      );
     } else {
       setOrgModules(null);
+      setModuleEntitlements(null);
     }
+
+
 
   }, []);
 
@@ -142,7 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
           setOrgModules(null);
+          setModuleEntitlements(null);
         }
+
         setIsLoading(false);
       }
     );
@@ -168,8 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setOrgModules(null);
+    setModuleEntitlements(null);
     setIsMockAudit(false);
   }, []);
+
 
   const hasRole = useCallback(
     (role: AppRole | AppRole[]) => {
@@ -188,9 +212,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const roleAllows = held.some((r) => ROLE_MODULES[r]?.includes(module));
       // Platform owners are not tenants — service activation never applies to them.
       if (held.includes("platform_super_admin")) return roleAllows;
-      return moduleAllowed(module, roleAllows, orgModules);
+      return moduleAllowed(module, roleAllows, orgModules, moduleEntitlements);
     },
-    [user, orgModules]
+    [user, orgModules, moduleEntitlements]
   );
 
 
@@ -199,7 +223,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule, orgModules }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated: !!session, isLoading, isMockAudit, setMockAudit, login, logout, hasRole, hasModule, orgModules, moduleEntitlements }}>
+
       {children}
     </AuthContext.Provider>
   );

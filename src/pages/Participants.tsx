@@ -13,11 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/auditLog";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import {
   Plus, Eye, EyeOff, Shield, Search, AlertTriangle, TrendingDown,
   TrendingUp, FileText, Upload, CheckCircle, XCircle, Clock, User,
@@ -31,8 +30,6 @@ import { fetchParticipantEvidenceChain, exportEvidenceChainCSV, downloadCSV } fr
 import { invalidateParticipants } from "@/lib/queryKeys";
 
 type Participant = Tables<"participants">;
-type Goal = Tables<"participant_goals">;
-type ProgressEntry = Tables<"participant_progress">;
 
 // Role-based masking levels
 const getMaskLevel = (role: string): "full" | "partial" | "masked" => {
@@ -89,29 +86,22 @@ export default function Participants() {
     },
   });
 
-  const { data: allGoals = [] } = useQuery({
-    queryKey: ["participant-goals"],
+  // Compliance evidence coverage — which participants hold each core record.
+  const { data: evidence = { plans: new Set<string>(), agreements: new Set<string>(), risks: new Set<string>(), continuity: new Set<string>() } } = useQuery({
+    queryKey: ["participant-compliance-evidence"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("participant_goals")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const [plans, agreements, risks, continuity] = await Promise.all([
+        supabase.from("support_plans").select("participant_id").eq("status", "active"),
+        supabase.from("service_agreements").select("participant_id"),
+        supabase.from("participant_risk_assessments").select("participant_id"),
+        supabase.from("participant_continuity_plans").select("participant_id"),
+      ]);
+      const ids = (r: { data: { participant_id: string | null }[] | null }) =>
+        new Set((r.data ?? []).map((x) => x.participant_id).filter(Boolean) as string[]);
+      return { plans: ids(plans), agreements: ids(agreements), risks: ids(risks), continuity: ids(continuity) };
     },
   });
 
-  const { data: allProgress = [] } = useQuery({
-    queryKey: ["participant-progress"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("participant_progress")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: accessLogs = [] } = useQuery({
     queryKey: ["access-reveal-logs"],
@@ -199,21 +189,17 @@ export default function Participants() {
     const consented = participants.filter(p => (p as any).consent_status === "granted").length;
     const pending = participants.filter(p => (p as any).consent_status === "pending").length;
     const withdrawn = participants.filter(p => (p as any).consent_status === "withdrawn").length;
-    const withGoals = new Set(allGoals.map(g => g.participant_id)).size;
-    const noProgress = allGoals.filter(g => {
-      const entries = allProgress.filter(p => p.goal_id === g.id);
-      return entries.length === 0 && differenceInDays(new Date(), new Date(g.created_at)) > 14;
-    });
-    return { total: participants.length, consented, pending, withdrawn, withGoals, noProgress: noProgress.length };
-  }, [participants, allGoals, allProgress]);
+    return { total: participants.length, consented, pending, withdrawn };
+  }, [participants]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Participant Profiles & Outcomes</h1>
-          <p className="text-muted-foreground">Privacy-first profiles with outcome tracking, evidence & audit trail</p>
+          <h1 className="text-2xl font-bold tracking-tight">Participant Compliance Register</h1>
+          <p className="text-muted-foreground">Identity, consent, compliance evidence and masked-access audit trail</p>
         </div>
+
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1">
             <Shield className="h-3 w-3" />
@@ -277,10 +263,10 @@ export default function Participants() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="profiles">Profiles</TabsTrigger>
-          <TabsTrigger value="outcomes">Outcome Tracking</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance & Alerts</TabsTrigger>
-          <TabsTrigger value="access-log">Access Logs</TabsTrigger>
+          <TabsTrigger value="profiles">Register</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance evidence</TabsTrigger>
+          <TabsTrigger value="access-log">Access logs</TabsTrigger>
+
         </TabsList>
 
         {/* PROFILES TAB */}
@@ -390,130 +376,18 @@ export default function Participants() {
           </Card>
         </TabsContent>
 
-        {/* OUTCOMES TAB */}
-        <TabsContent value="outcomes" className="space-y-4 mt-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{allGoals.length}</div><p className="text-sm text-muted-foreground">Active Goals</p></CardContent></Card>
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{allProgress.length}</div><p className="text-sm text-muted-foreground">Progress Entries</p></CardContent></Card>
-            <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{stats.withGoals}</div><p className="text-sm text-muted-foreground">Participants with Goals</p></CardContent></Card>
-          </div>
 
-          {allGoals.length === 0 ? (
-            <Card><CardContent className="py-8 text-center text-muted-foreground">No goals recorded yet. Open a participant profile to add goals.</CardContent></Card>
-          ) : (
-            <div className="space-y-3">
-              {allGoals.map(goal => {
-                const participant = participants.find(p => p.id === goal.participant_id);
-                const entries = allProgress.filter(p => p.goal_id === goal.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                const latest = entries[0];
-                const baseline = (goal as any).baseline_score as number | null;
-                const target = (goal as any).target_score as number | null;
-                const progressPct = baseline != null && target != null && latest?.metric_value != null
-                  ? Math.min(100, Math.max(0, ((latest.metric_value - baseline) / (target - baseline)) * 100))
-                  : null;
-                const isStale = entries.length === 0 && differenceInDays(new Date(), new Date(goal.created_at)) > 14;
 
-                return (
-                  <Card key={goal.id} className={isStale ? "border-warning/50" : ""}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{goal.title}</h3>
-                            <Badge variant="outline" className="capitalize text-xs">{goal.status}</Badge>
-                            {isStale && <Badge variant="destructive" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" />No Progress</Badge>}
-                          </div>
-                          {participant && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {maskField(`${participant.first_name} ${participant.last_name}`, maskLevel, false)}
-                            </p>
-                          )}
-                          {goal.description && <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>}
-                        </div>
-                        <div className="text-right text-sm">
-                          {baseline != null && <div>Baseline: <span className="font-medium">{baseline}</span></div>}
-                          {target != null && <div>Target: <span className="font-medium">{target}</span></div>}
-                          {latest?.metric_value != null && <div>Current: <span className="font-bold">{latest.metric_value}</span></div>}
-                        </div>
-                      </div>
-                      {progressPct != null && (
-                        <div className="mt-3 space-y-1">
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>Progress</span>
-                            <span>{Math.round(progressPct)}%</span>
-                          </div>
-                          <Progress value={progressPct} className="h-2" />
-                        </div>
-                      )}
-                      {entries.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">{entries.length} progress entries</p>
-                          <div className="flex gap-1">
-                            {entries.slice(0, 10).map((e, i) => {
-                              const prev = entries[i + 1];
-                              const trend = prev && e.metric_value != null && prev.metric_value != null
-                                ? e.metric_value > prev.metric_value ? "up" : e.metric_value < prev.metric_value ? "down" : "flat"
-                                : "flat";
-                              return (
-                                <div key={e.id} className={`w-3 h-3 rounded-full ${trend === "up" ? "bg-success" : trend === "down" ? "bg-destructive" : "bg-muted-foreground/30"}`} title={`${e.metric_value} - ${format(new Date(e.created_at), "PP")}`} />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
 
-        {/* COMPLIANCE & ALERTS TAB */}
+        {/* COMPLIANCE EVIDENCE TAB */}
         <TabsContent value="compliance" className="space-y-4 mt-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* No Progress Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-warning" />
-                  Goals Without Progress (&gt;14 days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const staleGoals = allGoals.filter(g => {
-                    const entries = allProgress.filter(p => p.goal_id === g.id);
-                    return entries.length === 0 && differenceInDays(new Date(), new Date(g.created_at)) > 14;
-                  });
-                  return staleGoals.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">All goals have recent progress</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {staleGoals.map(g => {
-                        const p = participants.find(pp => pp.id === g.participant_id);
-                        return (
-                          <div key={g.id} className="flex items-center justify-between text-sm p-2 rounded bg-warning/5 border border-warning/20">
-                            <div>
-                              <span className="font-medium">{g.title}</span>
-                              {p && <span className="text-muted-foreground ml-2">({p.first_name} {p.last_name.charAt(0)}.)</span>}
-                            </div>
-                            <Badge variant="outline" className="text-xs">{differenceInDays(new Date(), new Date(g.created_at))}d ago</Badge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-
             {/* Consent Issues */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Lock className="h-4 w-4 text-destructive" />
-                  Consent Issues
+                  Consent issues
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -523,7 +397,7 @@ export default function Participants() {
                     return consent === "withdrawn" || consent === "pending";
                   });
                   return issues.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">All participants have granted consent</p>
+                    <p className="text-sm text-muted-foreground text-center py-2">Every participant has recorded consent</p>
                   ) : (
                     <div className="space-y-2">
                       {issues.map(p => {
@@ -540,34 +414,69 @@ export default function Participants() {
                 })()}
               </CardContent>
             </Card>
+
+            {/* Evidence gaps */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  Participants missing evidence
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {participants.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-2">No participants recorded</p>
+                ) : (
+                  <div className="space-y-2">
+                    {participants.map(p => {
+                      const gaps = [
+                        evidence.plans.has(p.id) ? null : "support plan",
+                        evidence.agreements.has(p.id) ? null : "service agreement",
+                        evidence.risks.has(p.id) ? null : "risk assessment",
+                        evidence.continuity.has(p.id) ? null : "emergency plan",
+                      ].filter(Boolean) as string[];
+                      if (gaps.length === 0) return null;
+                      return (
+                        <div key={p.id} className="flex items-center justify-between gap-2 text-sm p-2 rounded bg-warning/5 border border-warning/20">
+                          <span>{p.first_name} {p.last_name.charAt(0)}.</span>
+                          <span className="text-xs text-muted-foreground text-right">Missing: {gaps.join(", ")}</span>
+                        </div>
+                      );
+                    })}
+                    {participants.every(p =>
+                      evidence.plans.has(p.id) && evidence.agreements.has(p.id) &&
+                      evidence.risks.has(p.id) && evidence.continuity.has(p.id)
+                    ) && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        All participants hold the core compliance evidence records
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Compliance Summary */}
+          {/* Evidence summary */}
           <Card>
-            <CardHeader><CardTitle className="text-sm">Outcome Compliance Summary</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Compliance evidence summary</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Total participants</span><span className="font-bold">{stats.total}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>With active goals</span><span className="font-bold">{stats.withGoals}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Without goals</span><span className="font-bold text-warning">{stats.total - stats.withGoals}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Goals with no progress (&gt;14d)</span><span className="font-bold text-destructive">{stats.noProgress}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Total progress entries</span><span className="font-bold">{allProgress.length}</span>
-              </div>
+              <div className="flex justify-between text-sm"><span>Total participants</span><span className="font-bold">{stats.total}</span></div>
+              <div className="flex justify-between text-sm"><span>With an active support plan</span><span className="font-bold">{evidence.plans.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With a service agreement</span><span className="font-bold">{evidence.agreements.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With a risk assessment</span><span className="font-bold">{evidence.risks.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With an emergency and continuity plan</span><span className="font-bold">{evidence.continuity.size}</span></div>
               <Separator />
               <div className="flex justify-between text-sm">
                 <span>Data unmask events (recent)</span><span className="font-bold">{accessLogs.length}</span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Evidence status only — it does not assert registration or certification and requires human review.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         {/* ACCESS LOGS TAB */}
         <TabsContent value="access-log" className="mt-4">
@@ -629,11 +538,6 @@ export default function Participants() {
           participant={selectedParticipant}
           open={detailOpen}
           onOpenChange={setDetailOpen}
-          goals={allGoals.filter(g => g.participant_id === selectedParticipant.id)}
-          progress={allProgress.filter(p => {
-            const goalIds = allGoals.filter(g => g.participant_id === selectedParticipant.id).map(g => g.id);
-            return goalIds.includes(p.goal_id ?? "");
-          })}
           maskLevel={maskLevel}
           isRevealed={(field) => isRevealed(selectedParticipant.id, field)}
           onToggleReveal={(field) => toggleReveal(selectedParticipant.id, field)}
@@ -645,81 +549,21 @@ export default function Participants() {
 
 // ── Participant Detail Sheet ──
 function ParticipantDetailSheet({
-  participant, open, onOpenChange, goals, progress, maskLevel, isRevealed, onToggleReveal,
+  participant, open, onOpenChange, maskLevel, isRevealed, onToggleReveal,
 }: {
   participant: Participant;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  goals: Goal[];
-  progress: ProgressEntry[];
   maskLevel: "full" | "partial" | "masked";
   isRevealed: (field: string) => boolean;
   onToggleReveal: (field: string) => void;
 }) {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
-  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
-  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
-  const [goalForm, setGoalForm] = useState({ title: "", description: "", baseline_score: "", target_score: "", measurement_unit: "score", target_date: "" });
-  const [progressForm, setProgressForm] = useState({ metric_value: "", notes: "", evidence_notes: "" });
 
   const consent = (participant as any).consent_status as string ?? "pending";
   const isConsentGranted = consent === "granted";
   const supportType = (participant as any).support_type as string | null;
   const riskFlags = ((participant as any).risk_flags as string[] | null) ?? [];
 
-  const addGoalMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("participant_goals").insert({
-        participant_id: participant.id,
-        title: goalForm.title,
-        description: goalForm.description || null,
-        baseline_score: goalForm.baseline_score ? Number(goalForm.baseline_score) : null,
-        target_score: goalForm.target_score ? Number(goalForm.target_score) : null,
-        measurement_unit: goalForm.measurement_unit,
-        target_date: goalForm.target_date || null,
-        created_by: user.id,
-      } as any);
-      if (error) throw error;
-      await logAudit({ action: "goal_created", module: "participant_goals", record_id: participant.id, details: { title: goalForm.title } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participant-goals"] });
-      setGoalDialogOpen(false);
-      setGoalForm({ title: "", description: "", baseline_score: "", target_score: "", measurement_unit: "score", target_date: "" });
-      toast({ title: "Goal added" });
-    },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
-
-  const addProgressMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      if (!selectedGoalId) throw new Error("Select a goal");
-      const goal = goals.find(g => g.id === selectedGoalId);
-      const { error } = await supabase.from("participant_progress").insert({
-        participant_id: participant.id,
-        goal_id: selectedGoalId,
-        metric_name: goal?.title ?? "Progress",
-        metric_value: progressForm.metric_value ? Number(progressForm.metric_value) : null,
-        notes: progressForm.notes || null,
-        evidence_notes: progressForm.evidence_notes || null,
-        evidence_type: "notes",
-        recorded_by: user.id,
-      } as any);
-      if (error) throw error;
-      await logAudit({ action: "progress_recorded", module: "participant_progress", record_id: participant.id, details: { goal_id: selectedGoalId, value: progressForm.metric_value } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participant-progress"] });
-      setProgressDialogOpen(false);
-      setProgressForm({ metric_value: "", notes: "", evidence_notes: "" });
-      toast({ title: "Progress recorded" });
-    },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
 
   const MaskedField = ({ label, value, field }: { label: string; value: string | null; field: string }) => (
     <div className="flex items-center justify-between py-1.5">
@@ -793,130 +637,21 @@ function ParticipantDetailSheet({
             </CardContent>
           </Card>
 
-          {/* Goals & Outcomes */}
+          {/* Compliance evidence pointer */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2"><Activity className="h-4 w-4" />Goals & Outcomes</CardTitle>
-                <Dialog open={goalDialogOpen} onOpenChange={setGoalDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" disabled={!isConsentGranted}>
-                      <Plus className="h-3 w-3 mr-1" />Add Goal
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Add Goal</DialogTitle></DialogHeader>
-                    <form className="space-y-4" onSubmit={e => { e.preventDefault(); addGoalMutation.mutate(); }}>
-                      <div className="space-y-2"><Label>Goal Title *</Label><Input value={goalForm.title} onChange={e => setGoalForm(f => ({ ...f, title: e.target.value }))} required /></div>
-                      <div className="space-y-2"><Label>Description</Label><Textarea value={goalForm.description} onChange={e => setGoalForm(f => ({ ...f, description: e.target.value }))} /></div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-2"><Label>Baseline</Label><Input type="number" value={goalForm.baseline_score} onChange={e => setGoalForm(f => ({ ...f, baseline_score: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Target</Label><Input type="number" value={goalForm.target_score} onChange={e => setGoalForm(f => ({ ...f, target_score: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Unit</Label><Input value={goalForm.measurement_unit} onChange={e => setGoalForm(f => ({ ...f, measurement_unit: e.target.value }))} /></div>
-                      </div>
-                      <div className="space-y-2"><Label>Target Date</Label><Input type="date" value={goalForm.target_date} onChange={e => setGoalForm(f => ({ ...f, target_date: e.target.value }))} /></div>
-                      <Button type="submit" className="w-full" disabled={addGoalMutation.isPending}>
-                        {addGoalMutation.isPending ? "Adding..." : "Add Goal"}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4" aria-hidden="true" />Compliance evidence
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {goals.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No goals yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {goals.map(goal => {
-                    const entries = progress.filter(p => p.goal_id === goal.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    const latest = entries[0];
-                    const baseline = (goal as any).baseline_score as number | null;
-                    const target = (goal as any).target_score as number | null;
-                    const unit = (goal as any).measurement_unit as string | null;
-                    const pct = baseline != null && target != null && latest?.metric_value != null
-                      ? Math.min(100, Math.max(0, ((latest.metric_value - baseline) / (target - baseline)) * 100))
-                      : null;
-
-                    return (
-                      <div key={goal.id} className="p-3 rounded-lg border space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-sm font-medium">{goal.title}</h4>
-                            {goal.description && <p className="text-xs text-muted-foreground">{goal.description}</p>}
-                          </div>
-                          <Badge variant="outline" className="capitalize text-xs">{goal.status}</Badge>
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                          {baseline != null && <span>Baseline: {baseline} {unit}</span>}
-                          {target != null && <span>Target: {target} {unit}</span>}
-                          {latest?.metric_value != null && <span className="font-medium text-foreground">Current: {latest.metric_value} {unit}</span>}
-                        </div>
-                        {pct != null && <Progress value={pct} className="h-1.5" />}
-                        {entries.length > 0 && (
-                          <div className="space-y-1 mt-2">
-                            {entries.slice(0, 5).map(e => (
-                              <div key={e.id} className="flex items-center justify-between text-xs p-1.5 bg-muted/50 rounded">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{e.metric_value ?? "—"}</span>
-                                  {e.notes && <span className="text-muted-foreground truncate max-w-[150px]">{e.notes}</span>}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {(e as any).evidence_notes && <span title="Has evidence"><FileText className="h-3 w-3 text-primary" /></span>}
-                                  <span className="text-muted-foreground">{format(new Date(e.created_at), "PP")}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Add Progress Button */}
-              {goals.length > 0 && (
-                <div className="mt-4">
-                  <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="w-full" disabled={!isConsentGranted}>
-                        <Plus className="h-3 w-3 mr-1" />Record Progress
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Record Progress</DialogTitle></DialogHeader>
-                      <form className="space-y-4" onSubmit={e => { e.preventDefault(); addProgressMutation.mutate(); }}>
-                        <div className="space-y-2">
-                          <Label>Goal *</Label>
-                          <Select value={selectedGoalId} onValueChange={setSelectedGoalId}>
-                            <SelectTrigger><SelectValue placeholder="Select goal..." /></SelectTrigger>
-                            <SelectContent>
-                              {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2"><Label>Score / Value</Label><Input type="number" value={progressForm.metric_value} onChange={e => setProgressForm(f => ({ ...f, metric_value: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Notes</Label><Textarea value={progressForm.notes} onChange={e => setProgressForm(f => ({ ...f, notes: e.target.value }))} /></div>
-                        <div className="space-y-2">
-                          <Label>Evidence Notes * <span className="text-xs text-muted-foreground">(required)</span></Label>
-                          <Textarea
-                            value={progressForm.evidence_notes}
-                            onChange={e => setProgressForm(f => ({ ...f, evidence_notes: e.target.value }))}
-                            placeholder="Describe the evidence supporting this progress entry..."
-                            required
-                          />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={addProgressMutation.isPending || !selectedGoalId}>
-                          {addProgressMutation.isPending ? "Recording..." : "Record Progress"}
-                        </Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground">
+                Consent, service agreements, support plans, risk assessments and emergency and
+                continuity plans for this participant are held in Participant support compliance.
+              </p>
             </CardContent>
           </Card>
+
 
           {/* Compliance Chain View */}
           <ComplianceChainView
