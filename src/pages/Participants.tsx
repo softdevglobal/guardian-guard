@@ -541,11 +541,6 @@ export default function Participants() {
           participant={selectedParticipant}
           open={detailOpen}
           onOpenChange={setDetailOpen}
-          goals={allGoals.filter(g => g.participant_id === selectedParticipant.id)}
-          progress={allProgress.filter(p => {
-            const goalIds = allGoals.filter(g => g.participant_id === selectedParticipant.id).map(g => g.id);
-            return goalIds.includes(p.goal_id ?? "");
-          })}
           maskLevel={maskLevel}
           isRevealed={(field) => isRevealed(selectedParticipant.id, field)}
           onToggleReveal={(field) => toggleReveal(selectedParticipant.id, field)}
@@ -557,17 +552,16 @@ export default function Participants() {
 
 // ── Participant Detail Sheet ──
 function ParticipantDetailSheet({
-  participant, open, onOpenChange, goals, progress, maskLevel, isRevealed, onToggleReveal,
+  participant, open, onOpenChange, maskLevel, isRevealed, onToggleReveal,
 }: {
   participant: Participant;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  goals: Goal[];
-  progress: ProgressEntry[];
   maskLevel: "full" | "partial" | "masked";
   isRevealed: (field: string) => boolean;
   onToggleReveal: (field: string) => void;
 }) {
+
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
