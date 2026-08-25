@@ -393,51 +393,15 @@ export default function Participants() {
 
 
 
-        {/* COMPLIANCE & ALERTS TAB */}
+        {/* COMPLIANCE EVIDENCE TAB */}
         <TabsContent value="compliance" className="space-y-4 mt-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* No Progress Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-warning" />
-                  Goals Without Progress (&gt;14 days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const staleGoals = allGoals.filter(g => {
-                    const entries = allProgress.filter(p => p.goal_id === g.id);
-                    return entries.length === 0 && differenceInDays(new Date(), new Date(g.created_at)) > 14;
-                  });
-                  return staleGoals.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">All goals have recent progress</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {staleGoals.map(g => {
-                        const p = participants.find(pp => pp.id === g.participant_id);
-                        return (
-                          <div key={g.id} className="flex items-center justify-between text-sm p-2 rounded bg-warning/5 border border-warning/20">
-                            <div>
-                              <span className="font-medium">{g.title}</span>
-                              {p && <span className="text-muted-foreground ml-2">({p.first_name} {p.last_name.charAt(0)}.)</span>}
-                            </div>
-                            <Badge variant="outline" className="text-xs">{differenceInDays(new Date(), new Date(g.created_at))}d ago</Badge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-
             {/* Consent Issues */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Lock className="h-4 w-4 text-destructive" />
-                  Consent Issues
+                  Consent issues
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -447,7 +411,7 @@ export default function Participants() {
                     return consent === "withdrawn" || consent === "pending";
                   });
                   return issues.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">All participants have granted consent</p>
+                    <p className="text-sm text-muted-foreground text-center py-2">Every participant has recorded consent</p>
                   ) : (
                     <div className="space-y-2">
                       {issues.map(p => {
@@ -464,34 +428,69 @@ export default function Participants() {
                 })()}
               </CardContent>
             </Card>
+
+            {/* Evidence gaps */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  Participants missing evidence
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {participants.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-2">No participants recorded</p>
+                ) : (
+                  <div className="space-y-2">
+                    {participants.map(p => {
+                      const gaps = [
+                        evidence.plans.has(p.id) ? null : "support plan",
+                        evidence.agreements.has(p.id) ? null : "service agreement",
+                        evidence.risks.has(p.id) ? null : "risk assessment",
+                        evidence.continuity.has(p.id) ? null : "emergency plan",
+                      ].filter(Boolean) as string[];
+                      if (gaps.length === 0) return null;
+                      return (
+                        <div key={p.id} className="flex items-center justify-between gap-2 text-sm p-2 rounded bg-warning/5 border border-warning/20">
+                          <span>{p.first_name} {p.last_name.charAt(0)}.</span>
+                          <span className="text-xs text-muted-foreground text-right">Missing: {gaps.join(", ")}</span>
+                        </div>
+                      );
+                    })}
+                    {participants.every(p =>
+                      evidence.plans.has(p.id) && evidence.agreements.has(p.id) &&
+                      evidence.risks.has(p.id) && evidence.continuity.has(p.id)
+                    ) && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        All participants hold the core compliance evidence records
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Compliance Summary */}
+          {/* Evidence summary */}
           <Card>
-            <CardHeader><CardTitle className="text-sm">Outcome Compliance Summary</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Compliance evidence summary</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Total participants</span><span className="font-bold">{stats.total}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>With active goals</span><span className="font-bold">{stats.withGoals}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Without goals</span><span className="font-bold text-warning">{stats.total - stats.withGoals}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Goals with no progress (&gt;14d)</span><span className="font-bold text-destructive">{stats.noProgress}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Total progress entries</span><span className="font-bold">{allProgress.length}</span>
-              </div>
+              <div className="flex justify-between text-sm"><span>Total participants</span><span className="font-bold">{stats.total}</span></div>
+              <div className="flex justify-between text-sm"><span>With an active support plan</span><span className="font-bold">{evidence.plans.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With a service agreement</span><span className="font-bold">{evidence.agreements.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With a risk assessment</span><span className="font-bold">{evidence.risks.size}</span></div>
+              <div className="flex justify-between text-sm"><span>With an emergency and continuity plan</span><span className="font-bold">{evidence.continuity.size}</span></div>
               <Separator />
               <div className="flex justify-between text-sm">
                 <span>Data unmask events (recent)</span><span className="font-bold">{accessLogs.length}</span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Evidence status only — it does not assert registration or certification and requires human review.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         {/* ACCESS LOGS TAB */}
         <TabsContent value="access-log" className="mt-4">
