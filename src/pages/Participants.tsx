@@ -13,11 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/auditLog";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import {
   Plus, Eye, EyeOff, Shield, Search, AlertTriangle, TrendingDown,
   TrendingUp, FileText, Upload, CheckCircle, XCircle, Clock, User,
@@ -31,8 +30,6 @@ import { fetchParticipantEvidenceChain, exportEvidenceChainCSV, downloadCSV } fr
 import { invalidateParticipants } from "@/lib/queryKeys";
 
 type Participant = Tables<"participants">;
-type Goal = Tables<"participant_goals">;
-type ProgressEntry = Tables<"participant_progress">;
 
 // Role-based masking levels
 const getMaskLevel = (role: string): "full" | "partial" | "masked" => {
