@@ -16,7 +16,7 @@ import {
 import { RecordSheet, type FieldDef } from "@/components/compliance/RecordSheet";
 import { toOptions, useParticipants, useStaff, withOrg } from "@/hooks/useComplianceLookups";
 import {
-  agreementSignBlockers, mealtimeRosterBlockers, serviceDeliveryBlockers,
+  agreementSignBlockers, mealtimeRosterBlockers,
   supportPlanActivationBlockers, workerAssignmentBlockers, type Role,
 } from "@/lib/complianceGates";
 
