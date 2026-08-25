@@ -11,6 +11,7 @@ const ROLES = [
   "hr_admin",
   "executive",
   "participant",
+  "tenant_admin",
 ] as const;
 
 const BodySchema = z.object({
@@ -25,7 +26,7 @@ const BodySchema = z.object({
   seed_compliance: z.boolean().default(true),
 });
 
-const ADMIN_ROLES = ["super_admin", "compliance_officer", "hr_admin"];
+const ADMIN_ROLES = ["super_admin", "compliance_officer", "hr_admin", "tenant_admin", "platform_super_admin"];
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
