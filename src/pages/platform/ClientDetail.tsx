@@ -20,12 +20,52 @@ export default function ClientDetail() {
   const [reason, setReason] = useState("");
   const [extraDays, setExtraDays] = useState("14");
   const [packageId, setPackageId] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskInstructions, setTaskInstructions] = useState("");
+  const [taskDue, setTaskDue] = useState("");
+
+  const assignTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("platform_tasks" as any).insert({
+        organisation_id: id,
+        title: taskTitle.trim(),
+        instructions: taskInstructions.trim() || null,
+        due_date: taskDue || null,
+        status: "assigned",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["platform-client", id] });
+      setTaskTitle("");
+      setTaskInstructions("");
+      setTaskDue("");
+      toast({ title: "Task assigned", description: "The provider will see this task in their NDIS registration centre." });
+    },
+    onError: (e: any) => toast({ variant: "destructive", title: "Could not assign task", description: e.message }),
+  });
+
+  const reviewTask = useMutation({
+    mutationFn: async ({ taskId, status, notes }: { taskId: string; status: string; notes?: string }) => {
+      const { error } = await supabase
+        .from("platform_tasks" as any)
+        .update({ status, review_notes: notes ?? null, reviewed_at: new Date().toISOString() })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["platform-client", id] });
+      toast({ title: "Review recorded" });
+    },
+    onError: (e: any) => toast({ variant: "destructive", title: "Could not record review", description: e.message }),
+  });
+
 
   const client = useQuery({
     queryKey: ["platform-client", id],
     enabled: !!id,
     queryFn: async () => {
-      const [org, sub, onb, users, docs, income, events, sessions, invites, answers, packages] = await Promise.all([
+      const [org, sub, onb, users, docs, income, events, sessions, invites, answers, packages, tasks] = await Promise.all([
         supabase.from("organisations" as any).select("*").eq("id", id).maybeSingle(),
         supabase.from("tenant_subscriptions" as any).select("*, subscription_packages(name, code, monthly_price)").eq("organisation_id", id).maybeSingle(),
         supabase.from("organisation_onboarding" as any).select("*").eq("organisation_id", id).maybeSingle(),
@@ -37,6 +77,7 @@ export default function ClientDetail() {
         supabase.from("organisation_invitations" as any).select("*").eq("organisation_id", id).order("created_at", { ascending: false }),
         supabase.from("onboarding_answers" as any).select("*").eq("organisation_id", id),
         supabase.from("subscription_packages" as any).select("*").eq("is_active", true).order("monthly_price"),
+        supabase.from("platform_tasks" as any).select("*").eq("organisation_id", id).order("due_date"),
       ]);
       if (org.error) throw org.error;
       return {
@@ -51,7 +92,9 @@ export default function ClientDetail() {
         invites: (invites.data ?? []) as any[],
         answers: (answers.data ?? []) as any[],
         packages: (packages.data ?? []) as any[],
+        tasks: (tasks.data ?? []) as any[],
       };
+
     },
   });
 
@@ -94,7 +137,9 @@ export default function ClientDetail() {
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="income">Income</TabsTrigger>
+          <TabsTrigger value="tasks">Compliance tasks</TabsTrigger>
           <TabsTrigger value="support">Support access</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 pt-4">
@@ -270,7 +315,73 @@ export default function ClientDetail() {
           )}
         </TabsContent>
 
+        <TabsContent value="tasks" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Assign a compliance task</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Tasks appear in the provider's NDIS registration centre. Assigning work is an operational instruction — it is not a compliance determination.
+              </p>
+              <div className="space-y-1">
+                <Label htmlFor="task-title">Task</Label>
+                <Input id="task-title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="min-h-[44px]" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-instructions">Instructions</Label>
+                <Textarea id="task-instructions" value={taskInstructions} onChange={(e) => setTaskInstructions(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-due">Due date</Label>
+                <Input id="task-due" type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)} className="min-h-[44px]" />
+              </div>
+              <Button
+                className="min-h-[44px]"
+                disabled={assignTask.isPending || taskTitle.trim().length < 4}
+                onClick={() => assignTask.mutate()}
+              >
+                Assign task
+              </Button>
+            </CardContent>
+          </Card>
+
+          {d.tasks.length === 0 ? (
+            <EmptyState title="No tasks assigned" description="Assign the evidence or actions this provider must complete." />
+          ) : (
+            <Card><CardContent className="space-y-3 py-4">
+              {d.tasks.map((t) => (
+                <div key={t.id} className="rounded-md border p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{t.title}</p>
+                    <StatusPill tone={t.status === "approved" ? "ok" : t.status === "correction_required" ? "bad" : "neutral"}>{t.status}</StatusPill>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t.due_date ? `Due ${t.due_date}` : "No due date"}</p>
+                  {t.provider_response && <p className="mt-2">Provider response: {t.provider_response}</p>}
+                  {t.status === "submitted" && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" className="min-h-[36px]" onClick={() => reviewTask.mutate({ taskId: t.id, status: "approved" })}>
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-[36px]"
+                        onClick={() => {
+                          const notes = window.prompt("What correction is required?");
+                          if (notes && notes.trim()) reviewTask.mutate({ taskId: t.id, status: "correction_required", notes: notes.trim() });
+                        }}
+                      >
+                        Request correction
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent></Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="support" className="space-y-4 pt-4">
+
           <Card>
             <CardHeader><CardTitle className="text-base">Start a time-limited support session</CardTitle></CardHeader>
             <CardContent className="space-y-3">
