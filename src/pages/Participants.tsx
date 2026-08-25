@@ -266,10 +266,10 @@ export default function Participants() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="profiles">Profiles</TabsTrigger>
-          <TabsTrigger value="outcomes">Outcome Tracking</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance & Alerts</TabsTrigger>
-          <TabsTrigger value="access-log">Access Logs</TabsTrigger>
+          <TabsTrigger value="profiles">Register</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance evidence</TabsTrigger>
+          <TabsTrigger value="access-log">Access logs</TabsTrigger>
+
         </TabsList>
 
         {/* PROFILES TAB */}
