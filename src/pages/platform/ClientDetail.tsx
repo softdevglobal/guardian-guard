@@ -37,6 +37,7 @@ export default function ClientDetail() {
         supabase.from("organisation_invitations" as any).select("*").eq("organisation_id", id).order("created_at", { ascending: false }),
         supabase.from("onboarding_answers" as any).select("*").eq("organisation_id", id),
         supabase.from("subscription_packages" as any).select("*").eq("is_active", true).order("monthly_price"),
+        supabase.from("platform_tasks" as any).select("*").eq("organisation_id", id).order("due_date"),
       ]);
       if (org.error) throw org.error;
       return {
@@ -51,7 +52,9 @@ export default function ClientDetail() {
         invites: (invites.data ?? []) as any[],
         answers: (answers.data ?? []) as any[],
         packages: (packages.data ?? []) as any[],
+        tasks: (tasks.data ?? []) as any[],
       };
+
     },
   });
 
