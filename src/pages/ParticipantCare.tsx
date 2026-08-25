@@ -22,7 +22,7 @@ import {
 
 type Entity =
   | "participant_consents" | "service_agreements" | "support_plans"
-  | "participant_risk_assessments" | "participant_continuity_plans" | "worker_assignments"
+  | "participant_risk_assessments" | "participant_continuity_plans"
   | "mealtime_profiles" | "participant_concerns";
 
 const YES_NO = [
@@ -47,7 +47,7 @@ export default function ParticipantCare() {
 
   const tables: Entity[] = [
     "participant_consents", "service_agreements", "support_plans",
-    "participant_risk_assessments", "participant_continuity_plans", "worker_assignments",
+    "participant_risk_assessments", "participant_continuity_plans",
     "mealtime_profiles", "participant_concerns",
   ];
 
@@ -214,22 +214,6 @@ export default function ParticipantCare() {
           { name: "test_notes", label: "Test notes", type: "textarea" },
           { name: "review_date", label: "Review date", type: "date", required: true },
         ];
-      case "worker_assignments":
-        return [
-          { name: "worker_id", label: "Worker", type: "select", required: true, options: toOptions(staff) },
-          { name: "role_on_team", label: "Role on the support team", type: "text", required: true },
-          { name: "plan_briefing_completed", label: "Worker has been briefed on the participant's support plan", type: "checkbox" },
-          {
-            name: "briefing_support_plan_id", label: "Support plan used for the briefing", type: "select",
-            options: activePlans.map((p) => ({ value: p.id, label: `Version ${p.version_number}` })),
-          },
-          { name: "plan_briefing_date", label: "Briefing date", type: "date" },
-          { name: "start_date", label: "Start date", type: "date", required: true },
-          {
-            name: "status", label: "Status", type: "select", required: true,
-            options: ["pending", "active", "ended"].map((v) => ({ value: v, label: v })),
-          },
-        ];
       case "mealtime_profiles":
         return [
           { name: "mealtime_support_required", label: "Mealtime support is required", type: "checkbox" },
@@ -270,16 +254,6 @@ export default function ParticipantCare() {
         return ["signed", "active"].includes(values.status) ? agreementSignBlockers(values) : [];
       case "support_plans":
         return values.status === "active" ? supportPlanActivationBlockers(values) : [];
-      case "worker_assignments": {
-        if (values.status !== "active") return [];
-        const elig = eligibility.find((e) => e.staff_id === values.worker_id);
-        return workerAssignmentBlockers({
-          plan_briefing_completed: !!values.plan_briefing_completed,
-          briefing_support_plan_id: values.briefing_support_plan_id,
-          workerEligible: !!elig?.is_eligible_for_assignment,
-          workerEligibilityReason: elig?.reason_summary,
-        });
-      }
       case "mealtime_profiles":
         return values.status === "active" && !values.practitioner_plan_url
           ? ["An assessed practitioner mealtime plan must be attached before the profile is active."]
@@ -288,20 +262,6 @@ export default function ParticipantCare() {
         return consentGranted ? [] : ["Consent is not granted for this participant — records cannot be added."];
     }
   };
-
-  const rosterCheck = useMemo(() => {
-    if (!mealtimePlan) return null;
-    return (data?.worker_assignments ?? [])
-      .filter((a) => a.status === "active")
-      .map((a) => ({
-        worker: staff.find((s) => s.id === a.worker_id)?.full_name ?? a.worker_id,
-        blockers: mealtimeRosterBlockers({
-          competencyCode: mealtimePlan.required_competency_code,
-          training: workerTraining.filter((t) => t.user_id === a.worker_id),
-          planActive: mealtimePlan.status === "active",
-        }),
-      }));
-  }, [mealtimePlan, data, staff, workerTraining]);
 
   const TABS: { value: Entity; label: string; columns: { key: string; label: string }[] }[] = [
     { value: "participant_consents", label: "Consent", columns: [
@@ -323,10 +283,6 @@ export default function ParticipantCare() {
       { key: "critical_supports", label: "Critical supports" }, { key: "last_tested_date", label: "Last tested" },
       { key: "review_date", label: "Review" },
     ]},
-    { value: "worker_assignments", label: "Workers", columns: [
-      { key: "worker_id", label: "Worker" }, { key: "role_on_team", label: "Role" },
-      { key: "status", label: "Status" }, { key: "blocked_reason", label: "Blocked reason" },
-    ]},
     { value: "mealtime_profiles", label: "Mealtime", columns: [
       { key: "status", label: "Status" }, { key: "texture_modification", label: "Texture" },
       { key: "required_competency_code", label: "Competency" }, { key: "plan_review_date", label: "Review" },
@@ -347,8 +303,8 @@ export default function ParticipantCare() {
   return (
     <div className="space-y-6">
       <PageHeading
-        title="Participant care record"
-        description="Onboarding, consent, service agreements, support planning, continuity and worker assignment evidence for each participant. Every gate below mirrors a database rule — the record is refused if the evidence is not there."
+        title="Participant support compliance"
+        description="Consent, service agreements, support planning, risk, continuity and mealtime plan evidence for each participant. Every gate below mirrors a database rule — the record is refused if the evidence is not there."
       />
       <HumanReviewNotice />
 
@@ -426,27 +382,6 @@ export default function ParticipantCare() {
                     Add record
                   </Button>
                 </div>
-
-                {t.value === "mealtime_profiles" && rosterCheck && rosterCheck.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Mealtime competency check</CardTitle>
-                      <CardDescription>Assigned workers are checked against the competency the plan requires.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {rosterCheck.map((r) => (
-                        <div key={r.worker} className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-medium">{r.worker}</span>
-                          {r.blockers.length === 0 ? (
-                            <StatusPill tone="ok">Competency current</StatusPill>
-                          ) : (
-                            <StatusPill tone="bad">{r.blockers.join(" ")}</StatusPill>
-                          )}
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
 
                 {rows.length === 0 ? (
                   <EmptyState title={`No ${t.label.toLowerCase()} records`} description="Records added here form part of the audit evidence pack." />
