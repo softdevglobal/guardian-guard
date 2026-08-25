@@ -87,7 +87,9 @@ const App = () => (
           <BrowserRouter>
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Routes>
+              <Route path="/auth" element={<Auth />} />
               <Route path="/trust/:slug" element={<PublicTrust />} />
+
               <Route path="/platform/dashboard" element={<PlatformPage><PlatformDashboard /></PlatformPage>} />
               <Route path="/platform/clients" element={<PlatformPage><PlatformClients /></PlatformPage>} />
               <Route path="/platform/clients/new" element={<PlatformPage><NewClient /></PlatformPage>} />
