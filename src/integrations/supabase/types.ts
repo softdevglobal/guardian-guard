@@ -214,92 +214,6 @@ export type Database = {
           },
         ]
       }
-      attendance_events: {
-        Row: {
-          accuracy_metres: number | null
-          created_at: string
-          device_capture_at: string | null
-          device_identifier: string | null
-          distance_metres: number | null
-          event_type: Database["public"]["Enums"]["attendance_event_type"]
-          exception_reason: string | null
-          geofence_result: Database["public"]["Enums"]["geofence_result"]
-          id: string
-          latitude: number | null
-          longitude: number | null
-          offline_capture: boolean
-          organisation_id: string
-          record_status: Database["public"]["Enums"]["record_status"]
-          server_created_at: string
-          session_identifier: string | null
-          shift_id: string
-          supervisor_review_notes: string | null
-          supervisor_reviewed_at: string | null
-          supervisor_reviewed_by: string | null
-          synced_at: string | null
-          updated_at: string
-          worker_id: string
-        }
-        Insert: {
-          accuracy_metres?: number | null
-          created_at?: string
-          device_capture_at?: string | null
-          device_identifier?: string | null
-          distance_metres?: number | null
-          event_type: Database["public"]["Enums"]["attendance_event_type"]
-          exception_reason?: string | null
-          geofence_result?: Database["public"]["Enums"]["geofence_result"]
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          offline_capture?: boolean
-          organisation_id: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          server_created_at?: string
-          session_identifier?: string | null
-          shift_id: string
-          supervisor_review_notes?: string | null
-          supervisor_reviewed_at?: string | null
-          supervisor_reviewed_by?: string | null
-          synced_at?: string | null
-          updated_at?: string
-          worker_id: string
-        }
-        Update: {
-          accuracy_metres?: number | null
-          created_at?: string
-          device_capture_at?: string | null
-          device_identifier?: string | null
-          distance_metres?: number | null
-          event_type?: Database["public"]["Enums"]["attendance_event_type"]
-          exception_reason?: string | null
-          geofence_result?: Database["public"]["Enums"]["geofence_result"]
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          offline_capture?: boolean
-          organisation_id?: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          server_created_at?: string
-          session_identifier?: string | null
-          shift_id?: string
-          supervisor_review_notes?: string | null
-          supervisor_reviewed_at?: string | null
-          supervisor_reviewed_by?: string | null
-          synced_at?: string | null
-          updated_at?: string
-          worker_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_events_shift_id_fkey"
-            columns: ["shift_id"]
-            isOneToOne: false
-            referencedRelation: "service_shifts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       audit_logs: {
         Row: {
           action: string
@@ -3162,7 +3076,6 @@ export type Database = {
       participant_evidence_preferences: {
         Row: {
           accessible_explanation_provided: boolean
-          allowed_evidence_types: Database["public"]["Enums"]["task_evidence_type"][]
           alternative_evidence_method: string | null
           consent_date: string | null
           consent_id: string | null
@@ -3184,7 +3097,6 @@ export type Database = {
         }
         Insert: {
           accessible_explanation_provided?: boolean
-          allowed_evidence_types?: Database["public"]["Enums"]["task_evidence_type"][]
           alternative_evidence_method?: string | null
           consent_date?: string | null
           consent_id?: string | null
@@ -3206,7 +3118,6 @@ export type Database = {
         }
         Update: {
           accessible_explanation_provided?: boolean
-          allowed_evidence_types?: Database["public"]["Enums"]["task_evidence_type"][]
           alternative_evidence_method?: string | null
           consent_date?: string | null
           consent_id?: string | null
@@ -3238,75 +3149,6 @@ export type Database = {
             foreignKeyName: "participant_evidence_preferences_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: true
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      participant_funding: {
-        Row: {
-          allocated_budget: number
-          claimed_amount: number
-          committed_budget: number
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          organisation_id: string
-          participant_id: string
-          plan_end_date: string | null
-          plan_start_date: string | null
-          remaining_budget: number
-          service_rate: number | null
-          support_category: string
-          updated_at: string
-        }
-        Insert: {
-          allocated_budget?: number
-          claimed_amount?: number
-          committed_budget?: number
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id: string
-          participant_id: string
-          plan_end_date?: string | null
-          plan_start_date?: string | null
-          remaining_budget?: number
-          service_rate?: number | null
-          support_category: string
-          updated_at?: string
-        }
-        Update: {
-          allocated_budget?: number
-          claimed_amount?: number
-          committed_budget?: number
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id?: string
-          participant_id?: string
-          plan_end_date?: string | null
-          plan_start_date?: string | null
-          remaining_budget?: number
-          service_rate?: number | null
-          support_category?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "participant_funding_organisation_id_fkey"
-            columns: ["organisation_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "participant_funding_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
@@ -4968,388 +4810,6 @@ export type Database = {
           },
         ]
       }
-      service_delivery_records: {
-        Row: {
-          authorised_at: string | null
-          authorised_by: string | null
-          created_at: string
-          created_by: string | null
-          duration_hours: number | null
-          exception_reason: string | null
-          id: string
-          notes: string | null
-          organisation_id: string
-          participant_id: string
-          record_status: Database["public"]["Enums"]["record_status"]
-          service_agreement_id: string | null
-          service_date: string
-          status: string
-          support_item: string | null
-          updated_at: string
-          worker_id: string | null
-        }
-        Insert: {
-          authorised_at?: string | null
-          authorised_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          duration_hours?: number | null
-          exception_reason?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id: string
-          participant_id: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          service_agreement_id?: string | null
-          service_date?: string
-          status?: string
-          support_item?: string | null
-          updated_at?: string
-          worker_id?: string | null
-        }
-        Update: {
-          authorised_at?: string | null
-          authorised_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          duration_hours?: number | null
-          exception_reason?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id?: string
-          participant_id?: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          service_agreement_id?: string | null
-          service_date?: string
-          status?: string
-          support_item?: string | null
-          updated_at?: string
-          worker_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_delivery_records_organisation_id_fkey"
-            columns: ["organisation_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_delivery_records_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_delivery_records_service_agreement_id_fkey"
-            columns: ["service_agreement_id"]
-            isOneToOne: false
-            referencedRelation: "service_agreements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_shift_tasks: {
-        Row: {
-          completed_at: string | null
-          completed_by: string | null
-          completion_notes: string | null
-          created_at: string
-          exception_reason: string | null
-          id: string
-          organisation_id: string
-          participant_instructions: string | null
-          record_status: Database["public"]["Enums"]["record_status"]
-          requires_after_photo: boolean
-          requires_before_photo: boolean
-          sequence: number
-          shift_id: string
-          status: Database["public"]["Enums"]["shift_task_status"]
-          template_id: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          completed_by?: string | null
-          completion_notes?: string | null
-          created_at?: string
-          exception_reason?: string | null
-          id?: string
-          organisation_id: string
-          participant_instructions?: string | null
-          record_status?: Database["public"]["Enums"]["record_status"]
-          requires_after_photo?: boolean
-          requires_before_photo?: boolean
-          sequence?: number
-          shift_id: string
-          status?: Database["public"]["Enums"]["shift_task_status"]
-          template_id?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          completed_by?: string | null
-          completion_notes?: string | null
-          created_at?: string
-          exception_reason?: string | null
-          id?: string
-          organisation_id?: string
-          participant_instructions?: string | null
-          record_status?: Database["public"]["Enums"]["record_status"]
-          requires_after_photo?: boolean
-          requires_before_photo?: boolean
-          sequence?: number
-          shift_id?: string
-          status?: Database["public"]["Enums"]["shift_task_status"]
-          template_id?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_shift_tasks_shift_id_fkey"
-            columns: ["shift_id"]
-            isOneToOne: false
-            referencedRelation: "service_shifts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_shift_tasks_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "service_task_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_shifts: {
-        Row: {
-          actual_end: string | null
-          actual_start: string | null
-          address_label: string | null
-          approval_notes: string | null
-          approved_at: string | null
-          approved_by: string | null
-          cancelled_reason: string | null
-          correction_reason: string | null
-          correction_requested_at: string | null
-          created_at: string
-          created_by: string | null
-          evidence_exception: boolean
-          evidence_exception_reason: string | null
-          exception_authorised_at: string | null
-          exception_authorised_by: string | null
-          geofence_exception: boolean
-          geofence_exception_reason: string | null
-          geofence_latitude: number | null
-          geofence_longitude: number | null
-          geofence_radius_metres: number
-          hazards_observed: string | null
-          id: string
-          linked_incident_id: string | null
-          location_id: string | null
-          organisation_id: string
-          participant_id: string
-          record_status: Database["public"]["Enums"]["record_status"]
-          recurrence_group_id: string | null
-          requires_supervisor_review: boolean
-          scheduled_end: string
-          scheduled_start: string
-          service_agreement_id: string | null
-          service_notes: string | null
-          service_type: string | null
-          site_id: string | null
-          status: Database["public"]["Enums"]["shift_status"]
-          submitted_at: string | null
-          supervisor_id: string | null
-          support_item: string | null
-          transport_kilometres: number | null
-          transport_notes: string | null
-          updated_at: string
-          worker_id: string
-        }
-        Insert: {
-          actual_end?: string | null
-          actual_start?: string | null
-          address_label?: string | null
-          approval_notes?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          cancelled_reason?: string | null
-          correction_reason?: string | null
-          correction_requested_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          evidence_exception?: boolean
-          evidence_exception_reason?: string | null
-          exception_authorised_at?: string | null
-          exception_authorised_by?: string | null
-          geofence_exception?: boolean
-          geofence_exception_reason?: string | null
-          geofence_latitude?: number | null
-          geofence_longitude?: number | null
-          geofence_radius_metres?: number
-          hazards_observed?: string | null
-          id?: string
-          linked_incident_id?: string | null
-          location_id?: string | null
-          organisation_id: string
-          participant_id: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          recurrence_group_id?: string | null
-          requires_supervisor_review?: boolean
-          scheduled_end: string
-          scheduled_start: string
-          service_agreement_id?: string | null
-          service_notes?: string | null
-          service_type?: string | null
-          site_id?: string | null
-          status?: Database["public"]["Enums"]["shift_status"]
-          submitted_at?: string | null
-          supervisor_id?: string | null
-          support_item?: string | null
-          transport_kilometres?: number | null
-          transport_notes?: string | null
-          updated_at?: string
-          worker_id: string
-        }
-        Update: {
-          actual_end?: string | null
-          actual_start?: string | null
-          address_label?: string | null
-          approval_notes?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          cancelled_reason?: string | null
-          correction_reason?: string | null
-          correction_requested_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          evidence_exception?: boolean
-          evidence_exception_reason?: string | null
-          exception_authorised_at?: string | null
-          exception_authorised_by?: string | null
-          geofence_exception?: boolean
-          geofence_exception_reason?: string | null
-          geofence_latitude?: number | null
-          geofence_longitude?: number | null
-          geofence_radius_metres?: number
-          hazards_observed?: string | null
-          id?: string
-          linked_incident_id?: string | null
-          location_id?: string | null
-          organisation_id?: string
-          participant_id?: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          recurrence_group_id?: string | null
-          requires_supervisor_review?: boolean
-          scheduled_end?: string
-          scheduled_start?: string
-          service_agreement_id?: string | null
-          service_notes?: string | null
-          service_type?: string | null
-          site_id?: string | null
-          status?: Database["public"]["Enums"]["shift_status"]
-          submitted_at?: string | null
-          supervisor_id?: string | null
-          support_item?: string | null
-          transport_kilometres?: number | null
-          transport_notes?: string | null
-          updated_at?: string
-          worker_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_shifts_linked_incident_id_fkey"
-            columns: ["linked_incident_id"]
-            isOneToOne: false
-            referencedRelation: "incidents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_shifts_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "participant_service_locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_shifts_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_shifts_service_agreement_id_fkey"
-            columns: ["service_agreement_id"]
-            isOneToOne: false
-            referencedRelation: "service_agreements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_shifts_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_task_templates: {
-        Row: {
-          allow_gallery_upload: boolean
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          is_active: boolean
-          name: string
-          organisation_id: string
-          participant_confirmation_required: boolean
-          record_status: Database["public"]["Enums"]["record_status"]
-          requires_after_photo: boolean
-          requires_before_photo: boolean
-          service_type: string | null
-          updated_at: string
-        }
-        Insert: {
-          allow_gallery_upload?: boolean
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          organisation_id: string
-          participant_confirmation_required?: boolean
-          record_status?: Database["public"]["Enums"]["record_status"]
-          requires_after_photo?: boolean
-          requires_before_photo?: boolean
-          service_type?: string | null
-          updated_at?: string
-        }
-        Update: {
-          allow_gallery_upload?: boolean
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          organisation_id?: string
-          participant_confirmation_required?: boolean
-          record_status?: Database["public"]["Enums"]["record_status"]
-          requires_after_photo?: boolean
-          requires_before_photo?: boolean
-          service_type?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       service_types: {
         Row: {
           active: boolean
@@ -5411,68 +4871,6 @@ export type Database = {
             columns: ["business_category_id"]
             isOneToOne: false
             referencedRelation: "business_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shift_completion_confirmations: {
-        Row: {
-          confirmation_method: string
-          confirmed_at: string | null
-          confirmed_by_name: string | null
-          created_at: string
-          declined: boolean
-          declined_reason: string | null
-          id: string
-          not_practicable_reason: string | null
-          organisation_id: string
-          record_status: Database["public"]["Enums"]["record_status"]
-          recorded_by: string | null
-          relationship: string | null
-          shift_id: string
-          signature_storage_path: string | null
-          updated_at: string
-        }
-        Insert: {
-          confirmation_method: string
-          confirmed_at?: string | null
-          confirmed_by_name?: string | null
-          created_at?: string
-          declined?: boolean
-          declined_reason?: string | null
-          id?: string
-          not_practicable_reason?: string | null
-          organisation_id: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          recorded_by?: string | null
-          relationship?: string | null
-          shift_id: string
-          signature_storage_path?: string | null
-          updated_at?: string
-        }
-        Update: {
-          confirmation_method?: string
-          confirmed_at?: string | null
-          confirmed_by_name?: string | null
-          created_at?: string
-          declined?: boolean
-          declined_reason?: string | null
-          id?: string
-          not_practicable_reason?: string | null
-          organisation_id?: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          recorded_by?: string | null
-          relationship?: string | null
-          shift_id?: string
-          signature_storage_path?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_completion_confirmations_shift_id_fkey"
-            columns: ["shift_id"]
-            isOneToOne: false
-            referencedRelation: "service_shifts"
             referencedColumns: ["id"]
           },
         ]
@@ -5730,71 +5128,6 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sites: {
-        Row: {
-          active: boolean
-          address_line1: string | null
-          created_at: string
-          created_by: string | null
-          geofence_radius_metres: number
-          id: string
-          latitude: number | null
-          longitude: number | null
-          name: string
-          notes: string | null
-          organisation_id: string
-          postcode: string | null
-          site_type: string
-          state: string | null
-          suburb: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          address_line1?: string | null
-          created_at?: string
-          created_by?: string | null
-          geofence_radius_metres?: number
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          notes?: string | null
-          organisation_id: string
-          postcode?: string | null
-          site_type?: string
-          state?: string | null
-          suburb?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          address_line1?: string | null
-          created_at?: string
-          created_by?: string | null
-          geofence_radius_metres?: number
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          notes?: string | null
-          organisation_id?: string
-          postcode?: string | null
-          site_type?: string
-          state?: string | null
-          suburb?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sites_organisation_id_fkey"
-            columns: ["organisation_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -6327,138 +5660,6 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      task_evidence: {
-        Row: {
-          accuracy_metres: number | null
-          caption: string | null
-          consent_id: string | null
-          created_at: string
-          device_capture_at: string | null
-          device_identifier: string | null
-          evidence_type: Database["public"]["Enums"]["task_evidence_type"]
-          file_size_bytes: number | null
-          geofence_result: Database["public"]["Enums"]["geofence_result"]
-          id: string
-          latitude: number | null
-          longitude: number | null
-          mime_type: string | null
-          offline_capture: boolean
-          organisation_id: string
-          participant_id: string
-          record_status: Database["public"]["Enums"]["record_status"]
-          server_created_at: string
-          session_identifier: string | null
-          sha256_hash: string
-          shift_id: string
-          shift_task_id: string | null
-          source: string
-          storage_path: string
-          supersede_reason: string | null
-          supersedes_evidence_id: string | null
-          synced_at: string | null
-          updated_at: string
-          worker_id: string
-        }
-        Insert: {
-          accuracy_metres?: number | null
-          caption?: string | null
-          consent_id?: string | null
-          created_at?: string
-          device_capture_at?: string | null
-          device_identifier?: string | null
-          evidence_type: Database["public"]["Enums"]["task_evidence_type"]
-          file_size_bytes?: number | null
-          geofence_result?: Database["public"]["Enums"]["geofence_result"]
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          mime_type?: string | null
-          offline_capture?: boolean
-          organisation_id: string
-          participant_id: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          server_created_at?: string
-          session_identifier?: string | null
-          sha256_hash: string
-          shift_id: string
-          shift_task_id?: string | null
-          source?: string
-          storage_path: string
-          supersede_reason?: string | null
-          supersedes_evidence_id?: string | null
-          synced_at?: string | null
-          updated_at?: string
-          worker_id: string
-        }
-        Update: {
-          accuracy_metres?: number | null
-          caption?: string | null
-          consent_id?: string | null
-          created_at?: string
-          device_capture_at?: string | null
-          device_identifier?: string | null
-          evidence_type?: Database["public"]["Enums"]["task_evidence_type"]
-          file_size_bytes?: number | null
-          geofence_result?: Database["public"]["Enums"]["geofence_result"]
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          mime_type?: string | null
-          offline_capture?: boolean
-          organisation_id?: string
-          participant_id?: string
-          record_status?: Database["public"]["Enums"]["record_status"]
-          server_created_at?: string
-          session_identifier?: string | null
-          sha256_hash?: string
-          shift_id?: string
-          shift_task_id?: string | null
-          source?: string
-          storage_path?: string
-          supersede_reason?: string | null
-          supersedes_evidence_id?: string | null
-          synced_at?: string | null
-          updated_at?: string
-          worker_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_evidence_consent_id_fkey"
-            columns: ["consent_id"]
-            isOneToOne: false
-            referencedRelation: "participant_consents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_evidence_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_evidence_shift_id_fkey"
-            columns: ["shift_id"]
-            isOneToOne: false
-            referencedRelation: "service_shifts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_evidence_shift_task_id_fkey"
-            columns: ["shift_task_id"]
-            isOneToOne: false
-            referencedRelation: "service_shift_tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_evidence_supersedes_evidence_id_fkey"
-            columns: ["supersedes_evidence_id"]
-            isOneToOne: false
-            referencedRelation: "task_evidence"
             referencedColumns: ["id"]
           },
         ]
@@ -7095,87 +6296,6 @@ export type Database = {
           },
         ]
       }
-      worker_profiles: {
-        Row: {
-          availability: Json
-          award_classification: string | null
-          created_at: string
-          created_by: string | null
-          employment_status: string
-          employment_type: string
-          end_date: string | null
-          id: string
-          notes: string | null
-          organisation_id: string
-          pay_rate: number | null
-          position: string | null
-          primary_site_id: string | null
-          qualifications: string[]
-          screening_status: string
-          skills: string[]
-          start_date: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          availability?: Json
-          award_classification?: string | null
-          created_at?: string
-          created_by?: string | null
-          employment_status?: string
-          employment_type?: string
-          end_date?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id: string
-          pay_rate?: number | null
-          position?: string | null
-          primary_site_id?: string | null
-          qualifications?: string[]
-          screening_status?: string
-          skills?: string[]
-          start_date?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          availability?: Json
-          award_classification?: string | null
-          created_at?: string
-          created_by?: string | null
-          employment_status?: string
-          employment_type?: string
-          end_date?: string | null
-          id?: string
-          notes?: string | null
-          organisation_id?: string
-          pay_rate?: number | null
-          position?: string | null
-          primary_site_id?: string | null
-          qualifications?: string[]
-          screening_status?: string
-          skills?: string[]
-          start_date?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "worker_profiles_organisation_id_fkey"
-            columns: ["organisation_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "worker_profiles_primary_site_id_fkey"
-            columns: ["primary_site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -7190,8 +6310,6 @@ export type Database = {
         Args: { _participant_id: string }
         Returns: boolean
       }
-      can_access_shift: { Args: { _shift_id: string }; Returns: boolean }
-      can_edit_shift: { Args: { _shift_id: string }; Returns: boolean }
       check_declining_outcomes: {
         Args: { _goal_id: string; _participant_id: string }
         Returns: boolean
@@ -7227,10 +6345,6 @@ export type Database = {
         Returns: number
       }
       generate_org_policies: { Args: { _org: string }; Returns: number }
-      geo_distance_metres: {
-        Args: { _lat1: number; _lat2: number; _lon1: number; _lon2: number }
-        Returns: number
-      }
       get_participant_id_for_user: {
         Args: { _user_id: string }
         Returns: string
@@ -7272,7 +6386,6 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id?: string }; Returns: boolean }
-      is_shift_oversight: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_test_title: { Args: { _title: string }; Returns: boolean }
       org_compliance_snapshot: {
@@ -7291,10 +6404,6 @@ export type Database = {
         }[]
       }
       platform_dashboard_summary: { Args: never; Returns: Json }
-      shift_submission_blockers: {
-        Args: { _shift_id: string }
-        Returns: string[]
-      }
     }
     Enums: {
       app_role:
@@ -7308,7 +6417,6 @@ export type Database = {
         | "participant"
         | "platform_super_admin"
         | "tenant_admin"
-      attendance_event_type: "check_in" | "check_out"
       complaint_category:
         | "service_quality"
         | "staff_conduct"
@@ -7358,7 +6466,6 @@ export type Database = {
         | "overdue"
         | "ready_for_review"
         | "not_applicable"
-      geofence_result: "inside" | "outside" | "unknown" | "inaccurate"
       incident_category:
         | "injury"
         | "emotional_distress"
@@ -7443,22 +6550,8 @@ export type Database = {
         | "active"
         | "ended"
         | "archived"
-      shift_status:
-        | "scheduled"
-        | "checked_in"
-        | "in_progress"
-        | "submitted"
-        | "approved"
-        | "correction_required"
-        | "cancelled"
-      shift_task_status:
-        | "pending"
-        | "completed"
-        | "not_completed"
-        | "not_applicable"
       submission_channel: "phone" | "email" | "web_form" | "in_person" | "other"
       support_plan_status: "draft" | "active" | "superseded" | "archived"
-      task_evidence_type: "before" | "after" | "issue"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       waste_type:
         | "general"
@@ -7606,7 +6699,6 @@ export const Constants = {
         "platform_super_admin",
         "tenant_admin",
       ],
-      attendance_event_type: ["check_in", "check_out"],
       complaint_category: [
         "service_quality",
         "staff_conduct",
@@ -7663,7 +6755,6 @@ export const Constants = {
         "ready_for_review",
         "not_applicable",
       ],
-      geofence_result: ["inside", "outside", "unknown", "inaccurate"],
       incident_category: [
         "injury",
         "emotional_distress",
@@ -7759,24 +6850,8 @@ export const Constants = {
         "ended",
         "archived",
       ],
-      shift_status: [
-        "scheduled",
-        "checked_in",
-        "in_progress",
-        "submitted",
-        "approved",
-        "correction_required",
-        "cancelled",
-      ],
-      shift_task_status: [
-        "pending",
-        "completed",
-        "not_completed",
-        "not_applicable",
-      ],
       submission_channel: ["phone", "email", "web_form", "in_person", "other"],
       support_plan_status: ["draft", "active", "superseded", "archived"],
-      task_evidence_type: ["before", "after", "issue"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       waste_type: [
         "general",
