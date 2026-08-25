@@ -13,6 +13,7 @@ function snapshot(over: Partial<OrgSnapshot> = {}): OrgSnapshot {
       policies: 0, policies_due: 0,
       participants: 0, staff: 0,
       governance_meetings: 0, registration_groups_confirmed: 0,
+      corrective_actions_open: 0, worker_requirements: 0, worker_requirements_verified: 0,
     },
     evidence: { total_applicable: 0, evidence_ready: 0, review_overdue: 0, missing: 0, in_progress: 0, ready_for_review: 0 },
     scores: {
@@ -21,6 +22,7 @@ function snapshot(over: Partial<OrgSnapshot> = {}): OrgSnapshot {
       supports: { percentage: null, numerator: 0, denominator: 0 },
       environment: { percentage: null, numerator: 0, denominator: 0 },
       ai_oversight: { percentage: null, numerator: 0, denominator: 0 },
+      worker_compliance: { percentage: null, numerator: 0, denominator: 0 },
     },
     ...over,
   };
