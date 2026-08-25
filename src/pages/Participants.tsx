@@ -192,21 +192,17 @@ export default function Participants() {
     const consented = participants.filter(p => (p as any).consent_status === "granted").length;
     const pending = participants.filter(p => (p as any).consent_status === "pending").length;
     const withdrawn = participants.filter(p => (p as any).consent_status === "withdrawn").length;
-    const withGoals = new Set(allGoals.map(g => g.participant_id)).size;
-    const noProgress = allGoals.filter(g => {
-      const entries = allProgress.filter(p => p.goal_id === g.id);
-      return entries.length === 0 && differenceInDays(new Date(), new Date(g.created_at)) > 14;
-    });
-    return { total: participants.length, consented, pending, withdrawn, withGoals, noProgress: noProgress.length };
-  }, [participants, allGoals, allProgress]);
+    return { total: participants.length, consented, pending, withdrawn };
+  }, [participants]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Participant Profiles & Outcomes</h1>
-          <p className="text-muted-foreground">Privacy-first profiles with outcome tracking, evidence & audit trail</p>
+          <h1 className="text-2xl font-bold tracking-tight">Participant Compliance Register</h1>
+          <p className="text-muted-foreground">Identity, consent, compliance evidence and masked-access audit trail</p>
         </div>
+
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1">
             <Shield className="h-3 w-3" />
