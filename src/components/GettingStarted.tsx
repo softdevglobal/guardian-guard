@@ -7,7 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { GETTING_STARTED_STEPS } from "@/lib/platform";
 
-/** Tenant-facing checklist so a new provider always knows the next action. */
+/**
+ * Tenant-facing compliance checklist. Every step is a registration or evidence
+ * obligation — daily operational setup lives in BMS Pro Trade, not here.
+ */
 export function GettingStarted() {
   const { user } = useAuth();
   const orgId = user?.organisation_id ?? null;
@@ -16,22 +19,29 @@ export function GettingStarted() {
     queryKey: ["getting-started", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const [onb, docs, staff, participants, templates, policies] = await Promise.all([
+      const [onb, groups, docs, personnel, workerRecords, policies, governance, capa, evidence] = await Promise.all([
         supabase.from("organisation_onboarding" as any).select("status, progress_pct").eq("organisation_id", orgId).maybeSingle(),
+        supabase.from("registration_groups" as any).select("id").eq("organisation_id", orgId).eq("is_confirmed", true).limit(1),
         supabase.from("organisation_documents" as any).select("id").eq("organisation_id", orgId).limit(1),
-        supabase.from("user_profiles" as any).select("id").eq("organisation_id", orgId).limit(5),
-        supabase.from("participants" as any).select("id").eq("organisation_id", orgId).limit(1),
-        supabase.from("service_task_templates" as any).select("id").eq("is_active", true).limit(1),
-        supabase.from("policies" as any).select("id").eq("organisation_id", orgId).limit(1),
+        supabase.from("key_personnel" as any).select("id").eq("organisation_id", orgId).limit(1),
+        supabase.from("staff_compliance_records" as any).select("id").eq("organisation_id", orgId).limit(1),
+        supabase.from("policy_acknowledgements" as any).select("id").limit(1),
+        supabase.from("governance_meetings" as any).select("id").eq("organisation_id", orgId).limit(1),
+        supabase.from("corrective_actions" as any).select("id").eq("organisation_id", orgId).not("status", "in", "(closed,verified,completed)").limit(1),
+        supabase.from("evidence_requirements" as any).select("id").eq("organisation_id", orgId).eq("status", "ready").limit(1),
       ]);
+      const any = (r: { data: unknown }) => ((r.data ?? []) as unknown[]).length > 0;
       return {
         profile: (onb.data as any)?.status === "approved" || ((onb.data as any)?.progress_pct ?? 0) >= 100,
-        documents: ((docs.data ?? []) as any[]).length > 0,
-        workers: ((staff.data ?? []) as any[]).length > 1,
-        participants: ((participants.data ?? []) as any[]).length > 0,
-        services: ((templates.data ?? []) as any[]).length > 0,
-        policies: ((policies.data ?? []) as any[]).length > 0,
-        auditor: false,
+        registration_groups: any(groups),
+        registration_info: (onb.data as any)?.status === "approved",
+        documents: any(docs),
+        key_personnel: any(personnel),
+        worker_compliance: any(workerRecords),
+        policies: any(policies),
+        governance: any(governance),
+        corrective_actions: !any(capa),
+        evidence_pack: any(evidence),
       } as Record<string, boolean>;
     },
   });
@@ -47,7 +57,7 @@ export function GettingStarted() {
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Getting started</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Work through these seven steps to make your evidence audit-ready. Guardian Guard records your evidence — it does not certify compliance.
+          Work through these steps to make your evidence audit-ready. Guardian Guard records your evidence — it does not certify compliance.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
