@@ -127,6 +127,11 @@ const App = () => (
               <Route path="/restrictive-practices" element={<ProtectedPage><RestrictivePractices /></ProtectedPage>} />
               <Route path="/governance" element={<ProtectedPage><Governance /></ProtectedPage>} />
               <Route path="/evidence-room" element={<ProtectedPage><EvidenceRoom /></ProtectedPage>} />
+              <Route path="/registration" element={<ProtectedPage><Registration /></ProtectedPage>} />
+              <Route path="/corrective-actions" element={<ProtectedPage><CorrectiveActions /></ProtectedPage>} />
+              <Route path="/calendar" element={<ProtectedPage><ComplianceCalendar /></ProtectedPage>} />
+              <Route path="/trust-portal" element={<ProtectedPage><TrustPortal /></ProtectedPage>} />
+
 
 
 
