@@ -43,6 +43,9 @@ interface AuthContextType {
   hasModule: (module: string) => boolean;
   /** Modules switched on by the organisation's confirmed services; null while unknown. */
   orgModules: string[] | null;
+  /** Package entitlements; a module set to false is hidden and route-blocked. */
+  moduleEntitlements: ModuleEntitlements;
+
 }
 
 
