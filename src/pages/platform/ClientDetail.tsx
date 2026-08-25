@@ -315,7 +315,73 @@ export default function ClientDetail() {
           )}
         </TabsContent>
 
+        <TabsContent value="tasks" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Assign a compliance task</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Tasks appear in the provider's NDIS registration centre. Assigning work is an operational instruction — it is not a compliance determination.
+              </p>
+              <div className="space-y-1">
+                <Label htmlFor="task-title">Task</Label>
+                <Input id="task-title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="min-h-[44px]" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-instructions">Instructions</Label>
+                <Textarea id="task-instructions" value={taskInstructions} onChange={(e) => setTaskInstructions(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-due">Due date</Label>
+                <Input id="task-due" type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)} className="min-h-[44px]" />
+              </div>
+              <Button
+                className="min-h-[44px]"
+                disabled={assignTask.isPending || taskTitle.trim().length < 4}
+                onClick={() => assignTask.mutate()}
+              >
+                Assign task
+              </Button>
+            </CardContent>
+          </Card>
+
+          {d.tasks.length === 0 ? (
+            <EmptyState title="No tasks assigned" description="Assign the evidence or actions this provider must complete." />
+          ) : (
+            <Card><CardContent className="space-y-3 py-4">
+              {d.tasks.map((t) => (
+                <div key={t.id} className="rounded-md border p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{t.title}</p>
+                    <StatusPill tone={t.status === "approved" ? "ok" : t.status === "correction_required" ? "bad" : "neutral"}>{t.status}</StatusPill>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t.due_date ? `Due ${t.due_date}` : "No due date"}</p>
+                  {t.provider_response && <p className="mt-2">Provider response: {t.provider_response}</p>}
+                  {t.status === "submitted" && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" className="min-h-[36px]" onClick={() => reviewTask.mutate({ taskId: t.id, status: "approved" })}>
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-[36px]"
+                        onClick={() => {
+                          const notes = window.prompt("What correction is required?");
+                          if (notes && notes.trim()) reviewTask.mutate({ taskId: t.id, status: "correction_required", notes: notes.trim() });
+                        }}
+                      >
+                        Request correction
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent></Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="support" className="space-y-4 pt-4">
+
           <Card>
             <CardHeader><CardTitle className="text-base">Start a time-limited support session</CardTitle></CardHeader>
             <CardContent className="space-y-3">
