@@ -215,11 +215,14 @@ export function maskSensitive(value: string | null | undefined, sensitivity?: st
 }
 
 export const GETTING_STARTED_STEPS = [
-  { key: "profile", label: "Complete business profile", to: "/onboarding" },
-  { key: "documents", label: "Upload required documents", to: "/onboarding" },
-  { key: "workers", label: "Add workers", to: "/staff-enrollment" },
-  { key: "participants", label: "Add participants", to: "/participants" },
-  { key: "services", label: "Configure services and tasks", to: "/service-operations" },
-  { key: "policies", label: "Review policies", to: "/policies" },
-  { key: "auditor", label: "Invite an auditor when ready", to: "/evidence-room" },
+  { key: "profile", label: "Complete organisation profile", to: "/onboarding" },
+  { key: "registration_groups", label: "Confirm registration groups", to: "/registration" },
+  { key: "registration_info", label: "Complete registration information", to: "/registration" },
+  { key: "documents", label: "Upload required business evidence", to: "/onboarding" },
+  { key: "key_personnel", label: "Add key personnel", to: "/registration" },
+  { key: "worker_compliance", label: "Add worker compliance records", to: "/staff" },
+  { key: "policies", label: "Review assigned policies", to: "/policies" },
+  { key: "governance", label: "Complete governance requirements", to: "/governance" },
+  { key: "corrective_actions", label: "Resolve corrective actions", to: "/corrective-actions" },
+  { key: "evidence_pack", label: "Prepare auditor evidence pack", to: "/evidence-room" },
 ] as const;
