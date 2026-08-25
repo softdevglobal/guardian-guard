@@ -46,8 +46,14 @@ import SafeEnvironment from "./pages/SafeEnvironment";
 import SIL from "./pages/SIL";
 import RestrictivePractices from "./pages/RestrictivePractices";
 import Governance from "./pages/Governance";
+import CorrectiveActions from "./pages/CorrectiveActions";
+import Registration from "./pages/Registration";
+import ComplianceCalendar from "./pages/ComplianceCalendar";
+import TrustPortal from "./pages/TrustPortal";
+import PublicTrust from "./pages/PublicTrust";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
