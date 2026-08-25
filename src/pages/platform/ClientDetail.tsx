@@ -25,7 +25,7 @@ export default function ClientDetail() {
     queryKey: ["platform-client", id],
     enabled: !!id,
     queryFn: async () => {
-      const [org, sub, onb, users, docs, income, events, sessions, invites, answers, packages] = await Promise.all([
+      const [org, sub, onb, users, docs, income, events, sessions, invites, answers, packages, tasks] = await Promise.all([
         supabase.from("organisations" as any).select("*").eq("id", id).maybeSingle(),
         supabase.from("tenant_subscriptions" as any).select("*, subscription_packages(name, code, monthly_price)").eq("organisation_id", id).maybeSingle(),
         supabase.from("organisation_onboarding" as any).select("*").eq("organisation_id", id).maybeSingle(),
