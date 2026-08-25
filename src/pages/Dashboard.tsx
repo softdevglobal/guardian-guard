@@ -123,20 +123,27 @@ export default function Dashboard() {
       <section aria-label="Compliance scores">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ScoreCard label="Governance & Operations" block={snapshot?.scores.governance} subject="governance records" icon={ShieldAlert} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/governance")} />
-          <ScoreCard label="Provision of Supports" block={snapshot?.scores.supports} subject="support records" icon={Users} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/participants")} />
-          <ScoreCard label="Support Environment" block={snapshot?.scores.environment} subject="environment records" icon={CheckCircle} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/safe-environment")} />
-          <ScoreCard label="AI Oversight" block={snapshot?.scores.ai_oversight} subject="AI activities" icon={Activity} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/audit-logs")} />
+          <ScoreCard label="Worker Compliance" block={snapshot?.scores.worker_compliance} subject="worker requirements" icon={UserCog} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/staff")} />
+          <ScoreCard label="Provision of Supports" block={snapshot?.scores.supports} subject="incident and complaint records" icon={Users} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/participants")} />
+          <ScoreCard label="Support Environment" block={snapshot?.scores.environment} subject="risk records" icon={CheckCircle} calculatedAt={snapshot?.calculated_at} loading={isLoading} onClick={() => navigate("/safe-environment")} />
         </div>
       </section>
 
       <section aria-label="Key statistics">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <CountCard label="Open Incidents" value={counts?.incidents_open ?? 0} caption={`${counts?.incidents_total ?? 0} in the register`} icon={AlertTriangle} tone="text-destructive" loading={isLoading} onClick={() => navigate("/incidents")} />
-          <CountCard label="Active Participants" value={counts?.participants ?? 0} icon={Users} tone="text-info" loading={isLoading} onClick={() => navigate("/participants")} />
+          <CountCard label="Open Complaints" value={counts?.complaints_open ?? 0} caption={`${counts?.complaints_total ?? 0} in the register`} icon={Users} tone="text-warning" loading={isLoading} onClick={() => navigate("/complaints")} />
+          <CountCard label="Open Risks" value={counts?.risks_open ?? 0} caption={`${counts?.risks_total ?? 0} in the register`} icon={ShieldAlert} tone="text-warning" loading={isLoading} onClick={() => navigate("/risks")} />
+          <CountCard label="Corrective Actions" value={counts?.corrective_actions_open ?? 0} caption="Open or in progress" icon={CheckCircle} tone="text-destructive" loading={isLoading} onClick={() => navigate("/corrective-actions")} />
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <CountCard label="Policies Due" value={counts?.policies_due ?? 0} caption="Review within 30 days" icon={FileText} tone="text-warning" loading={isLoading} onClick={() => navigate("/policies")} />
-          <CountCard label="Workers" value={counts?.staff ?? 0} caption="In your organisation" icon={TrendingUp} tone="text-success" loading={isLoading} onClick={() => navigate("/staff")} />
+          <CountCard label="Participants" value={counts?.participants ?? 0} caption="Compliance records held" icon={Users} tone="text-info" loading={isLoading} onClick={() => navigate("/participants")} />
+          <CountCard label="Workers" value={counts?.staff ?? 0} caption="In your organisation" icon={UserCog} tone="text-info" loading={isLoading} onClick={() => navigate("/staff")} />
+          <CountCard label="Upcoming Deadlines" value={evidence?.review_overdue ?? 0} caption="Evidence reviews overdue" icon={Clock} tone="text-destructive" loading={isLoading} onClick={() => navigate("/calendar")} />
         </div>
       </section>
+
 
       <section aria-label="Audit readiness">
         <ScoreCard
