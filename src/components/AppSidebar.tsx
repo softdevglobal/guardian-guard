@@ -77,7 +77,7 @@ const navItems = [
   { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, module: "complaints", badgeKey: "complaints_open" as const },
   { title: "Policies", url: "/policies", icon: FileText, module: "policies" },
   { title: "Participants", url: "/participants", icon: Users, module: "participants" },
-  { title: "Sites", url: "/sites", icon: MapPin, module: "sites" },
+  
   { title: "Participant Care", url: "/participant-care", icon: HeartPulse, module: "participant_care" },
   { title: "Medication", url: "/medication", icon: Pill, module: "medication" },
   { title: "Staff Compliance", url: "/staff", icon: UserCog, module: "staff" },
