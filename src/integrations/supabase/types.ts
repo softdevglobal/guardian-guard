@@ -763,6 +763,93 @@ export type Database = {
           },
         ]
       }
+      corrective_actions: {
+        Row: {
+          action: string
+          approved_at: string | null
+          approved_by: string | null
+          closure_notes: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          evidence_document_id: string | null
+          evidence_notes: string | null
+          evidence_required: boolean
+          id: string
+          organisation_id: string
+          owner_id: string | null
+          priority: string
+          reference: string | null
+          source_record_id: string | null
+          source_table: string | null
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          approved_at?: string | null
+          approved_by?: string | null
+          closure_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          evidence_document_id?: string | null
+          evidence_notes?: string | null
+          evidence_required?: boolean
+          id?: string
+          organisation_id: string
+          owner_id?: string | null
+          priority?: string
+          reference?: string | null
+          source_record_id?: string | null
+          source_table?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          closure_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          evidence_document_id?: string | null
+          evidence_notes?: string | null
+          evidence_required?: boolean
+          id?: string
+          organisation_id?: string
+          owner_id?: string | null
+          priority?: string
+          reference?: string | null
+          source_record_id?: string | null
+          source_table?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_actions_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_checks: {
         Row: {
           cleaning_completed: boolean
@@ -1558,6 +1645,90 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "internal_audits_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_personnel: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_appointed: string | null
+          declarations: string | null
+          email: string | null
+          evidence_document_id: string | null
+          experience_summary: string | null
+          full_name: string
+          id: string
+          organisation_id: string
+          phone: string | null
+          police_check_date: string | null
+          police_check_expiry: string | null
+          position: string
+          qualifications: string | null
+          role_type: string
+          status: string
+          updated_at: string
+          worker_screening_expiry: string | null
+          worker_screening_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_appointed?: string | null
+          declarations?: string | null
+          email?: string | null
+          evidence_document_id?: string | null
+          experience_summary?: string | null
+          full_name: string
+          id?: string
+          organisation_id: string
+          phone?: string | null
+          police_check_date?: string | null
+          police_check_expiry?: string | null
+          position: string
+          qualifications?: string | null
+          role_type?: string
+          status?: string
+          updated_at?: string
+          worker_screening_expiry?: string | null
+          worker_screening_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_appointed?: string | null
+          declarations?: string | null
+          email?: string | null
+          evidence_document_id?: string | null
+          experience_summary?: string | null
+          full_name?: string
+          id?: string
+          organisation_id?: string
+          phone?: string | null
+          police_check_date?: string | null
+          police_check_expiry?: string | null
+          position?: string
+          qualifications?: string | null
+          role_type?: string
+          status?: string
+          updated_at?: string
+          worker_screening_expiry?: string | null
+          worker_screening_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_personnel_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_personnel_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
@@ -2763,6 +2934,12 @@ export type Database = {
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
+          registration_applied_at: string | null
+          registration_audit_date: string | null
+          registration_expiry: string | null
+          registration_notes: string | null
+          registration_number: string | null
+          registration_status: string
           state: string | null
           suburb: string | null
           suspended_reason: string | null
@@ -2788,6 +2965,12 @@ export type Database = {
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          registration_applied_at?: string | null
+          registration_audit_date?: string | null
+          registration_expiry?: string | null
+          registration_notes?: string | null
+          registration_number?: string | null
+          registration_status?: string
           state?: string | null
           suburb?: string | null
           suspended_reason?: string | null
@@ -2813,6 +2996,12 @@ export type Database = {
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          registration_applied_at?: string | null
+          registration_audit_date?: string | null
+          registration_expiry?: string | null
+          registration_notes?: string | null
+          registration_number?: string | null
+          registration_status?: string
           state?: string | null
           suburb?: string | null
           suspended_reason?: string | null
@@ -3803,6 +3992,75 @@ export type Database = {
           },
         ]
       }
+      platform_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          evidence_document_id: string | null
+          evidence_required: boolean
+          id: string
+          instructions: string | null
+          organisation_id: string
+          provider_response: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          evidence_document_id?: string | null
+          evidence_required?: boolean
+          id?: string
+          instructions?: string | null
+          organisation_id: string
+          provider_response?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          evidence_document_id?: string | null
+          evidence_required?: boolean
+          id?: string
+          instructions?: string | null
+          organisation_id?: string
+          provider_response?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_tasks_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_tasks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policies: {
         Row: {
           acknowledgement_due_date: string | null
@@ -4185,6 +4443,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      provider_trust_portals: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          intro_text: string | null
+          is_enabled: boolean
+          organisation_id: string
+          published_at: string | null
+          published_snapshot: Json | null
+          show_audit_readiness: boolean
+          show_insurance: boolean
+          show_policies_current: boolean
+          show_registration_status: boolean
+          show_worker_screening: boolean
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro_text?: string | null
+          is_enabled?: boolean
+          organisation_id: string
+          published_at?: string | null
+          published_snapshot?: Json | null
+          show_audit_readiness?: boolean
+          show_insurance?: boolean
+          show_policies_current?: boolean
+          show_registration_status?: boolean
+          show_worker_screening?: boolean
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro_text?: string | null
+          is_enabled?: boolean
+          organisation_id?: string
+          published_at?: string | null
+          published_snapshot?: Json | null
+          show_audit_readiness?: boolean
+          show_insurance?: boolean
+          show_policies_current?: boolean
+          show_registration_status?: boolean
+          show_worker_screening?: boolean
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_trust_portals_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: true
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       registration_groups: {
         Row: {
