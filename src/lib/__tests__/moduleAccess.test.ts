@@ -16,9 +16,9 @@ describe("moduleAllowed", () => {
     expect(moduleAllowed("sil", true, ["sil"])).toBe(true);
   });
 
-  it("maps approval and worker surfaces onto service operations", () => {
-    expect(moduleAllowed("service_approvals", true, ["service_operations"])).toBe(true);
-    expect(moduleAllowed("service_delivery", true, [])).toBe(false);
+  it("keeps compliance modules ungated by service delivery", () => {
+    expect(moduleAllowed("corrective_actions", true, [])).toBe(true);
+    expect(moduleAllowed("registration", true, [])).toBe(true);
   });
 
   it("falls back to role access when activation is unknown", () => {
@@ -29,8 +29,9 @@ describe("moduleAllowed", () => {
 describe("moduleForPath", () => {
   it("resolves exact and nested routes", () => {
     expect(moduleForPath("/participants")).toBe("participants");
-    expect(moduleForPath("/my-shifts/abc-123")).toBe("service_delivery");
+    expect(moduleForPath("/corrective-actions/abc-123")).toBe("corrective_actions");
   });
+
 
   it("returns null for unmapped routes", () => {
     expect(moduleForPath("/unknown")).toBeNull();
