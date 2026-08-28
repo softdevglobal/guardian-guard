@@ -2,6 +2,18 @@
 
 Guardian Guard is a compliance management platform built for NDIS (National Disability Insurance Scheme) service providers. It enforces regulatory obligations at the database level, automates deadline monitoring, and provides real-time notification of compliance events.
 
+## Registration and audit-readiness resources
+
+Guardian Guard supports ongoing compliance after registration. Australian businesses preparing their initial application or audit can use these independent, public resources:
+
+- [NDIS Provider Registration — Complete Australian Guide](https://ndisproviderregistration.au/ndis-provider-registration)
+- [NDIS Provider Registration Checklist 2026](https://ndisproviderregistration.au/ndis-registration-checklist-2026)
+- [NDIS Registration Groups Explained](https://ndisproviderregistration.au/ndis-registration-groups)
+- [NDIS Provider Audit Guide](https://ndisproviderregistration.au/ndis-provider-audit)
+- [Free National Webinar: Starting as an NDIS Provider](https://ndisproviderregistration.au/free-ndis-provider-readiness-webinar)
+
+These resources are maintained by NDIS Provider Registration, an independent service operated by DGTG Pty Ltd. Neither Guardian Guard nor NDIS Provider Registration is affiliated with or endorsed by the NDIA or the NDIS Quality and Safeguards Commission. The Commission makes provider-registration decisions.
+
 ## Intended Users
 
 - **Super Admins** — full platform oversight
