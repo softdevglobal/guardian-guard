@@ -6,11 +6,16 @@ Guardian Guard is a compliance management platform built for NDIS (National Disa
 
 Guardian Guard supports ongoing compliance after registration. Australian businesses preparing their initial application or audit can use these independent, public resources:
 
+- [SIL Provider Registration Deadline: 1 October 2026](https://github.com/softdevglobal/DGTG-COM/blob/main/blog/sil-provider-registration-deadline-1-october-2026.md)
+- [SIL and registration group 0138 guide](https://ndisproviderregistration.au/ndis-registration-for-sil-providers)
+- [Free SIL 0138 registration checklist](https://ndisproviderregistration.au/sil-0138-registration-checklist)
 - [NDIS Provider Registration — Complete Australian Guide](https://ndisproviderregistration.au/ndis-provider-registration)
 - [NDIS Provider Registration Checklist 2026](https://ndisproviderregistration.au/ndis-registration-checklist-2026)
 - [NDIS Registration Groups Explained](https://ndisproviderregistration.au/ndis-registration-groups)
 - [NDIS Provider Audit Guide](https://ndisproviderregistration.au/ndis-provider-audit)
 - [Free National Webinar: Starting as an NDIS Provider](https://ndisproviderregistration.au/free-ndis-provider-readiness-webinar)
+
+The SIL deadline resource explains the distinction between the 1 July 2026 commencement date and the 1 October 2026 application date for relevant existing unregistered SIL providers. Providers should confirm their current position directly with the NDIS Quality and Safeguards Commission.
 
 These resources are maintained by NDIS Provider Registration, an independent service operated by DGTG Pty Ltd. Neither Guardian Guard nor NDIS Provider Registration is affiliated with or endorsed by the NDIA or the NDIS Quality and Safeguards Commission. The Commission makes provider-registration decisions.
 
